@@ -33,7 +33,7 @@ max_countries = 5
 c_num_inputs = 3
 c_num_outputs = 3
 c_rsize = ((max_names*max_objects)**2) / 8
-c_num_steps = 0# 100000
+c_num_steps = 0 # 100000
 c_eval_db_factor = 1 # fraction of database to consider
 c_test_pct = 0.1
 c_key_num_ks = 5
@@ -42,11 +42,18 @@ c_key_dim = 15
 
 logger = None
 
-# var mod is a var whose object was in the input and is the only value to be modified
+# varmod is a var whose object was in the input and is the only value to be modified
+# mod is a field, normally seen in output, that tells you how to modify the database
+# conn is a connective such as AND or OR
+# var says this is a var, actual value defined in varobj
+# varobj is a field with both a var id and an object, this providing the data and giving it a var name
+# obj is just an object. It will not be repeated or used in a var
+
 # mod is one of dm_type and says how to change the database
-df_type = Enum('df_type', 'bool var obj varobj varmod mod')
+df_type = Enum('df_type', 'bool var obj varobj varmod mod conn')
 actions = ['picked up', 'put down', 'has', 'went to', 'is located at']
 dm_type = Enum('dm_type', 'Insert Remove Modify')
+conn_type = Enum('conn_type', 'AND OR')
 
 # df_type_bool = 0
 # df_type_var = 1
@@ -54,6 +61,7 @@ dm_type = Enum('dm_type', 'Insert Remove Modify')
 # df_type_varobj = 3
 num_df_types = len(df_type)
 num_dm_types = len(dm_type)
+num_conn_types = len(conn_type)
 
 SDataField = collections.namedtuple('SDataField', 'df_type, var_num')
 SDataField.__new__.__defaults__ = (None, None, None)
@@ -111,6 +119,11 @@ def make_vec(arr, data_flds, els_arr):
 			subvec1[:, data_flds[el].var_num] = 1
 			subvec = np.concatenate((subvec0, subvec1), axis=1)
 			# note, no increment of field_id
+		elif data_flds[el].df_type == df_type.conn:
+			subvec1 = np.zeros((numrecs, num_conn_types))
+			subvec1[np.arange(numrecs), a] = 1
+			subvec = np.concatenate((subvec0, subvec1), axis=1)
+			field_id += 1
 		else:
 			logger.error('Invalid field ID. Exiting')
 			exit()
@@ -171,25 +184,6 @@ def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_art
 	num_els += num_new_els
 	return [new_els_range, num_new_els, new_els], num_els
 
-els_arr = []
-els_dict = {}
-def_article = []
-# name_ids, num_els, num_names, names = \
-name_set, num_els = \
-	init_els(	fname='names.txt', cap_first=True,
-				max_new=max_names, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-# object_ids, num_els, num_objects, objects = \
-object_set, num_els = \
-	init_els(	fname='objects.txt', new_def_article=True,
-				max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-place_set, num_els =\
-	init_els(	fname='countries.txt', cap_first=True,
-				max_new=max_countries, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-
-action_set, num_els =\
-	init_els(	alist=actions,
-				max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-
 def gen_phrases(gen_rules, els_dict, els_arr):
 	curr_flds_id = -1
 
@@ -221,7 +215,7 @@ def gen_phrases(gen_rules, els_dict, els_arr):
 					if type == df_type.varobj:
 						vars_dict[flds[el].var_num] = field_id
 						field_id += 1
-					elif type == df_type.obj or type == df_type.bool or type == df_type.mod:
+					elif type == df_type.obj or type == df_type.bool or type == df_type.mod or type == df_type.conn:
 						field_id += 1
 				input_flds = flds
 			else:
@@ -252,7 +246,7 @@ def gen_phrases(gen_rules, els_dict, els_arr):
 				elif df_type == df_type.bool:
 					for irec in range(numrecs):
 						recs[irec].append(int(sel_el))
-				elif df_type == df_type.mod:
+				elif df_type == df_type.mod or df_type == df_type.conn:
 					for irec in range(numrecs):
 						recs[irec].append(sel_el.value-1)
 			if ii == 0:
@@ -286,6 +280,26 @@ def gen_phrases(gen_rules, els_dict, els_arr):
 	all_ovecs = np.take(all_ovecs, shuffle_stick, axis=0)
 
 	return 	input_flds_arr, output_flds_arr, vars_dict_arr, fld_def_arr, input, output, all_ivecs, all_ovecs
+
+
+els_arr = []
+els_dict = {}
+def_article = []
+# name_ids, num_els, num_names, names = \
+name_set, num_els = \
+	init_els(	fname='names.txt', cap_first=True,
+				max_new=max_names, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+# object_ids, num_els, num_objects, objects = \
+object_set, num_els = \
+	init_els(	fname='objects.txt', new_def_article=True,
+				max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+place_set, num_els =\
+	init_els(	fname='countries.txt', cap_first=True,
+				max_new=max_countries, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+
+action_set, num_els =\
+	init_els(	alist=actions,
+				max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
 """
 def make_pickups(input_flds_arr, output_flds_arr, vars_dict_arr, fld_def_arr):
@@ -407,7 +421,7 @@ op_train_step = tf.train.AdamOptimizer(FLAGS.nn_lrn_rate).minimize(t_err, name='
 v_y = tf.Variable(tf.zeros([numrecs, c_key_dim], dtype=tf.float32), name='v_y')
 op_y = tf.assign(v_y, t_y, name='op_y')
 db_size = int(float(numrecs/ c_eval_db_factor) * (1.0 - c_test_pct))
-test_size = int(float(numrecs / c_eval_db_factor) * c_test_pct)
+test_size = numrecs - db_size # int(float(numrecs / c_eval_db_factor) * c_test_pct)
 t_key_db = tf.slice(input_=v_y, begin=[0, 0],
 				  size=[db_size, c_key_dim],
 				  name='t_key_db')
@@ -458,7 +472,48 @@ sess.run(op_y)
 r_keys = sess.run([t_key_cds, t_key_idxs])
 logger.info(r_keys)
 
-# modify this for mod and varmod
+def print_phrase(output_flds, phrase, vars_dict, out_phrase, out_str):
+	field_id = 0  # what field are we up to
+	for el, fld in enumerate(output_flds):
+		if fld.df_type == df_type.varobj:
+			field_id += 1
+		elif fld.df_type == df_type.obj:
+			out_str += els_arr[out_phrase[field_id]] + ' '
+			field_id += 1
+		elif fld.df_type == df_type.mod:
+			if out_phrase[field_id] == dm_type.Insert.value - 1:
+				out_str = 'Insert: '
+			elif out_phrase[field_id] == dm_type.Remove.value - 1:
+				out_str = 'Remove: '
+			elif out_phrase[field_id] == dm_type.Modify.value - 1:
+				out_str = 'Modify: '
+			field_id += 1
+		elif fld.df_type == df_type.bool:
+			if out_phrase[field_id]:
+				out_str = 'true that '
+			else:
+				out_str = 'false that '
+			field_id += 1
+		elif fld.df_type == df_type.var:
+			input_id = vars_dict[output_flds[el].var_num]
+			if def_article[phrase[input_id]]:
+				out_str += 'the '
+			out_str += els_arr[phrase[input_id]] + ' '
+		# note, no increment of field_id
+		elif fld.df_type == df_type.varmod:
+			input_id = vars_dict[output_flds[el].var_num]
+			out_str += '*'
+			if def_article[phrase[input_id]]:
+				out_str += 'the '
+			out_str += els_arr[phrase[input_id]] + '* '
+		# note, no increment of field_id
+		else:
+			logger.error('Invalid field ID. Exiting')
+			exit()
+
+	return out_str
+
+
 for iiphrase, phrase in enumerate( input[db_size:]):
 	fld_def = fld_def_arr[db_size + iiphrase]
 	input_flds, output_flds, vars_dict = input_flds_arr[fld_def], output_flds_arr[fld_def], vars_dict_arr[fld_def],
@@ -470,14 +525,18 @@ for iiphrase, phrase in enumerate( input[db_size:]):
 		out_str += els_arr[id] + ' '
 	logger.info(out_str)
 	for iout in range(c_key_num_ks-1):
+		out_str = print_phrase(output_flds, phrase, vars_dict, out_phrase, out_str)
+		logger.info(out_str)
+
+
 		field_id = 0  # what field are we up to
 		for el, fld in enumerate(output_flds):
-			if output_flds[el].df_type == df_type.varobj:
+			if fld.df_type == df_type.varobj:
 				field_id += 1
-			elif output_flds[el].df_type == df_type.obj:
+			elif fld.df_type == df_type.obj:
 				out_str += els_arr[out_phrase[field_id]] + ' '
 				field_id += 1
-			elif output_flds[el].df_type == df_type.mod:
+			elif fld.df_type == df_type.mod:
 				if out_phrase[field_id] == dm_type.Insert.value - 1:
 					out_str = 'Insert: '
 				elif out_phrase[field_id] == dm_type.Remove.value - 1:
@@ -485,19 +544,19 @@ for iiphrase, phrase in enumerate( input[db_size:]):
 				elif out_phrase[field_id] == dm_type.Modify.value - 1:
 					out_str = 'Modify: '
 				field_id += 1
-			elif output_flds[el].df_type == df_type.bool:
+			elif fld.df_type == df_type.bool:
 				if out_phrase[field_id]:
 					out_str = 'true that '
 				else:
 					out_str = 'false that '
 				field_id += 1
-			elif output_flds[el].df_type == df_type.var:
+			elif fld.df_type == df_type.var:
 				input_id = vars_dict[output_flds[el].var_num]
 				if def_article[phrase[input_id]]:
 					out_str += 'the '
 				out_str += els_arr[phrase[input_id]] + ' '
 				# note, no increment of field_id
-			elif output_flds[el].df_type == df_type.varmod:
+			elif fld.df_type == df_type.varmod:
 				input_id = vars_dict[output_flds[el].var_num]
 				out_str += '*'
 				if def_article[phrase[input_id]]:
