@@ -56,7 +56,7 @@ c_max_vars = 15
 c_key_dim = 15
 c_max_phrases_per_rule = 25
 
-logger = None
+# logger = None
 
 # varmod is a var whose object was in the input and is the only value to be modified
 # mod is a field, normally seen in output, that tells you how to modify the database
@@ -213,7 +213,6 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 
 	input_flds_arr = []
 	output_flds_arr = []
-	vars_dict_arr = []
 	fld_def_arr = []
 	ivec_arr = []
 	ivec_pos_list = []
@@ -224,7 +223,6 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 	output = []
 	for igen, i_and_o_rules in enumerate(gen_rules):
 		curr_flds_id += 1
-		vars_dict = {}
 		numrecs = 1
 		for ii, rule in enumerate(i_and_o_rules):
 			flds = []
@@ -238,20 +236,6 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 						numrecs *= 1
 
 			if ii == 0: # i rule
-				field_id = 0
-				for el, fld in enumerate(flds):
-					type = flds[el].df_type
-					if type == df_type.varobj:
-						vars_dict[flds[el].var_num] = field_id
-						field_id += 1
-					elif type == df_type.obj or type == df_type.bool \
-							or type == df_type.mod or type == df_type.conn \
-							or type == df_type.var:
-						field_id += 1
-					else:
-						logger.error('Invalid field def combination for vars_dict. Exiting')
-						exit()
-
 				input_flds = flds
 			else:
 				output_flds = flds
@@ -327,12 +311,11 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 
 		input_flds_arr.append(input_flds)
 		output_flds_arr.append(output_flds)
-		vars_dict_arr.append(vars_dict)
 
-	return 	input_flds_arr, output_flds_arr, vars_dict_arr, fld_def_arr, input, output, \
+	return 	input_flds_arr, output_flds_arr, fld_def_arr, input, output, \
 			ivec_pos_list, all_ovecs, ivec_arr, ivec_dim_dict, ivec_dim_by_rule
 
-def print_phrase(flds, src_phrase, out_phrase, out_str):
+def print_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
 	field_id = 0  # what field are we up to
 	for el, fld in enumerate(flds):
 		if fld.df_type == df_type.varobj:
@@ -393,195 +376,247 @@ def print_phrase(flds, src_phrase, out_phrase, out_str):
 	return out_str
 
 
+def init_objects():
+	els_arr = []
+	els_dict = {}
+	def_article = []
+	# name_ids, num_els, num_names, names = \
+	name_set, num_els = \
+		init_els(	fname='names.txt', cap_first=True,
+					max_new=max_names, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+	# object_ids, num_els, num_objects, objects = \
+	object_set, num_els = \
+		init_els(	fname='objects.txt', new_def_article=True,
+					max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+	place_set, num_els =\
+		init_els(	fname='countries.txt', cap_first=True,
+					max_new=max_countries, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
-els_arr = []
-els_dict = {}
-def_article = []
-# name_ids, num_els, num_names, names = \
-name_set, num_els = \
-	init_els(	fname='names.txt', cap_first=True,
-				max_new=max_names, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-# object_ids, num_els, num_objects, objects = \
-object_set, num_els = \
-	init_els(	fname='objects.txt', new_def_article=True,
-				max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-place_set, num_els =\
-	init_els(	fname='countries.txt', cap_first=True,
-				max_new=max_countries, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+	action_set, num_els =\
+		init_els(	alist=actions,
+					max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
-action_set, num_els =\
-	init_els(	alist=actions,
-				max_new=max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
-
-input = []
-output = []
+	return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
 
 def make_fld(els_set, df_type, sel_el=None, var_id=None):
 	return [els_set, df_type, sel_el, var_id]
 
-gen_rules = []
-gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-					make_fld(els_set=object_set, df_type=df_type.obj),
-					make_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
-					make_fld(els_set=[], df_type=df_type.var, var_id=0),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-					make_fld(els_set=place_set, df_type=df_type.obj)],
-				[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Modify),
-					make_fld(els_set=[], df_type=df_type.var, var_id=2),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located at'),
-					make_fld(els_set=[], df_type=df_type.varmod, var_id=6),
-					 ]]]
-gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
-					make_fld(els_set=object_set, df_type=df_type.obj)],
-				[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Insert),
-					make_fld(els_set=[], df_type=df_type.var, var_id=0),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-					make_fld(els_set=[], df_type=df_type.var, var_id=2),
-					 ]]]
-gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-					make_fld(els_set=object_set, df_type=df_type.obj)],
-				[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Remove),
-					make_fld(els_set=[], df_type=df_type.var, var_id=0),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-					make_fld(els_set=[], df_type=df_type.var, var_id=2),
-					 ]]]
-gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-					make_fld(els_set=place_set, df_type=df_type.obj)],
-				[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Modify),
-					make_fld(els_set=[], df_type=df_type.var, var_id=0),
-					make_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located at'),
-					make_fld(els_set=[], df_type=df_type.varmod, var_id=2),
-					 ]]]
+def init_rules(name_set, object_set, place_set, action_set):
+	gen_rules = []
+	gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+						make_fld(els_set=object_set, df_type=df_type.obj),
+						make_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
+						make_fld(els_set=[], df_type=df_type.var, var_id=0),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+						make_fld(els_set=place_set, df_type=df_type.obj)],
+					[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Modify),
+						make_fld(els_set=[], df_type=df_type.var, var_id=2),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located at'),
+						make_fld(els_set=[], df_type=df_type.varmod, var_id=6),
+						 ]]]
+	gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
+						make_fld(els_set=object_set, df_type=df_type.obj)],
+					[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Insert),
+						make_fld(els_set=[], df_type=df_type.var, var_id=0),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+						make_fld(els_set=[], df_type=df_type.var, var_id=2),
+						 ]]]
+	gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+						make_fld(els_set=object_set, df_type=df_type.obj)],
+					[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Remove),
+						make_fld(els_set=[], df_type=df_type.var, var_id=0),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+						make_fld(els_set=[], df_type=df_type.var, var_id=2),
+						 ]]]
+	gen_rules += [[	[	make_fld(els_set=name_set, df_type=df_type.obj),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+						make_fld(els_set=place_set, df_type=df_type.obj)],
+					[	make_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Modify),
+						make_fld(els_set=[], df_type=df_type.var, var_id=0),
+						make_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located at'),
+						make_fld(els_set=[], df_type=df_type.varmod, var_id=2),
+						 ]]]
+	return gen_rules
 
-input_flds_arr, output_flds_arr, vars_dict_arr, fld_def_arr, \
-input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
-	gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=c_max_phrases_per_rule)
+def init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs):
+	# num_ivec_types = len(ivec_dim_dict)
+	# input_dim = ivec.shape[1]
+	# extra = np.asarray([[1.0, 0.0] if output[i][3] else [0.0, 1.0] for i in range(numrecs)])
+	# ovec = np.concatenate((ovec, extra), axis=1)
 
-numrecs = len(input)
-num_ivec_types = len(ivec_dim_dict)
-# input_dim = ivec.shape[1]
-# extra = np.asarray([[1.0, 0.0] if output[i][3] else [0.0, 1.0] for i in range(numrecs)])
-# ovec = np.concatenate((ovec, extra), axis=1)
-
-norm = lambda vec: vec / np.linalg.norm(vec, axis=1, keepdims=True)
+	norm = lambda vec: vec / np.linalg.norm(vec, axis=1, keepdims=True)
 
 
-ovec_norm = norm(ovec)
-l_W = [None] * len(ivec_dim_dict)
-for ivec_dim, dim_pos in ivec_dim_dict.iteritems():
-	l_W[dim_pos] = (build_nn(var_scope='nn_'+str(dim_pos), input_dim=ivec_dim, b_reuse=False))
-	# type_pos_list = [ipos for ipos, pos in enumerate(ivec_pos_list) if pos == dim_pos]
-	# nd_ivec = ivec_normed[0].take(type_pos_list)
+	ovec_norm = norm(ovec)
+	l_W = [None] * len(ivec_dim_dict)
+	for ivec_dim, dim_pos in ivec_dim_dict.iteritems():
+		l_W[dim_pos] = (build_nn(var_scope='nn_'+str(dim_pos), input_dim=ivec_dim, b_reuse=False))
+		# type_pos_list = [ipos for ipos, pos in enumerate(ivec_pos_list) if pos == dim_pos]
+		# nd_ivec = ivec_normed[0].take(type_pos_list)
 
-l_y = []
-for iivec, one_ivec in enumerate(ivec_arr):
-	ivec_normed = norm(one_ivec)
-	v_x = tf.Variable(tf.constant(ivec_normed.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_x')
-	l_y.append(build_nn_run(name_scope='main', t_nn_x=v_x, v_W=l_W[ivec_dim_by_rule[iivec]]))
+	l_y = []
+	for iivec, one_ivec in enumerate(ivec_arr):
+		ivec_normed = norm(one_ivec)
+		v_x = tf.Variable(tf.constant(ivec_normed.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_x')
+		l_y.append(build_nn_run(name_scope='main', t_nn_x=v_x, v_W=l_W[ivec_dim_by_rule[iivec]]))
 
-t_y =tf.concat(l_y, axis=0, name='t_y')
+	t_y =tf.concat(l_y, axis=0, name='t_y')
 
-# v_x = tf.Variable(tf.constant(ivec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_x')
-v_o = tf.Variable(tf.constant(ovec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_o')
-v_r1 = tf.Variable(tf.random_uniform([c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
-				   trainable=False, name='v_r1')
-v_r2 = tf.Variable(tf.random_uniform([c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
-				   trainable=False, name='v_r2')
+	# v_x = tf.Variable(tf.constant(ivec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_x')
+	v_o = tf.Variable(tf.constant(ovec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_o')
+	v_r1 = tf.Variable(tf.random_uniform([c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
+					   trainable=False, name='v_r1')
+	v_r2 = tf.Variable(tf.random_uniform([c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
+					   trainable=False, name='v_r2')
 
-# t_x1 = tf.gather(v_x, v_r1, name='t_x1')
-# t_x2 = tf.gather(v_x, v_r2, name='t_x2')
-t_o1 = tf.gather(v_o, v_r1, name='t_o1')
-t_o2 = tf.gather(v_o, v_r2, name='t_o2')
-# t_y = tf.matmul(t_x, tf.clip_by_value(v_W, 0.0, 10.0), name='t_y') # + b
-# v_W, t_y = build_nn('main', v_x, input_dim, b_reuse=False)
+	# t_x1 = tf.gather(v_x, v_r1, name='t_x1')
+	# t_x2 = tf.gather(v_x, v_r2, name='t_x2')
+	t_o1 = tf.gather(v_o, v_r1, name='t_o1')
+	t_o2 = tf.gather(v_o, v_r2, name='t_o2')
+	# t_y = tf.matmul(t_x, tf.clip_by_value(v_W, 0.0, 10.0), name='t_y') # + b
+	# v_W, t_y = build_nn('main', v_x, input_dim, b_reuse=False)
 
-t_y1 = tf.gather(t_y, v_r1, name='t_y1')
-t_y2 = tf.gather(t_y, v_r2, name='t_y2')
+	t_y1 = tf.gather(t_y, v_r1, name='t_y1')
+	t_y2 = tf.gather(t_y, v_r2, name='t_y2')
 
-t_cdo = tf.reduce_sum(tf.multiply(t_o1, t_o2), axis=1, name='t_cdo')
-t_cdy = tf.reduce_sum(tf.multiply(t_y1, t_y2), axis=1, name='t_cdy')
-t_err = tf.reduce_mean((t_cdo - t_cdy) ** 2, name='t_err')
-op_train_step = tf.train.AdamOptimizer(FLAGS.nn_lrn_rate).minimize(t_err, name='op_train_step')
+	t_cdo = tf.reduce_sum(tf.multiply(t_o1, t_o2), axis=1, name='t_cdo')
+	t_cdy = tf.reduce_sum(tf.multiply(t_y1, t_y2), axis=1, name='t_cdy')
+	t_err = tf.reduce_mean((t_cdo - t_cdy) ** 2, name='t_err')
+	op_train_step = tf.train.AdamOptimizer(FLAGS.nn_lrn_rate).minimize(t_err, name='op_train_step')
 
-db_size = int(float(numrecs/ c_eval_db_factor) * (1.0 - c_test_pct))
-test_size = numrecs - db_size # int(float(numrecs / c_eval_db_factor) * c_test_pct)
-v_r_eval = tf.Variable(tf.random_shuffle(tf.range(numrecs)), name='v_r_eval')
-t_r_db = tf.slice(input_=v_r_eval, begin=[0], size=[db_size], name='t_r_db')
-t_r_test = tf.slice(input_=v_r_eval, begin=[db_size], size=[test_size], name='t_r_test')
-v_y = tf.Variable(tf.zeros([numrecs, c_key_dim], dtype=tf.float32), name='v_y')
-op_y = tf.assign(v_y, t_y, name='op_y')
-
-t_key_db = tf.gather(v_y, t_r_db, name='t_key_db')
-t_key_test = tf.gather(v_y, t_r_test, name='t_key_test')
-
-t_eval_key_cds =  tf.matmul(t_key_test, t_key_db, transpose_b=True, name='t_eval_key_cds')
-t_key_cds, t_r_key_idxs = tf.nn.top_k(t_eval_key_cds, c_key_num_ks, sorted=True, name='t_keys')
-t_key_idxs = tf.gather(t_r_db, t_r_key_idxs, name='t_key_idxs')
-
-logger = init_logging()
-
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-
-saver_dict = {'W_'+str(i): W for i, W in enumerate(l_W)}
-
-saver = tf.train.Saver(saver_dict, max_to_keep=3)
-ckpt = None
-if FLAGS.save_dir:
-	ckpt = tf.train.get_checkpoint_state(FLAGS.save_dir)
-if ckpt and ckpt.model_checkpoint_path:
-	logger.info('restoring from %s', ckpt.model_checkpoint_path)
-	saver.restore(sess, ckpt.model_checkpoint_path)
-
-if FLAGS.debug:
-	sess = tf_debug.LocalCLIDebugWrapperSession(sess, ui_type="curses")
-	sess.add_tensor_filter("stop_reached", stop_reached)
-
-losses = []
-
-for step in range(c_num_steps):
-	sess.run(tf.variables_initializer([v_r1, v_r2]))
-	if step == 0:
-		errval = math.sqrt(sess.run(t_err))
-		logger.info('Starting error: %f', errval)
-	elif step % (c_num_steps / 1000) == 0:
-		errval = np.mean(losses)
-		losses = []
-		logger.info('step: %d: error: %f', step, errval)
-	if step % (c_num_steps / 100) == 0:
-		if saver and FLAGS.save_dir:
-			logger.info('saving v_W to %s', FLAGS.save_dir)
-			saved_file = saver.save(sess,
-									os.path.join(FLAGS.save_dir, 'model.ckpt'),
-									step)
-	outputs = sess.run([t_err, op_train_step])
-	losses.append(math.sqrt(outputs[0]))
-
-sess.run(op_y)
-sess.run(tf.variables_initializer([v_r_eval]))
-sess.run(t_for_stop)
-r_r_test, r_key_cds, r_key_idxs = sess.run([t_r_test, t_key_cds, t_key_idxs])
-logger.info([r_r_test, r_key_cds, r_key_idxs])
+	return op_train_step, t_y, t_err, v_r1, v_r2, l_W
 
 
-for itest, iiphrase in enumerate(r_r_test):
-	phrase = input[iiphrase]
-	fld_def = fld_def_arr[iiphrase]
-	input_flds = input_flds_arr[fld_def]
-	out_phrase = output[r_key_idxs[itest][0]]
-	out_str = "input: "
-	out_str = print_phrase(input_flds, phrase, phrase, out_str)
-	logger.info(out_str)
-	for iout in range(c_key_num_ks-1):
-		oiphrase = r_key_idxs[itest][iout]
-		o_fld_def = fld_def_arr[oiphrase]
-		out_str = print_phrase(output_flds_arr[o_fld_def], phrase, output[oiphrase], out_str)
+def init_eval_tensors(numrecs, t_y):
+	db_size = int(float(numrecs/ c_eval_db_factor) * (1.0 - c_test_pct))
+	test_size = numrecs - db_size # int(float(numrecs / c_eval_db_factor) * c_test_pct)
+	v_r_eval = tf.Variable(tf.random_shuffle(tf.range(numrecs)), name='v_r_eval')
+	t_r_db = tf.slice(input_=v_r_eval, begin=[0], size=[db_size], name='t_r_db')
+	t_r_test = tf.slice(input_=v_r_eval, begin=[db_size], size=[test_size], name='t_r_test')
+	v_y = tf.Variable(tf.zeros([numrecs, c_key_dim], dtype=tf.float32), name='v_y')
+	op_y = tf.assign(v_y, t_y, name='op_y')
+
+	t_key_db = tf.gather(v_y, t_r_db, name='t_key_db')
+	t_key_test = tf.gather(v_y, t_r_test, name='t_key_test')
+
+	t_eval_key_cds =  tf.matmul(t_key_test, t_key_db, transpose_b=True, name='t_eval_key_cds')
+	t_key_cds, t_r_key_idxs = tf.nn.top_k(t_eval_key_cds, c_key_num_ks, sorted=True, name='t_keys')
+	t_key_idxs = tf.gather(t_r_db, t_r_key_idxs, name='t_key_idxs')
+	return t_r_test, t_key_cds, t_key_idxs, op_y, v_r_eval
+
+
+def init_learn(l_W):
+	sess = tf.Session()
+	sess.run(tf.global_variables_initializer())
+
+	saver_dict = {'W_'+str(i): W for i, W in enumerate(l_W)}
+
+	saver = tf.train.Saver(saver_dict, max_to_keep=3)
+	ckpt = None
+	if FLAGS.save_dir:
+		ckpt = tf.train.get_checkpoint_state(FLAGS.save_dir)
+	if ckpt and ckpt.model_checkpoint_path:
+		logger.info('restoring from %s', ckpt.model_checkpoint_path)
+		saver.restore(sess, ckpt.model_checkpoint_path)
+
+	if FLAGS.debug:
+		sess = tf_debug.LocalCLIDebugWrapperSession(sess, ui_type="curses")
+		sess.add_tensor_filter("stop_reached", stop_reached)
+
+	return sess, saver
+
+
+def do_init():
+	logger = init_logging()
+
+	els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set = init_objects()
+	gen_rules = init_rules(name_set, object_set, place_set, action_set)
+	del name_set, object_set, place_set, action_set
+
+	input_flds_arr, output_flds_arr, fld_def_arr, \
+	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
+		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=c_max_phrases_per_rule)
+	del els_dict, gen_rules
+
+	numrecs = len(input)
+	op_train_step, t_y, t_err, v_r1, v_r2, l_W \
+		= init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs)
+	del ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule
+
+	t_r_test, t_key_cds, t_key_idxs, op_y, v_r_eval \
+		= init_eval_tensors(numrecs, t_y)
+	del t_y, numrecs
+
+	sess, saver = init_learn(l_W)
+	del l_W
+
+	return logger, sess, v_r1, v_r2, t_err, saver, op_train_step, \
+		   op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
+		   fld_def_arr, input_flds_arr, input, output, output_flds_arr, \
+		   def_article, els_arr
+
+def do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step):
+
+	losses = []
+
+	for step in range(c_num_steps):
+		sess.run(tf.variables_initializer([v_r1, v_r2]))
+		if step == 0:
+			errval = math.sqrt(sess.run(t_err))
+			logger.info('Starting error: %f', errval)
+		elif step % (c_num_steps / 1000) == 0:
+			errval = np.mean(losses)
+			losses = []
+			logger.info('step: %d: error: %f', step, errval)
+		if step % (c_num_steps / 100) == 0:
+			if saver and FLAGS.save_dir:
+				logger.info('saving v_W to %s', FLAGS.save_dir)
+				saved_file = saver.save(sess,
+										os.path.join(FLAGS.save_dir, 'model.ckpt'),
+										step)
+		outputs = sess.run([t_err, op_train_step])
+		losses.append(math.sqrt(outputs[0]))
+
+def do_eval(logger, sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
+			fld_def_arr, input_flds_arr, input, output, output_flds_arr,
+			def_article, els_arr):
+	sess.run(op_y)
+	sess.run(tf.variables_initializer([v_r_eval]))
+	sess.run(t_for_stop)
+	r_r_test, r_key_cds, r_key_idxs = sess.run([t_r_test, t_key_cds, t_key_idxs])
+	logger.info([r_r_test, r_key_cds, r_key_idxs])
+
+
+	for itest, iiphrase in enumerate(r_r_test):
+		phrase = input[iiphrase]
+		fld_def = fld_def_arr[iiphrase]
+		input_flds = input_flds_arr[fld_def]
+		out_phrase = output[r_key_idxs[itest][0]]
+		out_str = "input: "
+		out_str = print_phrase(input_flds, phrase, phrase, out_str, def_article, els_arr)
 		logger.info(out_str)
-		del oiphrase
+		for iout in range(c_key_num_ks-1):
+			oiphrase = r_key_idxs[itest][iout]
+			o_fld_def = fld_def_arr[oiphrase]
+			out_str = print_phrase(	output_flds_arr[o_fld_def], phrase, output[oiphrase],
+									out_str, def_article, els_arr)
+			logger.info(out_str)
+			del oiphrase
+
+logger, sess, v_r1, v_r2, t_err, saver, op_train_step, \
+		op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
+		fld_def_arr, input_flds_arr, input, output, output_flds_arr, \
+		def_article, els_arr \
+	= do_init()
+
+do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step)
+
+do_eval(logger, sess, op_y, v_r_eval, t_r_test, t_key_cds,
+		t_key_idxs, fld_def_arr, input_flds_arr, input, output,
+		output_flds_arr, def_article, els_arr)
 
 sess.close()
 
