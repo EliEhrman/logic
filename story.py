@@ -1,3 +1,4 @@
+import random
 from enum import Enum
 import collections
 
@@ -7,6 +8,8 @@ from rules import dm_type
 from rules import conn_type
 import els
 
+
+
 def create_story(els_dict, def_article, els_arr, story_rules):
 	story = []
 	flds_arr = []
@@ -14,11 +17,12 @@ def create_story(els_dict, def_article, els_arr, story_rules):
 	b_gen_for_learn = False
 
 	for igen, rule in enumerate(story_rules):
-		flds_arr
 		if not rule.story_based:
 			src_recs, recs = rules.gen_for_rule(els_dict, b_gen_for_learn, rule)
+		else:
+			src_recs, recs = rules.gen_from_story(els_dict, els_arr, rule, story)
 
-		# The first value in the list is the sotry mod. It is in int format, so translate to enum value (which is 1-based index)
+		# The first value in the list is the story mod. It is in int format, so translate to enum value (which is 1-based index)
 		for rec in recs:
 			if rec[0]+1 == dm_type.Insert.value:
 				story.append(rec[1:])
