@@ -38,5 +38,5 @@ c_story_len = 5
 
 # logger = None
 
-actions = ['picked up', 'put down', 'has', 'went to', 'is located in']
+actions = ['picked up', 'put down', 'has', 'went to', 'is located in', 'is free in']
 

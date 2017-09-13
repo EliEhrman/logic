@@ -34,7 +34,7 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 	objects_start = rule_parts(	gens = [
 		rule_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Insert),
 		rule_fld(els_set=object_set, df_type=df_type.obj),
-		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
 		rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)])
 	story_rules.append(objects_start)
 	people_start = rule_parts(	gens = [
@@ -49,7 +49,7 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 		rule_fld(els_set=place_set, df_type=df_type.obj),
 		rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
 		rule_fld(els_set=object_set, df_type=df_type.obj),
-		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
 		rule_fld(els_set=[], df_type=df_type.var, var_id=2)],
 			gens = [
 		rule_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Insert),
@@ -90,6 +90,21 @@ def init_rules(name_set, object_set, place_set, action_set):
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
 						 ])
 	gen_rules.append(gen_rule_picked_up)
+	gen_rule_picked_up_free =	rule_parts(	preconds = [
+						rule_fld(els_set=name_set, df_type=df_type.obj),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
+						rule_fld(els_set=object_set, df_type=df_type.obj),
+						rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+						rule_fld(els_set=place_set, df_type=df_type.obj)],
+								gens=[
+						rule_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Modify),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=6),
+						 ])
+	gen_rules.append(gen_rule_picked_up_free)
 	gen_rule_put_down = 	rule_parts(	preconds = [
 						rule_fld(els_set=name_set, df_type=df_type.obj),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
@@ -101,6 +116,21 @@ def init_rules(name_set, object_set, place_set, action_set):
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
 						 ])
 	gen_rules.append(gen_rule_put_down)
+	gen_rule_put_down_free =	rule_parts(	preconds = [
+						rule_fld(els_set=name_set, df_type=df_type.obj),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+						rule_fld(els_set=object_set, df_type=df_type.obj),
+						rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+						rule_fld(els_set=place_set, df_type=df_type.obj)],
+								gens=[
+						rule_fld(els_set=[], df_type=df_type.mod, sel_el=dm_type.Modify),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=6),
+						 ])
+	gen_rules.append(gen_rule_put_down_free)
 	gen_rule_went = rule_parts(	preconds = [
 						rule_fld(els_set=name_set, df_type=df_type.obj),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
