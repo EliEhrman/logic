@@ -20,8 +20,8 @@ conn_type = Enum('conn_type', 'AND OR')
 
 rule_fld = collections.namedtuple('rule_fld', 'els_set, df_type, sel_el, var_id, rand_sel')
 rule_fld.__new__.__defaults__ = (None, None, None, False)
-rule_parts = collections.namedtuple('rule_parts', 'gens, preconds, story_based')
-rule_parts.__new__.__defaults__ = (None, False)
+rule_parts = collections.namedtuple('rule_parts', 'gens, preconds, story_based, b_db, b_story')
+rule_parts.__new__.__defaults__ = (None, False, True, False)
 
 # def old_make_fld(els_set, df_type, sel_el=None, var_id=None):
 # 	return [els_set, df_type, sel_el, var_id]
@@ -56,7 +56,7 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 		rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
 		rule_fld(els_set=[], df_type=df_type.var, var_id=4)],
-			story_based = True
+			story_based = True, b_db=False, b_story=True
 	)
 	story_rules.append(picukup_rule)
 	return story_rules
@@ -116,6 +116,16 @@ def init_rules(name_set, object_set, place_set, action_set):
 	print gen_rule_picked_up.preconds[0].els_set[2]
 	return gen_rules
 	# end function init_story_rules
+
+"""
+So far we have three functions
+gen_for_rule creates examples from a set of rules. It is used both by story to generate a (n initial) database state
+and by the oracle to create instances the learning network uses to learn rules.
+gen_for_story is similar to this but does not generate an exhaustive set. Rather it looks at a story and tries
+to find set of phrases from the story that matches the rule. It stops when it has found just on new inference
+apply rules takes a single phrase, a set of rules and tries to generate all the inferences for that rule
+
+"""
 
 def gen_for_rule(els_dict, b_gen_for_learn, rule):
 	gen_part = 'preconds'
@@ -205,6 +215,84 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 
 	return src_recs, recs
 	# end function gen_for_rule
+
+def apply_rules(els_dict, rules, phrase):
+	mod_phrases = []
+	search_markers = []
+	for igen, rule in enumerate(rules):
+		conds = rule.preconds
+		field_id = -1
+		b_hit = True
+		for ifrule, fld_rule in enumerate(conds):
+			field_id += 1
+			els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+			if df_type == df_type.obj:
+				if sel_el != None:
+					iel = els_dict[sel_el]
+					if iel == phrase[field_id]:
+						continue
+					else:
+						b_hit = False
+						break
+				elif els_set != None and len(els_set) > 0 and els_set[0] != None and len(els_set[0]) > 0:
+					if phrase[field_id] in els_set[0]:
+						continue
+					else:
+						b_hit = False
+						break
+		if not b_hit:
+			continue
+
+		new_phrase = []
+		new_markers = []
+		gens = rule.gens
+		for ifrule, fld_rule in enumerate(gens):
+			field_id += 1
+			els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+			if df_type == df_type.obj:
+				if sel_el != None:
+					new_phrase.append(els_dict[sel_el])
+					new_markers.append(True)
+				else:
+					print 'Error! Dont know what to add.'
+					exit()
+			elif df_type == df_type.var:
+				new_phrase.append(phrase[var_id])
+				new_markers.append(True)
+			elif df_type == df_type.mod and sel_el != None:
+				new_phrase.append(sel_el.value - 1)
+				new_markers.append(True)
+			elif df_type == df_type.varmod and sel_el != None:
+				new_phrase.append(sel_el.value - 1)
+				new_markers.append(False)
+			elif df_type == df_type.conn:
+				continue
+		# end loop over fld_rule of gens
+		mod_phrases.append(new_phrase)
+		search_markers.append(new_markers)
+
+	return mod_phrases, search_markers
+
+def apply_mods(story_db, mod_phrases, search_markers):
+	for imod, mod_phrase in enumerate(mod_phrases):
+		mod_type = mod_phrase[0]
+		if mod_type == dm_type.Insert.value - 1:
+			story_db += [mod_phrase[1:]]
+			continue
+		for phrase in story_db:
+			b_match = True
+			for iel, el in enumerate(phrase):
+				if el != mod_phrase[iel + 1] and search_markers[imod][iel+1]:
+					b_match = False
+					break
+			if b_match:
+				if mod_type == dm_type.Remove.value - 1:
+					story_db.remove(phrase)
+				elif mod_type == dm_type.Remove.value - 1:
+					story_db.remove(phrase)
+					story_db += [mod_phrase[1:]]
+
+	return story_db
 
 def gen_from_story(els_dict, els_arr, rule, story):
 	conds = rule.preconds

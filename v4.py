@@ -32,9 +32,6 @@ num_df_types = len(df_type)
 num_dm_types = len(dm_type)
 num_conn_types = len(conn_type)
 
-SDataField = collections.namedtuple('SDataField', 'df_type, var_num')
-SDataField.__new__.__defaults__ = (None, None, None)
-
 def stop_reached(datum, tensor):
 	if datum.node_name == 't_for_stop': # and tensor > 100:
 		return True
@@ -278,7 +275,7 @@ def do_init():
 	input_flds_arr, output_flds_arr, fld_def_arr, \
 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
-	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules)
+	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, gen_rules)
 	del els_dict, gen_rules, story_rules
 
 	numrecs = len(input)
