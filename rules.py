@@ -175,8 +175,8 @@ def init_rules(name_set, object_set, place_set, action_set):
 So far we have three functions
 gen_for_rule creates examples from a set of rules. It is used both by story to generate a (n initial) database state
 and by the oracle to create instances the learning network uses to learn rules.
-gen_for_story is similar to this but does not generate an exhaustive set. Rather it looks at a story and tries
-to find set of phrases from the story that matches the rule. It stops when it has found just on new inference
+gen_for_story is similar to this but does not generate all combinations of the input sets. Rather it looks at a story and tries
+to find set of phrases from the story that matches the rule. Sometimes, it stops when it has found just one new inference
 apply rules takes a single phrase, a set of rules and tries to generate all the inferences for that rule
 
 """
@@ -437,7 +437,7 @@ def apply_mods(story_db, mod_phrases, search_markers):
 
 	return story_db
 
-def gen_from_story(els_dict, els_arr, rule, story):
+def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 	conds = rule.preconds
 
 	old_hits = [[-1]]
@@ -445,7 +445,6 @@ def gen_from_story(els_dict, els_arr, rule, story):
 	# b_still_in = True
 	old_cands = range(len(story))
 	hit_old_cands = [old_cands]
-	new_cands = []
 	field_id = -1
 	var_locs = []
 
@@ -465,8 +464,9 @@ def gen_from_story(els_dict, els_arr, rule, story):
 		return old_hits
 	# old_hits = expand_hits(old_hits, hit_old_cands)
 
-	def search_by_rules(tree, rule_part_name, new_cands, field_id, obj_num, hit_old_cands, old_hits, vars_dict):
+	def search_by_rules(tree, rule_part_name, field_id, obj_num, hit_old_cands, old_hits, vars_dict):
 		if tree.logic == conn_type.single:
+			new_cands = []
 			field_id = 0
 			fld_defs = tree.single
 			for ifrule, fld_rule in enumerate(fld_defs):
@@ -519,10 +519,10 @@ def gen_from_story(els_dict, els_arr, rule, story):
 
 		else:
 			for branch in tree.branches:
-				new_cands, field_id, obj_num, hit_old_cands, old_hits, vars_dict \
-					= search_by_rules(branch, rule_part_name, new_cands, field_id, obj_num, hit_old_cands, old_hits, vars_dict)
+				old_hits, field_id, obj_num, hit_old_cands, vars_dict \
+					= search_by_rules(branch, rule_part_name, field_id, obj_num, hit_old_cands, old_hits, vars_dict)
 
-		return new_cands, field_id, obj_num, hit_old_cands, old_hits, vars_dict
+		return old_hits, field_id, obj_num, hit_old_cands, vars_dict
 
 	rule_part_name = 'preconds'
 	rule_part = rule.preconds
@@ -530,12 +530,22 @@ def gen_from_story(els_dict, els_arr, rule, story):
 	obj_num = 0
 	vars_dict = {}
 
-	new_cands, field_id, obj_num, hit_old_cands, old_hits, vars_dict = search_by_rules(rule_part, rule_part_name, new_cands, field_id, obj_num, hit_old_cands, old_hits, vars_dict)
+	old_hits = \
+		search_by_rules(rule_part, rule_part_name, field_id, obj_num, hit_old_cands, old_hits, vars_dict)[0]
 
-	if len(old_hits) == 0:
+	if gen_by_last:
+		ilast = len(story) - 1
+		good_hits = []
+		for hit in old_hits:
+			if ilast >= 0 and ilast in hit:
+				good_hits.append(hit)
+	else:
+		good_hits = old_hits
+
+	if len(good_hits) == 0:
 		return [], []
 
-	sel_hit = (random.choice(old_hits))[1:]
+	sel_hit = (random.choice(good_hits))[1:]
 	new_conds = []
 	# new_conds.append(rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert))
 	# What we should do here is process the tree recursively using the original rule
@@ -543,7 +553,7 @@ def gen_from_story(els_dict, els_arr, rule, story):
 	# in this case it's not real. We are simply combining the phrases found in the story as if its a rule
 	# So if there's jut one phrase, it's a single otherwise we do an AND
 	if len(sel_hit) == 1:
-		phrase = story[sel_hit[1]]
+		phrase = story[sel_hit[0]]
 		rule_fields = []
 		for el in phrase:
 			# obj_el = els_arr[el]
