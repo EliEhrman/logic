@@ -9,8 +9,6 @@ from rules import dm_type
 from rules import conn_type
 import els
 
-
-
 def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
 	story = []
 	story_db = []
@@ -23,14 +21,19 @@ def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
 			src_recs, recs = rules.gen_for_rule(els_dict, b_gen_for_learn, rule)
 
 			# The first value in the list is the story mod. It is in int format, so translate to enum value (which is 1-based index)
+			# For now, we only support story generation of simple one-branch tree
 			for rec in recs:
-				if rec[0]+1 == dm_type.Insert.value:
-					story_db.append(rec[1:])
+				if rec[0][1] == conn_type.start:
+					if rec[1][1] == conn_type.Insert:
+						story_db.append(rec[2:-1])
+				else:
+					print 'Error! for now, story insertions may only be simple single-branch phrases stripped of start/end'
+					exit()
 
 	print 'Current state of story DB'
 	for phrase in story_db:
 		out_str = ''
-		out_str = els.output_phrase(def_article, els_arr, out_str, phrase)
+		out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
 		print out_str
 
 	for i_story_step in range(config.c_story_len):
@@ -38,15 +41,16 @@ def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
 			if rule.story_based:
 				src_recs, recs = rules.gen_from_story(els_dict, els_arr, rule, story_db)
 				out_str = 'Next story step: *** '
-				out_str = els.output_phrase(def_article, els_arr, out_str, recs[0][1:])
+				out_str = els.output_phrase(def_article, els_dict, out_str, recs[0][2:-1])
 				out_str += ' **** '
 				print out_str
+				continue # no application of rules to new step for the purpose of a version checkin
 				mod_phrases, search_markers = rules.apply_rules(els_dict, gen_rules, recs[0][1:])
 				story_db = rules.apply_mods(story_db, mod_phrases, search_markers)
 				print 'New state of story DB'
 				for phrase in story_db:
 					out_str = ''
-					out_str = els.output_phrase(def_article, els_arr, out_str, phrase)
+					out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
 					print out_str
 
 	return story

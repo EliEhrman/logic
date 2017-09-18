@@ -5,7 +5,13 @@ import rules
 from rules import df_type
 from rules import dm_type
 from rules import conn_type
+from rules import rec_def_type
 from utils import ulogger as logger
+
+import numpy as np
+
+num_conn_types = len(conn_type)
+num_rec_def_types = len(rec_def_type)
 
 # distinguishing between objs and objects. The former is generic. The latter are things you pick up, take etc
 
@@ -58,21 +64,39 @@ def init_objects():
 	return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
 
 
-def output_phrase(def_article, els_arr, out_str, phrase, filled_phrase = None):
+def output_phrase(def_article, els_dict, out_str, phrase, filled_phrase = None):
 	for iel, el in enumerate(phrase):
-		if el < 0:
+		if el[0] == rec_def_type.error:
 			out_str += '<Error!> '
+			# return out_str
 		else:
 			if filled_phrase != None and not filled_phrase[iel]:
 				out_str += '*'
-			if def_article[el]:
+			if def_article[els_dict[el[1]]]:
 				out_str += 'the '
-			out_str += els_arr[el]
+			out_str += el[1]
 			if filled_phrase != None and not filled_phrase[iel]:
 				out_str += '*'
 			out_str += ' '
 
 	return out_str
+
+# def output_phrase(def_article, els_arr, out_str, phrase, filled_phrase = None):
+# 	# rewrite this for new rec format
+# 	for iel, el in enumerate(phrase):
+# 		if el < 0:
+# 			out_str += '<Error!> '
+# 		else:
+# 			if filled_phrase != None and not filled_phrase[iel]:
+# 				out_str += '*'
+# 			if def_article[el]:
+# 				out_str += 'the '
+# 			out_str += els_arr[el]
+# 			if filled_phrase != None and not filled_phrase[iel]:
+# 				out_str += '*'
+# 			out_str += ' '
+#
+# 	return out_str
 
 def complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
 	filled_phrase = []
@@ -123,3 +147,36 @@ def print_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
 
 	filled_phrase, exact_mark, out_str = complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr)
 	return output_phrase(def_article, els_arr, out_str, filled_phrase, exact_mark)
+
+
+def make_vec(recs, els_dict):
+	# numrecs = len(recs)
+	num_els = len(els_dict)
+
+	for irec, rec in enumerate(recs):
+		for ifld, fld in enumerate(rec):
+			subvec0 = np.zeros(num_rec_def_types)
+			subvec0[fld[0].value - 1] = 1
+			if fld[0] == rec_def_type.conn:
+				subvec1 = np.zeros(num_conn_types)
+				subvec1[fld[1].value - 1] = 1
+			elif fld[0]  == rec_def_type.obj:
+				subvec1 = np.zeros(num_els)
+				subvec1[els_dict[fld[1]]] = 1
+			elif fld[0] == rec_def_type.var:
+				subvec1 = np.zeros(config.c_max_vars)
+				subvec1[fld[1]] = 1
+
+			subvec = np.concatenate((subvec0, subvec1), axis=0)
+
+			if ifld == 0:
+				vec = subvec
+			else:
+				vec = np.concatenate((vec, subvec), axis=0)
+
+		if irec == 0:
+			vecs = vec
+		else:
+			vecs = np.vstack((vecs, vec))
+	return vecs
+

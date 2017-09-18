@@ -141,7 +141,8 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 		src_recs, recs = \
 			rules.gen_for_rule(els_dict, b_gen_for_learn=True, rule=i_and_o_rule)
 		curr_flds_id += 1
-		ivec = make_vec(src_recs, i_and_o_rule.preconds, els_arr)
+		# ivec = make_vec(src_recs, i_and_o_rule.preconds, els_arr)
+		ivec = els.make_vec(src_recs, els_dict)
 		fld_def_arr.extend([curr_flds_id] * len(src_recs))
 		# len_so_far = len(ivec_arr)
 		ivec_dim = ivec.shape[1]
@@ -155,7 +156,8 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 		ivec_arr.append(ivec)
 		del dict_id, ivec, src_recs
 
-		ovec = make_vec(recs, i_and_o_rule.gens, els_arr)
+		# ovec = make_vec(recs, i_and_o_rule.gens, els_arr)
+		ovec = els.make_vec(recs, els_dict)
 		output += recs
 		del recs
 
