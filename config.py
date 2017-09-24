@@ -35,6 +35,7 @@ c_max_vars = 15
 c_key_dim = 15
 c_max_phrases_per_rule = 25
 c_story_len = 5
+c_ovec_len = 200
 
 # logger = None
 

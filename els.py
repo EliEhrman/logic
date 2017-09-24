@@ -64,18 +64,18 @@ def init_objects():
 	return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
 
 
-def output_phrase(def_article, els_dict, out_str, phrase, filled_phrase = None):
+def output_phrase(def_article, els_dict, out_str, phrase):
 	for iel, el in enumerate(phrase):
 		if el[0] == rec_def_type.error:
 			out_str += '<Error!> '
 			# return out_str
 		else:
-			if filled_phrase != None and not filled_phrase[iel]:
+			if len(el) > 2 and not el[2]:
 				out_str += '*'
 			if def_article[els_dict[el[1]]]:
 				out_str += 'the '
 			out_str += el[1]
-			if filled_phrase != None and not filled_phrase[iel]:
+			if len(el) > 2 and not el[2]:
 				out_str += '*'
 			out_str += ' '
 
@@ -146,6 +146,8 @@ def complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr)
 def print_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
 
 	filled_phrase, exact_mark, out_str = complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr)
+	print 'reconsider the coding of this functiion'
+	exit()
 	return output_phrase(def_article, els_arr, out_str, filled_phrase, exact_mark)
 
 
@@ -180,3 +182,9 @@ def make_vec(recs, els_dict):
 			vecs = np.vstack((vecs, vec))
 	return vecs
 
+def pad_ovec(vecs):
+	numrecs = vecs.shape[0]
+	pad_len = config.c_ovec_len - vecs.shape[1]
+	vecs = np.concatenate((vecs, np.zeros((numrecs, pad_len), dtype=np.int32,)), axis=1)
+
+	return vecs

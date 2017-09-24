@@ -40,6 +40,8 @@ def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
 		for i_story_rule, story_rule in enumerate(story_rules):
 			if story_rule.story_based:
 				src_recs, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
+				if recs == []:
+					break
 				new_phrase = recs[0][2:-1]
 				out_str = 'Next story step: *** '
 				out_str = els.output_phrase(def_article, els_dict, out_str, new_phrase)
@@ -48,14 +50,14 @@ def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
 				story_with_step = story_db + [new_phrase]
 				for igen, gen_rule in enumerate(gen_rules):
 					src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_with_step, gen_by_last=True)
+					if recs == []:
+						continue
 					mod_phrase = recs[0][1:-1]
-					continue # no application of rules to new step for the purpose of a version checkin
-				mod_phrases, search_markers = rules.apply_rules(els_dict, gen_rules, recs[0][1:])
-				story_db = rules.apply_mods(story_db, mod_phrases, search_markers)
-				print 'New state of story DB'
-				for phrase in story_db:
-					out_str = ''
-					out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
-					print out_str
+					story_db = rules.apply_mods(story_db, [mod_phrase])
+					print '-------- New state of story DB -----'
+					for phrase in story_db:
+						out_str = ''
+						out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
+						print out_str
 
 	return story

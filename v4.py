@@ -158,6 +158,7 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 
 		# ovec = make_vec(recs, i_and_o_rule.gens, els_arr)
 		ovec = els.make_vec(recs, els_dict)
+		ovec = els.pad_ovec(ovec)
 		output += recs
 		del recs
 

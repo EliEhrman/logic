@@ -19,8 +19,16 @@ dm_type = Enum('dm_type', 'Insert Remove Modify')
 conn_type = Enum('conn_type', 'single AND OR start end Insert Remove Modify')
 rec_def_type = Enum('rec_def_type', 'obj conn var error')
 
-rule_fld = collections.namedtuple('rule_fld', 'els_set, df_type, sel_el, var_id, rand_sel')
-rule_fld.__new__.__defaults__ = (None, None, None, False)
+# rule_fld is the rule for one field (normally a word in the phrase). Consists of:
+# els_set. A definition of a elements set. Itself consisting of a set of el_ids, a size and a set of the els
+# df_type. either: obj, var, mod, conn
+# sel_el. If not none, means the field must contain exactly this value
+# var_id. If df_type == var, this is the id of the var. This uses a count of all objects in the rule to reference an earlier object
+# rand_sel specifies that the object is selected from the set by random. Just one
+# replace_by_next. When modifying, the first field must match exactly for record to count and the following field is inserted.
+# Again, only applies when applying a mod to the story db
+rule_fld = collections.namedtuple('rule_fld', 'els_set, df_type, sel_el, var_id, rand_sel, replace_by_next')
+rule_fld.__new__.__defaults__ = (None, None, None, False, False)
 rule_parts = collections.namedtuple('rule_parts', 'gens, preconds, story_based, b_db, b_story')
 rule_parts.__new__.__defaults__ = (None, False, True, False)
 tree_junct = collections.namedtuple('tree_junct', 'logic single branches')
@@ -93,6 +101,7 @@ def init_rules(name_set, object_set, place_set, action_set):
 								gens=tree_junct(single=[
 						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in', replace_by_next=True),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=5),
 						 ]))
@@ -194,7 +203,7 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 	def count_numrecs(tree, numrecs, recdivarr):
 		if tree.logic == conn_type.single:
 			for fld_rule in tree.single:
-				els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+				els_set, _, sel_el, _, rand_sel, _ = fld_rule
 				if sel_el == None and els_set != [] and not rand_sel:
 					numrecs *= els_set[1]
 					recdivarr.append(els_set[1])
@@ -224,7 +233,7 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 			for ifrule, fld_rule in enumerate(fld_defs):
 				if rule_part_name == gen_part:
 					recdivarr = recdivarr[1:]
-				els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+				els_set, df_type, sel_el, var_id, rand_sel, replace_by_next = fld_rule
 				if rule_part_name == gen_part and sel_el == None and els_set != [] and not rand_sel:
 					numrecdiv = 1
 					for irecdiv in recdivarr:
@@ -278,7 +287,10 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 				elif df_type == df_type.conn:
 					print 'Error! df.type == conn should not exits any more'
 					exit()
-				elif df_type == df_type.var or df_type == df_type.varmod:
+				elif df_type == df_type.varmod:
+					print 'Error! df.type == varmod should not exits any more'
+					exit()
+				elif df_type == df_type.var:
 					# if we are genreating records for learning the rule, we don't want the explicit value
 					# just to learn the var id
 					if b_gen_for_learn:
@@ -307,6 +319,9 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 				else:
 					logger.error('Invalid field def for rec generation. Exiting')
 					exit()
+				if replace_by_next:
+					for irec in range(numrecs):
+						recs[irec][-1].append(True)
 			for irec in range(numrecs):
 				# recs[irec].append(rec_def_type.conn.value - 1)
 				# recs[irec].append(conn_type.end.value - 1)
@@ -368,7 +383,7 @@ def apply_rules(els_dict, rules, phrase):
 		b_hit = True
 		for ifrule, fld_rule in enumerate(conds):
 			field_id += 1
-			els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+			els_set, df_type, sel_el, _, _, _ = fld_rule
 			if df_type == df_type.obj:
 				if sel_el != None:
 					iel = els_dict[sel_el]
@@ -391,7 +406,7 @@ def apply_rules(els_dict, rules, phrase):
 		gens = rule.gens
 		for ifrule, fld_rule in enumerate(gens):
 			field_id += 1
-			els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+			_, df_type, sel_el, var_id, _, _ = fld_rule
 			if df_type == df_type.obj:
 				if sel_el != None:
 					new_phrase.append(els_dict[sel_el])
@@ -416,24 +431,30 @@ def apply_rules(els_dict, rules, phrase):
 
 	return mod_phrases, search_markers
 
-def apply_mods(story_db, mod_phrases, search_markers):
+def apply_mods(story_db, mod_phrases):
 	for imod, mod_phrase in enumerate(mod_phrases):
-		mod_type = mod_phrase[0]
-		if mod_type == conn_type.Insert.value - 1:
+		mod_type = mod_phrase[0][1]
+		if mod_type == conn_type.Insert:
 			story_db += [mod_phrase[1:]]
 			continue
 		for phrase in story_db:
+			new_phrase = []
 			b_match = True
-			for iel, el in enumerate(phrase):
-				if el != mod_phrase[iel + 1] and search_markers[imod][iel+1]:
+			iel = 0
+			for el in phrase:
+				iel += 1
+				if el[1] != mod_phrase[iel][1]:
 					b_match = False
 					break
+				if len(mod_phrase[iel]) > 2 and mod_phrase[iel][2]:
+					iel += 1
+				new_phrase.append(mod_phrase[iel])
 			if b_match:
-				if mod_type == conn_type.Remove.value - 1:
+				if mod_type == conn_type.Remove:
 					story_db.remove(phrase)
-				elif mod_type == conn_type.Remove.value - 1:
+				elif mod_type == conn_type.Modify:
 					story_db.remove(phrase)
-					story_db += [mod_phrase[1:]]
+					story_db += [new_phrase]
 
 	return story_db
 
@@ -470,7 +491,7 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 			field_id = 0
 			fld_defs = tree.single
 			for ifrule, fld_rule in enumerate(fld_defs):
-				els_set, df_type, sel_el, var_id, rand_sel = fld_rule
+				els_set, df_type, sel_el, var_id, _, _ = fld_rule
 				for ihit, hit in enumerate(old_hits):
 					old_cands = hit_old_cands[ihit]
 					for iphrase in old_cands:
