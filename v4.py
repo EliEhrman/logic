@@ -278,7 +278,7 @@ def do_init():
 	input_flds_arr, output_flds_arr, fld_def_arr, \
 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
-	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, gen_rules)
+	# story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, gen_rules)
 	del els_dict, gen_rules, story_rules
 
 	numrecs = len(input)

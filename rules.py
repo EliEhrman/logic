@@ -49,13 +49,15 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
 		rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]))
 	story_rules.append(objects_start)
+
 	people_start = rule_parts(	gens = tree_junct(single = [
 		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
 		rule_fld(els_set=name_set, df_type=df_type.obj),
 		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
 		rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]))
 	story_rules.append(people_start)
-	picukup_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
+
+	pickup_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
 			tree_junct(single=[
 		rule_fld(els_set=name_set, df_type=df_type.obj),
 		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
@@ -71,7 +73,40 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 		rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
 			story_based = True, b_db=False, b_story=True
 	)
-	story_rules.append(picukup_rule)
+	story_rules.append(pickup_rule)
+
+	putdown_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
+			tree_junct(single=[
+		rule_fld(els_set=name_set, df_type=df_type.obj),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+		rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+		rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	story_rules.append(putdown_rule)
+
+	went_rule = rule_parts(
+			preconds=tree_junct(single=[
+		rule_fld(els_set=name_set, df_type=df_type.obj),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+		rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			gens = tree_junct(single = [
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+		rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+		rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
+			story_based = True, b_db = False, b_story = True
+	)
+	story_rules.append(went_rule)
+
 	return story_rules
 
 def init_rules(name_set, object_set, place_set, action_set):
@@ -106,75 +141,96 @@ def init_rules(name_set, object_set, place_set, action_set):
 						rule_fld(els_set=[], df_type=df_type.var, var_id=5),
 						 ]))
 	gen_rules.append(gen_rule_picked_up_free)
-	"""
-	gen_rule_picked_up_free =	rule_parts(	preconds = [
-						rule_fld(els_set=name_set, df_type=df_type.obj),
-						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
-						rule_fld(els_set=object_set, df_type=df_type.obj),
-						rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
-						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-						rule_fld(els_set=place_set, df_type=df_type.obj)],
-								gens=[
-						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
-						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						rule_fld(els_set=[], df_type=df_type.var, var_id=6),
-						 ])
-	gen_rules.append(gen_rule_picked_up_free)
-	gen_rule_put_down = 	rule_parts(	preconds = [
+
+	gen_rule_put_down =	rule_parts(	preconds = tree_junct(single=[
 						rule_fld(els_set=name_set, df_type=df_type.obj),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-						rule_fld(els_set=object_set, df_type=df_type.obj)],
-								gens=[
+						rule_fld(els_set=object_set, df_type=df_type.obj)]),
+								gens= tree_junct(single=[
 						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						 ])
+						 ]))
 	gen_rules.append(gen_rule_put_down)
-	gen_rule_put_down_free =	rule_parts(	preconds = [
+
+	gen_rule_put_down_free =	rule_parts(
+								preconds = tree_junct(logic=conn_type.AND, branches=[
+									tree_junct(single=[
 						rule_fld(els_set=name_set, df_type=df_type.obj),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-						rule_fld(els_set=object_set, df_type=df_type.obj),
-						rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
+						rule_fld(els_set=object_set, df_type=df_type.obj)]),
+									tree_junct(single=[
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						rule_fld(els_set=place_set, df_type=df_type.obj)],
-								gens=[
+						rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+								gens=tree_junct(single=[
 						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in', replace_by_next=True),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-						rule_fld(els_set=[], df_type=df_type.var, var_id=6),
-						 ])
+						rule_fld(els_set=[], df_type=df_type.var, var_id=5),
+						 ]))
 	gen_rules.append(gen_rule_put_down_free)
-	gen_rule_went = rule_parts(	preconds = [
+
+	# for now, the order matters. The first rule removes the located in and leaves no located in
+	# The following rule looks only at the went to story step and created a new located in
+	# The reliance on rule ordering seems poor. A better method would either allow a rule that
+	# DOES NOT match any story db phrase or a specific disagreement between two vars (so you don't
+	# remove a previously inserted 'is located in'
+	gen_rule_went_from =	rule_parts(
+								preconds = tree_junct(logic=conn_type.AND, branches=[
+									tree_junct(single=[
 						rule_fld(els_set=name_set, df_type=df_type.obj),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+						rule_fld(els_set=place_set, df_type=df_type.obj)]),
+									tree_junct(single=[
+						rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-						rule_fld(els_set=place_set, df_type=df_type.obj)],
-								gens=[
-						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
+						rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+								gens=tree_junct(single=[
+						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						rule_fld(els_set=[], df_type=df_type.varmod, var_id=2),
-						 ])
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						 ]))
+	gen_rules.append(gen_rule_went_from)
+
+	gen_rule_went =	rule_parts(	preconds = tree_junct(single=[
+						rule_fld(els_set=name_set, df_type=df_type.obj),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+						rule_fld(els_set=place_set, df_type=df_type.obj)]),
+								gens= tree_junct(single=[
+						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						 ]))
 	gen_rules.append(gen_rule_went)
-	gen_rule_has_and_went =	rule_parts(	preconds = [
+
+	gen_rule_has_and_went =	rule_parts(
+								preconds = tree_junct(logic=conn_type.AND, branches=[
+									tree_junct(single=[
 						rule_fld(els_set=name_set, df_type=df_type.obj),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-						rule_fld(els_set=object_set, df_type=df_type.obj),
-						rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND),
+						rule_fld(els_set=object_set, df_type=df_type.obj)]),
+									tree_junct(single=[
+						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+						rule_fld(els_set=place_set, df_type=df_type.obj)]),
+									tree_junct(single=[
 						rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-						rule_fld(els_set=place_set, df_type=df_type.obj)],
-								gens = [
+						rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+								gens=tree_junct(single=[
 						rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
 						rule_fld(els_set=[], df_type=df_type.var, var_id=2),
 						rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						rule_fld(els_set=[], df_type=df_type.varmod, var_id=6),
-						 ])
+						rule_fld(els_set=[], df_type=df_type.var, var_id=5, replace_by_next=True),
+						rule_fld(els_set=[], df_type=df_type.var, var_id=8),
+								]))
 	gen_rules.append(gen_rule_has_and_went)
-	"""
+
 	# print gen_rules[1].preconds[0].els_set
 	# print gen_rule_picked_up.preconds[0].els_set[2]
 	return gen_rules
@@ -529,7 +585,9 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 				# end loop of ihit, hit over old_hits
 				# var_locs.append((len(new_hit), field_id))
 				# vars_dict[obj_num] = (len(hit), field_id)
-				vars_dict[obj_num] = (len(hit), field_id)
+				if old_hits == []:
+					break
+				vars_dict[obj_num] = (len(old_hits[0]), field_id)
 				field_id += 1
 				obj_num += 1
 				# end loop over hits
@@ -540,6 +598,8 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 
 		else:
 			for branch in tree.branches:
+				if old_hits == []:
+					break
 				old_hits, field_id, obj_num, hit_old_cands, vars_dict \
 					= search_by_rules(branch, rule_part_name, field_id, obj_num, hit_old_cands, old_hits, vars_dict)
 
