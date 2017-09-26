@@ -70,13 +70,13 @@ def output_phrase(def_article, els_dict, out_str, phrase):
 			out_str += '<Error!> '
 			# return out_str
 		else:
-			if len(el) > 2 and not el[2]:
-				out_str += '*'
-			if def_article[els_dict[el[1]]]:
+			if len(el) > 2 and el[2]:
+				out_str += '{search for: '
+			if el[0] == rec_def_type.obj and def_article[els_dict[el[1]]]:
 				out_str += 'the '
 			out_str += el[1]
-			if len(el) > 2 and not el[2]:
-				out_str += '*'
+			if len(el) > 2 and el[2]:
+				out_str += '}'
 			out_str += ' '
 
 	return out_str
@@ -98,7 +98,35 @@ def output_phrase(def_article, els_dict, out_str, phrase):
 #
 # 	return out_str
 
-def complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
+def complete_phrase(src_phrase,
+					out_phrase,
+					out_str):
+	filled_phrase = []
+	for el in out_phrase:
+		if el[0] == rec_def_type.conn:
+			if el[1] == conn_type.AND:
+				filled_phrase.append([el[0], 'AND'])
+			elif el[1] == conn_type.OR:
+				filled_phrase.append([el[0], 'OR'])
+			elif el[1] == conn_type.start:
+				filled_phrase.append([el[0], '('])
+			elif el[1] == conn_type.end:
+				filled_phrase.append([el[0], ')'])
+			elif el[1] == conn_type.Modify:
+				out_str = 'Modify: '
+			elif el[1] == conn_type.Insert:
+				out_str = 'Insert: '
+			elif el[1] == conn_type.Remove:
+				out_str = 'Remove: '
+		elif el[0] == rec_def_type.var:
+			filled_phrase.append(src_phrase[el[1]])
+			if len(el) > 2:
+				filled_phrase[-1].append(el[2])
+		elif el[0] == rec_def_type.obj:
+			filled_phrase.append(el)
+	return filled_phrase, out_str
+
+def old_complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
 	filled_phrase = []
 	exact_mark = []
 	for el, fld in enumerate(flds):
@@ -143,12 +171,10 @@ def complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr)
 
 	return filled_phrase, exact_mark, out_str
 
-def print_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
+def print_phrase(src_phrase, out_phrase, out_str, def_article, els_dict):
 
-	filled_phrase, exact_mark, out_str = complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr)
-	print 'reconsider the coding of this functiion'
-	exit()
-	return output_phrase(def_article, els_arr, out_str, filled_phrase, exact_mark)
+	filled_phrase, out_str = complete_phrase(src_phrase, out_phrase, out_str)
+	return output_phrase(def_article, els_dict, out_str, filled_phrase)
 
 
 def make_vec(recs, els_dict):

@@ -279,7 +279,7 @@ def do_init():
 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
 	# story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, gen_rules)
-	del els_dict, gen_rules, story_rules
+	del els_arr, gen_rules, story_rules
 
 	numrecs = len(input)
 	op_train_step, t_y, t_err, v_r1, v_r2, l_W \
@@ -296,7 +296,7 @@ def do_init():
 	return sess, v_r1, v_r2, t_err, saver, op_train_step, \
 		   op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
 		   fld_def_arr, input_flds_arr, input, output, output_flds_arr, \
-		   def_article, els_arr
+		   def_article, els_dict
 
 def do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step):
 
@@ -321,8 +321,8 @@ def do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step):
 		losses.append(math.sqrt(outputs[0]))
 
 def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
-			fld_def_arr, input_flds_arr, input, output, output_flds_arr,
-			def_article, els_arr):
+			fld_def_arr, input_flds_arr, input, output,
+			def_article, els_dict):
 	sess.run(op_y)
 	sess.run(tf.variables_initializer([v_r_eval]))
 	sess.run(t_for_stop)
@@ -336,27 +336,27 @@ def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
 		input_flds = input_flds_arr[fld_def]
 		out_phrase = output[r_key_idxs[itest][0]]
 		out_str = "input: "
-		out_str = els.print_phrase(input_flds, phrase, phrase, out_str, def_article, els_arr)
+		out_str = els.print_phrase(phrase, phrase, out_str, def_article, els_dict)
 		logger.info(out_str)
 		for iout in range(config.c_key_num_ks-1):
 			oiphrase = r_key_idxs[itest][iout]
 			o_fld_def = fld_def_arr[oiphrase]
-			out_str = els.print_phrase(	output_flds_arr[o_fld_def], phrase, output[oiphrase],
-									out_str, def_article, els_arr)
+			out_str = els.print_phrase(	phrase, output[oiphrase],
+									out_str, def_article, els_dict)
 			logger.info(out_str)
 			del oiphrase
 
 sess, v_r1, v_r2, t_err, saver, op_train_step, \
 		op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
 		fld_def_arr, input_flds_arr, input, output, output_flds_arr, \
-		def_article, els_arr \
+		def_article, els_dict \
 	= do_init()
 
 do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step)
 
 do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds,
 		t_key_idxs, fld_def_arr, input_flds_arr, input, output,
-		output_flds_arr, def_article, els_arr)
+		def_article, els_dict)
 
 sess.close()
 
