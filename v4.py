@@ -139,7 +139,7 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 	output = []
 	for igen, i_and_o_rule in enumerate(gen_rules):
 		src_recs, recs = \
-			rules.gen_for_rule(els_dict, b_gen_for_learn=True, rule=i_and_o_rule)
+			rules.gen_for_rule(b_gen_for_learn=True, rule=i_and_o_rule)
 		curr_flds_id += 1
 		# ivec = make_vec(src_recs, i_and_o_rule.preconds, els_arr)
 		ivec = els.make_vec(src_recs, els_dict)
@@ -191,8 +191,6 @@ def init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs)
 	l_W = [None] * len(ivec_dim_dict)
 	for ivec_dim, dim_pos in ivec_dim_dict.iteritems():
 		l_W[dim_pos] = (build_nn(var_scope='nn_'+str(dim_pos), input_dim=ivec_dim, b_reuse=False))
-		# type_pos_list = [ipos for ipos, pos in enumerate(ivec_pos_list) if pos == dim_pos]
-		# nd_ivec = ivec_normed[0].take(type_pos_list)
 
 	l_y = []
 	for iivec, one_ivec in enumerate(ivec_arr):
@@ -202,19 +200,14 @@ def init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs)
 
 	t_y =tf.concat(l_y, axis=0, name='t_y')
 
-	# v_x = tf.Variable(tf.constant(ivec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_x')
 	v_o = tf.Variable(tf.constant(ovec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_o')
-	v_r1 = tf.Variable(tf.random_uniform([config.c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
-					   trainable=False, name='v_r1')
-	v_r2 = tf.Variable(tf.random_uniform([config.c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
-					   trainable=False, name='v_r2')
+	v_r1 = tf.Variable(	tf.random_uniform([config.c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
+						trainable=False, name='v_r1')
+	v_r2 = tf.Variable(	tf.random_uniform([config.c_rsize], minval=0, maxval=numrecs-1, dtype=tf.int32),
+						trainable=False, name='v_r2')
 
-	# t_x1 = tf.gather(v_x, v_r1, name='t_x1')
-	# t_x2 = tf.gather(v_x, v_r2, name='t_x2')
 	t_o1 = tf.gather(v_o, v_r1, name='t_o1')
 	t_o2 = tf.gather(v_o, v_r2, name='t_o2')
-	# t_y = tf.matmul(t_x, tf.clip_by_value(v_W, 0.0, 10.0), name='t_y') # + b
-	# v_W, t_y = build_nn('main', v_x, input_dim, b_reuse=False)
 
 	t_y1 = tf.gather(t_y, v_r1, name='t_y1')
 	t_y2 = tf.gather(t_y, v_r2, name='t_y2')
@@ -273,12 +266,13 @@ def do_init():
 	els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set = els.init_objects()
 	gen_rules = rules.init_rules(name_set, object_set, place_set, action_set)
 	story_rules = rules.init_story_rules(name_set, object_set, place_set, action_set)
+	query_rules = rules.init_query_rules(name_set, object_set, place_set, els_dict)
 	del name_set, object_set, place_set, action_set
 
 	input_flds_arr, output_flds_arr, fld_def_arr, \
 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
-	# story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, gen_rules)
+	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules)
 	del els_arr, gen_rules, story_rules
 
 	numrecs = len(input)

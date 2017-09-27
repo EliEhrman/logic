@@ -1,40 +1,38 @@
+from __future__ import print_function
 import random
-from enum import Enum
-import collections
 
 import config
 import rules
-from rules import df_type
-from rules import dm_type
 from rules import conn_type
 import els
 
-def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
+
+def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules):
 	story = []
 	story_db = []
-	flds_arr = []
 
 	b_gen_for_learn = False
 
 	for igen, rule in enumerate(story_rules):
 		if not rule.story_based:
-			src_recs, recs = rules.gen_for_rule(els_dict, b_gen_for_learn, rule)
+			src_recs, recs = rules.gen_for_rule(b_gen_for_learn, rule)
 
-			# The first value in the list is the story mod. It is in int format, so translate to enum value (which is 1-based index)
+			# The first value in the list is the story mod. It is in int format, so translate to enum value
+			# (which is 1-based index)
 			# For now, we only support story generation of simple one-branch tree
 			for rec in recs:
 				if rec[0][1] == conn_type.start:
 					if rec[1][1] == conn_type.Insert:
 						story_db.append(rec[2:-1])
 				else:
-					print 'Error! for now, story insertions may only be simple single-branch phrases stripped of start/end'
+					print('Error! for now, story insertions may only be simple single-branch phrases stripped of start/end')
 					exit()
 
-	print 'Current state of story DB'
+	print('Current state of story DB')
 	for phrase in story_db:
 		out_str = ''
 		out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
-		print out_str
+		print(out_str)
 
 	story_based_rules = []
 	for story_rule in story_rules:
@@ -44,25 +42,52 @@ def create_story(els_dict, def_article, els_arr, story_rules, gen_rules):
 	for i_story_step in range(config.c_story_len):
 		story_rule = random.choice(story_based_rules)
 		src_recs, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
-		if recs == []:
+		if not recs:
 			continue
 		new_phrase = recs[0][2:-1]
 		out_str = 'Next story step: *** '
 		out_str = els.output_phrase(def_article, els_dict, out_str, new_phrase)
 		out_str += ' **** '
-		print out_str
+		print(out_str)
 		for igen, gen_rule in enumerate(gen_rules):
 			story_with_step = story_db + [new_phrase]
 			src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_with_step, gen_by_last=True)
-			if recs == []:
+			if not recs:
 				continue
 			mod_phrase = recs[0][1:-1]
 			story_db = rules.apply_mods(story_db, [mod_phrase])
 
-	print '-------- New state of story DB -----'
+	query_gen = rules.extract_query_gen(query_rules[0])
+	src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_gen)
+
+	# src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_rules[0])
+	# sel_query_src = random.choice(src_recs)
+	# out_str = 'Query: '
+	# out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
+	# print(out_str)
+	# sel_query = rules.instatiate_query(query_rules[0], sel_query_src)
+	# src_recs, recs = rules.gen_from_story(els_dict, els_arr, sel_query, story_db)
+
+	print('-------- New state of story DB -----')
 	for phrase in story_db:
 		out_str = ''
 		out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
-		print out_str
+		print(out_str)
+
+	for iiquery in range(150):
+		sel_query_src = random.choice(recs)
+		out_str = 'Query: '
+		out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
+		print(out_str)
+		gen_src_recs, gen_recs = rules.gen_from_story(els_dict, els_arr, query_rules[0],
+													  story_db+[sel_query_src[1:-1]], gen_by_last=True, multi_ans=True)
+		if gen_recs:
+			for ans_rec in gen_recs:
+				out_str = 'Answer: '
+				out_str = els.output_phrase(def_article, els_dict, out_str, ans_rec[2:-1])
+				print(out_str)
+				out_str = []
+		else:
+			print('No answer')
 
 	return story

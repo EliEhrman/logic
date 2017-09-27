@@ -17,7 +17,7 @@ num_rec_def_types = len(rec_def_type)
 
 def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_article=False, cap_first=False, max_new=5):
 	num_els = len(els_arr)
-	if fname != None:
+	if fname:
 		fh_names = open(fname, 'rb')
 		fr_names = csv.reader(fh_names, delimiter=',')
 		if cap_first:

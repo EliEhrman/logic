@@ -1,8 +1,11 @@
+from __future__ import print_function
 import random
 from enum import Enum
 import collections
+import config
 import utils
 from utils import ulogger as logger
+# import els
 
 
 
@@ -35,12 +38,61 @@ tree_junct = collections.namedtuple('tree_junct', 'logic single branches')
 tree_junct.__new__.__defaults__ = (conn_type.single, [], [])
 # rec_def = collections.namedtuple('rec_def', 'obj, conn')
 
-# def old_make_fld(els_set, df_type, sel_el=None, var_id=None):
-# 	return [els_set, df_type, sel_el, var_id]
-#
-# def make_fld(els_set, df_type, sel_el=None, var_id=None):
-# 	return rule_fld(els_set, df_type, sel_el, var_id)
-#
+def instatiate_query(query_rule, rec):
+	return rule_parts(preconds=tree_junct(logic=conn_type.AND, branches=[
+		tree_junct(single=[
+			query_rule.preconds.branches[0].single[0],
+			rule_fld(els_set=[], df_type=df_type.obj,sel_el=rec[3][1]),
+			rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[4][1])
+		]),
+		tree_junct(	single=query_rule.preconds.branches[1])]),
+					gens=query_rule.gens)
+
+def extract_query_gen(query_rule):
+	return rule_parts(gens = query_rule.preconds.branches[0])
+
+def init_query_rules(name_set, object_set, place_set, els_dict):
+	query_rules = []
+	"""
+	who_obj_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
+			tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
+		rule_fld(els_set=utils.set_from_l(config.person_object_action, els_dict), df_type=df_type.obj),
+		rule_fld(els_set=object_set, df_type=df_type.obj)]),
+			tree_junct(single=[
+		rule_fld(els_set=name_set, df_type=df_type.obj),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(who_obj_rule)
+	"""
+	who_place_gen_rule = rule_parts
+	who_place_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
+			tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
+		rule_fld(els_set=utils.set_from_l(config.person_place_action, els_dict), df_type=df_type.obj),
+		rule_fld(els_set=place_set, df_type=df_type.obj)]),
+		# rule_fld(els_set=utils.combine_sets([place_set, object_set]), df_type=df_type.obj)]),
+			tree_junct(single=[
+		rule_fld(els_set=name_set, df_type=df_type.obj),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(who_place_rule)
+	return query_rules
+
 def init_story_rules(name_set, object_set, place_set, action_set):
 	story_rules = []
 	objects_start = rule_parts(	gens = tree_junct(single = [
@@ -110,7 +162,6 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 	return story_rules
 
 def init_rules(name_set, object_set, place_set, action_set):
-	src_recs = []
 	gen_rules = []
 	gen_rule_picked_up =	rule_parts(	preconds = tree_junct(single=[
 						rule_fld(els_set=name_set, df_type=df_type.obj),
@@ -245,10 +296,10 @@ to find set of phrases from the story that matches the rule. Sometimes, it stops
 apply rules takes a single phrase, a set of rules and tries to generate all the inferences for that rule
 
 """
-def gen_for_rule(els_dict, b_gen_for_learn, rule):
+def gen_for_rule(b_gen_for_learn, rule):
 	gen_part = 'preconds'
 	b_gen_from_conds = True
-	if rule.preconds == None:
+	if not rule.preconds:
 		gen_part = 'gens'
 		b_gen_from_conds = False
 
@@ -260,7 +311,7 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 		if tree.logic == conn_type.single:
 			for fld_rule in tree.single:
 				els_set, _, sel_el, _, rand_sel, _ = fld_rule
-				if sel_el == None and els_set != [] and not rand_sel:
+				if not sel_el and els_set and not rand_sel:
 					numrecs *= els_set[1]
 					recdivarr.append(els_set[1])
 				else:
@@ -290,7 +341,7 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 				if rule_part_name == gen_part:
 					recdivarr = recdivarr[1:]
 				els_set, df_type, sel_el, var_id, rand_sel, replace_by_next = fld_rule
-				if rule_part_name == gen_part and sel_el == None and els_set != [] and not rand_sel:
+				if rule_part_name == gen_part and not sel_el and els_set and not rand_sel:
 					numrecdiv = 1
 					for irecdiv in recdivarr:
 						numrecdiv *= irecdiv
@@ -330,7 +381,7 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 					obj_num += 1
 					field_id += 1
 				elif df_type == df_type.bool:
-					print 'Error! No code implementation for df.type == bool'
+					print('Error! No code implementation for df.type == bool')
 					exit()
 					# for irec in range(numrecs):
 					# 	recs[irec].append(int(sel_el))
@@ -341,10 +392,10 @@ def gen_for_rule(els_dict, b_gen_for_learn, rule):
 						recs[irec].append([rec_def_type.conn, sel_el])
 					field_id += 1
 				elif df_type == df_type.conn:
-					print 'Error! df.type == conn should not exits any more'
+					print('Error! df.type == conn should not exits any more')
 					exit()
 				elif df_type == df_type.varmod:
-					print 'Error! df.type == varmod should not exits any more'
+					print('Error! df.type == varmod should not exits any more')
 					exit()
 				elif df_type == df_type.var:
 					# if we are genreating records for learning the rule, we don't want the explicit value
@@ -441,14 +492,14 @@ def apply_rules(els_dict, rules, phrase):
 			field_id += 1
 			els_set, df_type, sel_el, _, _, _ = fld_rule
 			if df_type == df_type.obj:
-				if sel_el != None:
+				if sel_el is not None:
 					iel = els_dict[sel_el]
 					if iel == phrase[field_id]:
 						continue
 					else:
 						b_hit = False
 						break
-				elif els_set != None and len(els_set) > 0 and els_set[0] != None and len(els_set[0]) > 0:
+				elif els_set is not None and len(els_set) > 0 and els_set[0] is not None and len(els_set[0]) > 0:
 					if phrase[field_id] in els_set[0]:
 						continue
 					else:
@@ -468,15 +519,15 @@ def apply_rules(els_dict, rules, phrase):
 					new_phrase.append(els_dict[sel_el])
 					new_markers.append(True)
 				else:
-					print 'Error! Dont know what to add.'
+					print('Error! Dont know what to add.')
 					exit()
 			elif df_type == df_type.var:
 				new_phrase.append(phrase[var_id])
 				new_markers.append(True)
-			elif df_type == df_type.mod and sel_el != None:
+			elif df_type == df_type.mod and sel_el:
 				new_phrase.append(sel_el.value - 1)
 				new_markers.append(True)
-			elif df_type == df_type.varmod and sel_el != None:
+			elif df_type == df_type.varmod and sel_el:
 				new_phrase.append(sel_el.value - 1)
 				new_markers.append(False)
 			elif df_type == df_type.conn:
@@ -514,32 +565,23 @@ def apply_mods(story_db, mod_phrases):
 
 	return story_db
 
-def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
+def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=False):
 	conds = rule.preconds
 
 	old_hits = [[-1]]
 	new_hits = []
-	# b_still_in = True
 	old_cands = range(len(story))
 	hit_old_cands = [old_cands]
 	field_id = -1
-	var_locs = []
-
-	# old_hits = [[-1], [-1]]
-	# hit_old_cands = [[5, 6], [6, 7]]
-	# old_hits = [[-1, 5], [-1, 6], [-1, 7], [-1, 8], [-1, 9]]
-	# hit_old_cands = [[0, 1], [], [0, 1], [0, 1], []]
 
 	def expand_hits(old_hits, hit_old_cands):
 		nh1, old_hits = old_hits, []
 		for ihit, hit in enumerate(nh1):
 			for icand in hit_old_cands[ihit]:
 				nh2 = hit
-				# [nh2.extend(h) for h in nh1]
 				nh3 = nh2 + [icand]
 				old_hits.append(nh3)
 		return old_hits
-	# old_hits = expand_hits(old_hits, hit_old_cands)
 
 	def search_by_rules(tree, rule_part_name, field_id, obj_num, hit_old_cands, old_hits, vars_dict):
 		if tree.logic == conn_type.single:
@@ -552,28 +594,20 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 					old_cands = hit_old_cands[ihit]
 					for iphrase in old_cands:
 						phrase = story[iphrase]
-						# if not b_still_in:
-						# 	break
 						if df_type == df_type.obj:
 							if phrase[field_id][0] == rec_def_type.obj:
-								if sel_el != None:
+								if sel_el:
 									if phrase[field_id][1] == sel_el:
 										new_cands.append(iphrase)
-										# new_hit.append([iphrase])
-									# else:
-									# 	b_still_in = False
 								elif els_set != None and els_set[2] != None and len(els_set[2]) > 0:
 									if phrase[field_id][1] in els_set[2]:
 										new_cands.append(iphrase)
-										# new_hit.append([iphrase])
-									# else:
-									# 	b_still_in = False
 						elif df_type == df_type.var:
 							var_phrase, var_field_id = vars_dict[var_id]
 							if var_phrase >= len(hit):
 								req = phrase[var_field_id][1]
 							else:
-								 req = story[hit[var_phrase]][var_field_id][1]
+								req = story[hit[var_phrase]][var_field_id][1]
 							if phrase[field_id][1] == req:
 								new_cands.append(iphrase)
 					# end switch over df_type
@@ -583,9 +617,7 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 					new_cands = []
 
 				# end loop of ihit, hit over old_hits
-				# var_locs.append((len(new_hit), field_id))
-				# vars_dict[obj_num] = (len(hit), field_id)
-				if old_hits == []:
+				if not old_hits:
 					break
 				vars_dict[obj_num] = (len(old_hits[0]), field_id)
 				field_id += 1
@@ -594,11 +626,10 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 			old_hits = expand_hits(old_hits, hit_old_cands)
 			hit_old_cands = [range(len(story)) for hit in old_hits]
 			# # end loop of fld over conds part of rule
-			# old_hits = expand_hits(old_hits, hit_old_cands)
 
 		else:
 			for branch in tree.branches:
-				if old_hits == []:
+				if not old_hits:
 					break
 				old_hits, field_id, obj_num, hit_old_cands, vars_dict \
 					= search_by_rules(branch, rule_part_name, field_id, obj_num, hit_old_cands, old_hits, vars_dict)
@@ -626,39 +657,52 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False):
 	if len(good_hits) == 0:
 		return [], []
 
-	sel_hit = (random.choice(good_hits))[1:]
-	new_conds = []
-	# new_conds.append(rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert))
-	# What we should do here is process the tree recursively using the original rule
-	# However, besides the fact that I don't even know why I should have a second level of recursion
-	# in this case it's not real. We are simply combining the phrases found in the story as if its a rule
-	# So if there's jut one phrase, it's a single otherwise we do an AND
-	if len(sel_hit) == 1:
-		phrase = story[sel_hit[0]]
-		rule_fields = []
-		for el in phrase:
-			# obj_el = els_arr[el]
-			rule_fields.append(rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
-		new_conds = tree_junct(single = rule_fields)
-	else:
-		branches = []
-		for hit in sel_hit:
-			phrase = story[hit]
+	ret_src_recs, ret_recs = [], []
+
+	for igood in range(len(good_hits)):
+		if multi_ans:
+			sel_hit = good_hits[igood][1:]
+		else:
+			sel_hit = (random.choice(good_hits))[1:]
+
+		new_conds = []
+		# new_conds.append(rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert))
+		# What we should do here is process the tree recursively using the original rule
+		# However, besides the fact that I don't even know why I should have a second level of recursion
+		# in this case it's not real. We are simply combining the phrases found in the story as if its a rule
+		# So if there's jut one phrase, it's a single otherwise we do an AND
+		if len(sel_hit) == 1:
+			phrase = story[sel_hit[0]]
 			rule_fields = []
 			for el in phrase:
 				# obj_el = els_arr[el]
 				rule_fields.append(rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
-			branches.append(tree_junct(single=rule_fields))
-		new_conds = tree_junct(branches=branches, logic=conn_type.AND)
-	# for iphrase in sel_hit[1:]:
-	# 	phrase = story[iphrase]
-	# 	for el in phrase:
-	# 		# obj_el = els_arr[el]
-	# 		new_conds.append(rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
-	# 	new_conds.append(rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND))
-	# new_conds = new_conds[:-1]
-	new_rule = rule_parts(preconds=new_conds, gens=rule.gens)
-	src_recs, recs = gen_for_rule(els_dict, b_gen_for_learn=False, rule=new_rule)
-	return src_recs, recs
+			new_conds = tree_junct(single = rule_fields)
+		else:
+			branches = []
+			for hit in sel_hit:
+				phrase = story[hit]
+				rule_fields = []
+				for el in phrase:
+					# obj_el = els_arr[el]
+					rule_fields.append(rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
+				branches.append(tree_junct(single=rule_fields))
+			new_conds = tree_junct(branches=branches, logic=conn_type.AND)
+		# for iphrase in sel_hit[1:]:
+		# 	phrase = story[iphrase]
+		# 	for el in phrase:
+		# 		# obj_el = els_arr[el]
+		# 		new_conds.append(rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
+		# 	new_conds.append(rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND))
+		# new_conds = new_conds[:-1]
+		new_rule = rule_parts(preconds=new_conds, gens=rule.gens)
+		src_recs, recs = gen_for_rule(b_gen_for_learn=False, rule=new_rule)
+		ret_src_recs.extend(src_recs)
+		ret_recs.extend(recs)
+
+		if not multi_ans:
+			break
+
+	return ret_src_recs, ret_recs
 
 	# end of function gen_from_story
