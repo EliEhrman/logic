@@ -39,13 +39,15 @@ c_ovec_len = 200
 
 # logger = None
 
-query_action = ['who']
+query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in']
 person_place_action = ['is located in', 'went to']
 object_place_action = ['is located in', 'is free in' ]
-person_object_action = ['picked up', 'put down', 'has']
+person_object_dynamic_action = ['picked up', 'put down']
+person_object_static_action = ['has']
 
 uniquify = lambda llist: list(set(llist))
 
+person_object_action = uniquify(person_object_dynamic_action + person_object_static_action)
 actions = uniquify(query_action + person_place_action + object_place_action + person_object_action)
 # actions = ['picked up', 'put down', 'has', 'went to', 'is located in', 'is free in', 'who']
 

@@ -39,12 +39,14 @@ def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_r
 		if story_rule.story_based:
 			story_based_rules.append(story_rule)
 
+	story_steps = []
 	for i_story_step in range(config.c_story_len):
 		story_rule = random.choice(story_based_rules)
 		src_recs, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
 		if not recs:
 			continue
 		new_phrase = recs[0][2:-1]
+		story_steps.append(new_phrase) # the right way to do this is to see if the insert cmd was present in recs
 		out_str = 'Next story step: *** '
 		out_str = els.output_phrase(def_article, els_dict, out_str, new_phrase)
 		out_str += ' **** '
@@ -56,9 +58,6 @@ def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_r
 				continue
 			mod_phrase = recs[0][1:-1]
 			story_db = rules.apply_mods(story_db, [mod_phrase])
-
-	query_gen = rules.extract_query_gen(query_rules[0])
-	src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_gen)
 
 	# src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_rules[0])
 	# sel_query_src = random.choice(src_recs)
@@ -74,20 +73,32 @@ def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_r
 		out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
 		print(out_str)
 
-	for iiquery in range(150):
-		sel_query_src = random.choice(recs)
-		out_str = 'Query: '
-		out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
-		print(out_str)
-		gen_src_recs, gen_recs = rules.gen_from_story(els_dict, els_arr, query_rules[0],
-													  story_db+[sel_query_src[1:-1]], gen_by_last=True, multi_ans=True)
-		if gen_recs:
-			for ans_rec in gen_recs:
-				out_str = 'Answer: '
-				out_str = els.output_phrase(def_article, els_dict, out_str, ans_rec[2:-1])
-				print(out_str)
-				out_str = []
-		else:
-			print('No answer')
+	for query_rule in query_rules:
+		query_gen = rules.extract_query_gen(query_rule)
+		src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_gen)
+
+		for iiquery in range(15):
+			sel_query_src = (random.choice(recs))[1:-1] # remove start-stop
+			out_str = 'Query: '
+			out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
+			print(out_str + '?')
+			ans_recs = []
+			gen_src_recs, gen_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
+														  story_db+[sel_query_src], gen_by_last=True, multi_ans=True)
+			ans_recs += gen_recs
+			gen_src_recs, gen_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
+														  story_steps+[sel_query_src], gen_by_last=True, multi_ans=True)
+			ans_recs += gen_recs
+			if ans_recs:
+				for ans_rec in ans_recs:
+					out_str = 'Answer: '
+					out_str = els.output_phrase(def_article, els_dict, out_str, ans_rec[2:-1])
+					print(out_str)
+					out_str = []
+			else:
+				print('No answer')
+
+		# end loop to iterate random generated queries
+	# end for query_rule over query_rules that gen queries (ie where's the hat, where's the tie ...)
 
 	return story

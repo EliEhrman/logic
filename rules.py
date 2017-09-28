@@ -38,22 +38,102 @@ tree_junct = collections.namedtuple('tree_junct', 'logic single branches')
 tree_junct.__new__.__defaults__ = (conn_type.single, [], [])
 # rec_def = collections.namedtuple('rec_def', 'obj, conn')
 
-def instatiate_query(query_rule, rec):
-	return rule_parts(preconds=tree_junct(logic=conn_type.AND, branches=[
-		tree_junct(single=[
-			query_rule.preconds.branches[0].single[0],
-			rule_fld(els_set=[], df_type=df_type.obj,sel_el=rec[3][1]),
-			rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[4][1])
-		]),
-		tree_junct(	single=query_rule.preconds.branches[1])]),
-					gens=query_rule.gens)
-
-def extract_query_gen(query_rule):
-	return rule_parts(gens = query_rule.preconds.branches[0])
-
 def init_query_rules(name_set, object_set, place_set, els_dict):
 	query_rules = []
-	"""
+
+	where_object_rule = rule_parts(
+			preconds = tree_junct(logic=conn_type.AND, branches = [
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
+		rule_fld(els_set=object_set, df_type=df_type.obj)]),
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
+		rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='is in'),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(where_object_rule)
+
+	where_person_rule = rule_parts(
+			preconds = tree_junct(logic=conn_type.AND, branches = [
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
+		rule_fld(els_set=name_set, df_type=df_type.obj)]),
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='is located in'),
+		rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='is in'),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(where_person_rule)
+
+	what_person_have_rule = rule_parts(
+			preconds = tree_junct(logic=conn_type.AND, branches = [
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='what does'),
+		rule_fld(els_set=name_set, df_type=df_type.obj),
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='have')]),
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='has'),
+		rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=4),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(what_person_have_rule)
+
+	what_person_rule = rule_parts(
+			preconds = tree_junct(logic=conn_type.AND, branches = [
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='what has'),
+		rule_fld(els_set=name_set, df_type=df_type.obj),
+		rule_fld(els_set=utils.set_from_l(config.person_object_dynamic_action, els_dict), df_type=df_type.obj)]),
+				tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+		rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(what_person_rule)
+
+	what_place_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
+			tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.obj, sel_el='what'),
+		rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
+		rule_fld(els_set=place_set, df_type=df_type.obj)]),
+		# rule_fld(els_set=utils.combine_sets([place_set, object_set]), df_type=df_type.obj)]),
+			tree_junct(single=[
+		rule_fld(els_set=object_set, df_type=df_type.obj),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+			gens = tree_junct(single=[
+		rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+		rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+			story_based = True, b_db=False, b_story=True
+	)
+	query_rules.append(what_place_rule)
+
 	who_obj_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
 			tree_junct(single=[
 		rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
@@ -71,8 +151,7 @@ def init_query_rules(name_set, object_set, place_set, els_dict):
 			story_based = True, b_db=False, b_story=True
 	)
 	query_rules.append(who_obj_rule)
-	"""
-	who_place_gen_rule = rule_parts
+
 	who_place_rule = rule_parts(	preconds = tree_junct(logic=conn_type.AND, branches = [
 			tree_junct(single=[
 		rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
@@ -91,6 +170,7 @@ def init_query_rules(name_set, object_set, place_set, els_dict):
 			story_based = True, b_db=False, b_story=True
 	)
 	query_rules.append(who_place_rule)
+
 	return query_rules
 
 def init_story_rules(name_set, object_set, place_set, action_set):
@@ -160,6 +240,19 @@ def init_story_rules(name_set, object_set, place_set, action_set):
 	story_rules.append(went_rule)
 
 	return story_rules
+
+def instatiate_query(query_rule, rec):
+	return rule_parts(preconds=tree_junct(logic=conn_type.AND, branches=[
+		tree_junct(single=[
+			query_rule.preconds.branches[0].single[0],
+			rule_fld(els_set=[], df_type=df_type.obj,sel_el=rec[3][1]),
+			rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[4][1])
+		]),
+		tree_junct(	single=query_rule.preconds.branches[1])]),
+					gens=query_rule.gens)
+
+def extract_query_gen(query_rule):
+	return rule_parts(gens = query_rule.preconds.branches[0])
 
 def init_rules(name_set, object_set, place_set, action_set):
 	gen_rules = []

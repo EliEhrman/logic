@@ -20,11 +20,11 @@ chair
 sheet
 glasses
 stapler
-wheel
+magic wheel
 hair
 lysol
 coffee pot
-keyboard
+encrypting keyboard
 wood
 weed
 pants
@@ -36,14 +36,14 @@ leaf
 firetruck
 orange
 fairy
-tooth
-nose
-ear
-eye
-quarter
+missing tooth
+bronze nose
+silver ear
+fake eye
+dessicated quarter
 money
-roof
-shingle
+photo of the roof
+fake shingle
 salt
 pepper
 Remote control
@@ -78,14 +78,14 @@ watermelon
 video casette
 candy bar
 radio
-keys
+key to the treasure
 golden egg
 duck
 bottle of perfume
 Soap
 Toilet Paper
 Napkin
-Fork
+stolen fork
 Remote Control
 Pen
 Dog Collar

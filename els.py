@@ -65,6 +65,7 @@ def init_objects():
 
 
 def output_phrase(def_article, els_dict, out_str, phrase):
+	b_first = True
 	for iel, el in enumerate(phrase):
 		if el[0] == rec_def_type.error:
 			out_str += '<Error!> '
@@ -73,8 +74,16 @@ def output_phrase(def_article, els_dict, out_str, phrase):
 			if len(el) > 2 and el[2]:
 				out_str += '{search for: '
 			if el[0] == rec_def_type.obj and def_article[els_dict[el[1]]]:
-				out_str += 'the '
-			out_str += el[1]
+				if b_first:
+					out_str += 'The '
+					b_first = False
+				else:
+					out_str += 'the '
+			if b_first:
+				out_str += el[1][:1].upper() + el[1][1:]
+				b_first = False
+			else:
+				out_str += el[1]
 			if len(el) > 2 and el[2]:
 				out_str += '}'
 			out_str += ' '
