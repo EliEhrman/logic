@@ -39,8 +39,6 @@ def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_art
 	num_els += num_new_els
 	return [new_els_range, num_new_els, new_els], num_els
 
-
-
 def init_objects():
 	els_arr = []
 	els_dict = {}
@@ -62,7 +60,6 @@ def init_objects():
 					max_new=config.max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
 	return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
-
 
 def output_phrase(def_article, els_dict, out_str, phrase):
 	b_first = True
@@ -90,22 +87,6 @@ def output_phrase(def_article, els_dict, out_str, phrase):
 
 	return out_str
 
-# def output_phrase(def_article, els_arr, out_str, phrase, filled_phrase = None):
-# 	# rewrite this for new rec format
-# 	for iel, el in enumerate(phrase):
-# 		if el < 0:
-# 			out_str += '<Error!> '
-# 		else:
-# 			if filled_phrase != None and not filled_phrase[iel]:
-# 				out_str += '*'
-# 			if def_article[el]:
-# 				out_str += 'the '
-# 			out_str += els_arr[el]
-# 			if filled_phrase != None and not filled_phrase[iel]:
-# 				out_str += '*'
-# 			out_str += ' '
-#
-# 	return out_str
 
 def complete_phrase(src_phrase,
 					out_phrase,
@@ -135,56 +116,10 @@ def complete_phrase(src_phrase,
 			filled_phrase.append(el)
 	return filled_phrase, out_str
 
-def old_complete_phrase(flds, src_phrase, out_phrase, out_str, def_article, els_arr):
-	filled_phrase = []
-	exact_mark = []
-	for el, fld in enumerate(flds):
-		if fld.df_type == df_type.varobj or fld.df_type == df_type.obj:
-			filled_phrase += [out_phrase[el]]
-			exact_mark += [True]
-		elif fld.df_type == df_type.mod:
-			if out_phrase[el] == dm_type.Insert.value - 1:
-				out_str = 'Insert: '
-			elif out_phrase[el] == dm_type.Remove.value - 1:
-				out_str = 'Remove: '
-			elif out_phrase[el] == dm_type.Modify.value - 1:
-				out_str = 'Modify: '
-		elif fld.df_type == df_type.conn:
-			if out_phrase[el] == conn_type.AND.value - 1:
-				out_str += 'AND '
-			if out_phrase[el] == conn_type.OR.value - 1:
-				out_str += 'OR '
-		elif fld.df_type == df_type.bool:
-			if out_phrase[el]:
-				out_str = 'true that '
-			else:
-				out_str = 'false that '
-		elif fld.df_type == df_type.var:
-			# input_id = vars_dict.get(flds[el].var_id, None)
-			input_id = out_phrase[el]
-			if input_id == None or input_id >= len(src_phrase):
-				filled_phrase += [-1]
-			else:
-				filled_phrase += [src_phrase[input_id]]
-			exact_mark += [True]
-		elif fld.df_type == df_type.varmod:
-			input_id = out_phrase[el]
-			if input_id == None or input_id >= len(src_phrase):
-				filled_phrase += [-1]
-			else:
-				filled_phrase += [src_phrase[input_id]]
-			exact_mark += [False]
-		else:
-			logger.error('Invalid field ID. Exiting')
-			exit()
-
-	return filled_phrase, exact_mark, out_str
-
 def print_phrase(src_phrase, out_phrase, out_str, def_article, els_dict):
 
 	filled_phrase, out_str = complete_phrase(src_phrase, out_phrase, out_str)
 	return output_phrase(def_article, els_dict, out_str, filled_phrase)
-
 
 def make_vec(recs, els_dict):
 	# numrecs = len(recs)

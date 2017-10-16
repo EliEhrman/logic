@@ -39,68 +39,6 @@ def stop_reached(datum, tensor):
 
 t_for_stop = tf.constant(5.0, name='t_for_stop')
 
-def make_vec(arr, data_flds, els_arr):
-	global logger
-	numrecs = len(arr)
-	num_els = len(els_arr)
-	field_id = 0  # what field are we up to
-	for el, fld in enumerate(data_flds):
-		field_id = min(len(arr[0])-1, field_id)
-		# dfa = [arr[i][el] for i in range(numrecs)]
-		subvec0 = np.zeros((numrecs, num_df_types))
-		subvec0[:, data_flds[el].df_type.value - 1] = 1
-		# get_val = lambda f, t: f.value if t else f
-		# a = np.asarray([get_val(arr[i][field_id], (data_flds[el].df_type == df_type.mod)) for i in range(numrecs)])
-		a = np.asarray([arr[i][field_id] for i in range(numrecs)])
-		if data_flds[el].df_type == df_type.varobj:
-			subvec1 = np.zeros((numrecs, config.c_max_vars))
-			subvec1[:, data_flds[el].var_id] = 1
-			subvec2 = np.zeros((numrecs, num_els))
-			subvec2[np.arange(numrecs), a] = 1
-			subvec = np.concatenate((subvec0, subvec1, subvec2), axis=1)
-			field_id += 1
-		elif data_flds[el].df_type == df_type.obj:
-			subvec2 = np.zeros((numrecs, num_els))
-			subvec2[np.arange(numrecs), a] = 1
-			subvec = np.concatenate((subvec0, subvec2), axis=1)
-			field_id += 1
-		elif data_flds[el].df_type == df_type.bool:
-			subvec1 = np.zeros((numrecs, 2))
-			subvec1[np.arange(numrecs), a.astype(np.int64)] = 1
-			subvec = np.concatenate((subvec0, subvec1), axis=1)
-			field_id += 1
-		elif data_flds[el].df_type == df_type.mod:
-			subvec1 = np.zeros((numrecs, num_dm_types))
-			subvec1[np.arange(numrecs), a.astype(np.int64)] = 1
-			subvec = np.concatenate((subvec0, subvec1), axis=1)
-			field_id += 1
-		elif data_flds[el].df_type == df_type.var:
-			subvec1 = np.zeros((numrecs, config.c_max_vars))
-			subvec1[:, data_flds[el].var_id] = 1
-			subvec = np.concatenate((subvec0, subvec1), axis=1)
-			field_id += 1
-			# note, no increment of field_id
-		elif data_flds[el].df_type == df_type.varmod:
-			# same as var but indicates a search that must match all other fields
-			subvec1 = np.zeros((numrecs, config.c_max_vars))
-			subvec1[:, data_flds[el].var_id] = 1
-			subvec = np.concatenate((subvec0, subvec1), axis=1)
-			field_id += 1
-			# note, no increment of field_id
-		elif data_flds[el].df_type == df_type.conn:
-			subvec1 = np.zeros((numrecs, num_conn_types))
-			subvec1[np.arange(numrecs), a] = 1
-			subvec = np.concatenate((subvec0, subvec1), axis=1)
-			field_id += 1
-		else:
-			logger.error('Invalid field ID. Exiting')
-			exit()
-
-		if el == 0:
-			vec = subvec
-		else:
-			vec = np.concatenate((vec, subvec), axis=1)
-	return vec
 
 def build_nn(var_scope, input_dim, b_reuse):
 	# num_inputs = tf.shape(t_nn_x)[0]
@@ -265,14 +203,19 @@ def do_init():
 
 	els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set = els.init_objects()
 	gen_rules = rules.init_rules(name_set, object_set, place_set, action_set)
+	for rule in gen_rules:
+		out_str = 'rule print: \n'
+		out_str = rules.print_rule(rule, out_str)
+		print(out_str)
 	story_rules = rules.init_story_rules(name_set, object_set, place_set, action_set)
 	query_rules = rules.init_query_rules(name_set, object_set, place_set, els_dict)
+	blocking_rules = rules.init_blocking_rules(name_set, object_set, place_set, action_set, els_dict)
 	del name_set, object_set, place_set, action_set
 
 	input_flds_arr, output_flds_arr, fld_def_arr, \
 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
-	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules)
+	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules, blocking_rules)
 	del els_arr, gen_rules, story_rules
 
 	numrecs = len(input)

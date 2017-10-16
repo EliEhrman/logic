@@ -1,0 +1,46 @@
+1. Complete story-game
+    a. Knowing
+    b. asking
+    c. telling
+    d. motivations
+        wanting
+        liking
+    e. values
+    f. simple, single-step application of motivations to actions
+        Always pick up
+        ask if you want
+        answer if like
+        like if you are helped
+        give if you like alot
+2. Learning the rules
+    a. gather avalanche of related words
+    b. propose rules
+    c. add an arbiter that scores if you got rules right
+        learning arbiter may ask questions of the oracle
+    d. Demonstrate symbolic learning
+3. Play the game
+    a. Add oracle-level strategy
+    b. learn effective strategy
+    c. Eval based on how often your character has the items
+4. Translate to NLP
+    a. Do everything with English sentences
+    b. logic (Tree based AND, OR etc.) still used in rules
+5. Learn from plain text
+    a. Handle passive text
+    b. Learn by asking questions
+        must manage without
+        advance skills using this method to be able to handle the passive better
+
+Game Enhancement
+    a. Speech recognition
+    b. Face reading
+    c. Speech generation
+    d. Realistic image of speaker
+
+Applications
+
+1. Game
+2. News
+3. Personal politics
+4. Global Textual Knowledge
+5. Detailed analysis of complex logical arguments/research/understanding

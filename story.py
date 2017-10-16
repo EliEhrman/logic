@@ -7,7 +7,7 @@ from rules import conn_type
 import els
 
 
-def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules):
+def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules, blocking_rules):
 	story = []
 	story_db = []
 
@@ -46,17 +46,35 @@ def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_r
 		if not recs:
 			continue
 		new_phrase = recs[0][2:-1]
-		story_steps.append(new_phrase) # the right way to do this is to see if the insert cmd was present in recs
 		out_str = 'Next story step: *** '
 		out_str = els.output_phrase(def_article, els_dict, out_str, new_phrase)
 		out_str += ' **** '
 		print(out_str)
+		b_blocked = False
+		for iblock, block_rule in enumerate(blocking_rules):
+			story_with_step = story_db + [new_phrase]
+			src_recs, recs = rules.gen_from_story(els_dict, els_arr, block_rule, story_with_step, gen_by_last=True)
+			if recs:
+				b_blocked = True
+				break
+		if b_blocked:
+			out_str = 'New step blocked by the following rule: '
+			out_str = rules.print_rule(block_rule, out_str)
+			# out_str  = els.print_phrase(block_rule, block_rule, out_str, def_article, els_dict)
+			print(out_str)
+			continue
+
+		story_steps.append(new_phrase) # the right way to do this is to see if the insert cmd was present in recs
+
 		for igen, gen_rule in enumerate(gen_rules):
 			story_with_step = story_db + [new_phrase]
 			src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_with_step, gen_by_last=True)
 			if not recs:
 				continue
 			mod_phrase = recs[0][1:-1]
+			# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
+			out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
+			print(out_str)
 			story_db = rules.apply_mods(story_db, [mod_phrase])
 
 	# src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_rules[0])
