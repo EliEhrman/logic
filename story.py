@@ -41,7 +41,10 @@ def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_r
 
 	story_steps = []
 	for i_story_step in range(config.c_story_len):
-		story_rule = random.choice(story_based_rules)
+		# two step instead of random.choice for debugging purposes
+		i_story_rule = random.randint(0, len(story_based_rules)-1)
+		story_rule = story_based_rules[i_story_rule]
+		# story_rule = random.choice(story_based_rules)
 		src_recs, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
 		if not recs:
 			continue
@@ -68,14 +71,16 @@ def create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_r
 
 		for igen, gen_rule in enumerate(gen_rules):
 			story_with_step = story_db + [new_phrase]
-			src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_with_step, gen_by_last=True)
+			src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_with_step,
+												  gen_by_last=True, multi_ans=True)
 			if not recs:
 				continue
-			mod_phrase = recs[0][1:-1]
-			# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
-			out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
-			print(out_str)
-			story_db = rules.apply_mods(story_db, [mod_phrase])
+			for one_rec in recs:
+				mod_phrase = one_rec[1:-1]
+				# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
+				out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
+				print(out_str)
+				story_db = rules.apply_mods(story_db, [mod_phrase])
 
 	# src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_rules[0])
 	# sel_query_src = random.choice(src_recs)

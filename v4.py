@@ -202,11 +202,11 @@ def do_init():
 	# logger = utils.ulogger
 
 	els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set = els.init_objects()
-	gen_rules = rules.init_rules(name_set, object_set, place_set, action_set)
-	for rule in gen_rules:
-		out_str = 'rule print: \n'
-		out_str = rules.print_rule(rule, out_str)
-		print(out_str)
+	gen_rules = rules.init_rules(name_set, object_set, place_set, action_set, els_dict)
+	# for rule in gen_rules:
+	# 	out_str = 'rule print: \n'
+	# 	out_str = rules.print_rule(rule, out_str)
+	# 	print(out_str)
 	story_rules = rules.init_story_rules(name_set, object_set, place_set, action_set)
 	query_rules = rules.init_query_rules(name_set, object_set, place_set, els_dict)
 	blocking_rules = rules.init_blocking_rules(name_set, object_set, place_set, action_set, els_dict)

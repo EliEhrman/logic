@@ -7,8 +7,6 @@ import utils
 from utils import ulogger as logger
 # import els
 
-
-
 # varmod is a var whose object was in the input and is the only value to be modified
 # mod is a field, normally seen in output, that tells you how to modify the database
 # conn is a connective such as AND or OR
@@ -53,6 +51,21 @@ def init_blocking_rules(name_set, object_set, place_set, action_set, els_dict):
 	# if gave_to_block_rule.__class__ == nt_rule_parts:
 	# 	print(str(gave_to_block_rule.__class__))
 	blocking_rules.append(gave_to_block_rule)
+
+	went_to_block_rule = nt_rule_parts(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove)]))
+
+	blocking_rules.append(went_to_block_rule)
 
 	return blocking_rules
 
@@ -297,7 +310,7 @@ def instatiate_query(query_rule, rec):
 def extract_query_gen(query_rule):
 	return nt_rule_parts(gens = query_rule.preconds.branches[0])
 
-def init_rules(name_set, object_set, place_set, action_set):
+def init_rules(name_set, object_set, place_set, action_set, els_dict):
 	gen_rules = []
 	gen_rule_picked_up =	nt_rule_parts(	preconds = nt_tree_junct(single=[
 						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
@@ -394,7 +407,35 @@ def init_rules(name_set, object_set, place_set, action_set):
 						 ]))
 	gen_rules.append(gen_rule_put_down_free)
 
-	gen_rule_knows_went =	nt_rule_parts(
+	gen_rule_knows_dynamic_action =	nt_rule_parts(
+		preconds = nt_tree_junct(logic=conn_type.AND,
+			branches=[
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=utils.set_from_l(config.person_object_dynamic_action, els_dict), df_type=df_type.obj),
+					nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+			]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='knows that'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)
+								]))
+	gen_rules.append(gen_rule_knows_dynamic_action)
+
+
+	# make sure this rule is before the place modification of 'went to'
+	gen_rule_knows_went_from =	nt_rule_parts(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -418,7 +459,29 @@ def init_rules(name_set, object_set, place_set, action_set):
 			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)
 								]))
-	gen_rules.append(gen_rule_knows_went)
+	gen_rules.append(gen_rule_knows_went_from)
+
+	gen_rule_knows_went_to =	nt_rule_parts(
+		preconds = nt_tree_junct(logic=conn_type.AND,
+			branches=[
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])
+			]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='knows that'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)
+								]))
+	gen_rules.append(gen_rule_knows_went_to)
 
 	# for now, the order matters. The first rule removes the located in and leaves no located in
 	# The following rule looks only at the went to story step and created a new located in
@@ -743,9 +806,7 @@ def apply_rules(els_dict, rules, phrase):
 def apply_mods(story_db, mod_phrases):
 	for imod, mod_phrase in enumerate(mod_phrases):
 		mod_type = mod_phrase[0][1]
-		if mod_type == conn_type.Insert:
-			story_db += [mod_phrase[1:]]
-			continue
+		b_phrase_found = False
 		for phrase in story_db:
 			new_phrase = []
 			b_match = True
@@ -759,11 +820,16 @@ def apply_mods(story_db, mod_phrases):
 					iel += 1
 				new_phrase.append(mod_phrase[iel])
 			if b_match:
+				b_phrase_found = True
 				if mod_type == conn_type.Remove:
 					story_db.remove(phrase)
 				elif mod_type == conn_type.Modify:
 					story_db.remove(phrase)
 					story_db += [new_phrase]
+		if not b_phrase_found:
+			# Only insert if the phrase does not exist identically in DB already
+			if mod_type == conn_type.Insert:
+				story_db += [mod_phrase[1:]]
 
 	return story_db
 
