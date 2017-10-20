@@ -109,7 +109,7 @@ def complete_phrase(src_phrase,
 			elif el[1] == conn_type.Remove:
 				out_str = 'Remove: '
 		elif el[0] == rec_def_type.var:
-			filled_phrase.append(src_phrase[el[1]])
+			filled_phrase.append((src_phrase.phrase())[el[1]])
 			if len(el) > 2:
 				filled_phrase[-1].append(el[2])
 		elif el[0] == rec_def_type.obj:
@@ -126,7 +126,7 @@ def make_vec(recs, els_dict):
 	num_els = len(els_dict)
 
 	for irec, rec in enumerate(recs):
-		for ifld, fld in enumerate(rec):
+		for ifld, fld in enumerate(rec.phrase()):
 			subvec0 = np.zeros(num_rec_def_types)
 			subvec0[fld[0].value - 1] = 1
 			if fld[0] == rec_def_type.conn:

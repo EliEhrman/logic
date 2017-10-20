@@ -268,17 +268,18 @@ def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
 
 
 	for itest, iiphrase in enumerate(r_r_test):
-		phrase = input[iiphrase]
+		phrase_rec = input[iiphrase]
+		phrase = phrase_rec.phrase()
 		fld_def = fld_def_arr[iiphrase]
 		input_flds = input_flds_arr[fld_def]
 		out_phrase = output[r_key_idxs[itest][0]]
 		out_str = "input: "
-		out_str = els.print_phrase(phrase, phrase, out_str, def_article, els_dict)
+		out_str = els.print_phrase(phrase_rec, phrase, out_str, def_article, els_dict)
 		logger.info(out_str)
 		for iout in range(config.c_key_num_ks-1):
 			oiphrase = r_key_idxs[itest][iout]
 			o_fld_def = fld_def_arr[oiphrase]
-			out_str = els.print_phrase(	phrase, output[oiphrase],
+			out_str = els.print_phrase(	phrase_rec, (output[oiphrase]).phrase(),
 									out_str, def_article, els_dict)
 			logger.info(out_str)
 			del oiphrase

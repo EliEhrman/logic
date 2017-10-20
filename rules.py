@@ -34,6 +34,29 @@ nt_rule_parts = collections.namedtuple('nt_rule_parts', 'gens, preconds, story_b
 nt_rule_parts.__new__.__defaults__ = (None, False, True, False)
 nt_tree_junct = collections.namedtuple('nt_tree_junct', 'logic single branches')
 nt_tree_junct.__new__.__defaults__ = (conn_type.single, [], [])
+nt_phrase_rec = collections.namedtuple('nt_phrase_rec', 'time, phrase')
+nt_phrase_rec.__new__.__defaults__ = (0, [])
+
+class C_phrase_rec(object):
+	# __slots__='time', '_phrase'
+
+	def __init__(self, init_phrase=None):
+		self.time = 0
+		if init_phrase:
+			self.__phrase = init_phrase
+		else:
+			self.__phrase = []
+
+	def append(self, el):
+		self.__phrase.append(el)
+
+	def append_replace_next(self, replace_next=True):
+		self.__phrase[-1].append(replace_next)
+
+	def phrase(self):
+		return self.__phrase
+
+
 # rec_def = collections.namedtuple('rec_def', 'obj, conn')
 
 def init_blocking_rules(name_set, object_set, place_set, action_set, els_dict):
@@ -678,12 +701,12 @@ def gen_for_rule(b_gen_for_learn, rule):
 							for irec in range(numrecs):
 								# recs[irec].append(rec_def_type.obj.value - 1)
 								# recs[irec].append(recs[irec][var_id])
-								recs[irec].append([rec_def_type.obj, recs[irec][vars_dict[var_id]][1]])
+								recs[irec].append([rec_def_type.obj, (recs[irec].phrase())[vars_dict[var_id]][1]])
 						else:
 							for irec in range(numrecs):
 								# recs[irec].append(rec_def_type.obj.value - 1)
 								# recs[irec].append(src_recs[irec][var_id])
-								recs[irec].append([rec_def_type.obj, src_recs[irec][vars_dict[var_id]][1]])
+								recs[irec].append([rec_def_type.obj, (src_recs[irec].phrase())[vars_dict[var_id]][1]])
 						if rule_part_name == gen_part:
 							vars_dict[obj_num] = field_id
 						obj_num += 1 # increment because its easier to specify rules counting vars, but no add to dict
@@ -693,7 +716,7 @@ def gen_for_rule(b_gen_for_learn, rule):
 					exit()
 				if replace_by_next:
 					for irec in range(numrecs):
-						recs[irec][-1].append(True)
+						recs[irec].append_replace_next()
 			for irec in range(numrecs):
 				# recs[irec].append(rec_def_type.conn.value - 1)
 				# recs[irec].append(conn_type.end.value - 1)
@@ -733,7 +756,7 @@ def gen_for_rule(b_gen_for_learn, rule):
 			else:
 				continue
 		# for rule_part_name, rule_part in rule._asdict().iteritems():
-		recs = [[] for i in range(numrecs)]
+		recs = [C_phrase_rec() for i in range(numrecs)]
 		field_id = 0
 		obj_num = 0
 		recs, _, _, _ = build_recs(rule_part, rule_part_name, recs, vars_dict, src_recs, recdivarr, field_id, obj_num)
@@ -804,10 +827,12 @@ def apply_rules(els_dict, rules, phrase):
 	return mod_phrases, search_markers
 
 def apply_mods(story_db, mod_phrases):
-	for imod, mod_phrase in enumerate(mod_phrases):
+	for imod, mod_phrase_rec in enumerate(mod_phrases):
+		mod_phrase = mod_phrase_rec.phrase()
 		mod_type = mod_phrase[0][1]
 		b_phrase_found = False
-		for phrase in story_db:
+		for iphrase, phrase_rec in enumerate(story_db):
+			phrase = phrase_rec.phrase()
 			new_phrase = []
 			b_match = True
 			iel = 0
@@ -822,14 +847,14 @@ def apply_mods(story_db, mod_phrases):
 			if b_match:
 				b_phrase_found = True
 				if mod_type == conn_type.Remove:
-					story_db.remove(phrase)
+					story_db.pop(iphrase)
 				elif mod_type == conn_type.Modify:
-					story_db.remove(phrase)
-					story_db += [new_phrase]
+					story_db.pop(iphrase)
+					story_db += [C_phrase_rec(new_phrase)]
 		if not b_phrase_found:
 			# Only insert if the phrase does not exist identically in DB already
 			if mod_type == conn_type.Insert:
-				story_db += [mod_phrase[1:]]
+				story_db += [C_phrase_rec(mod_phrase[1:])]
 
 	return story_db
 
@@ -863,7 +888,8 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=
 				for ihit, hit in enumerate(old_hits):
 					old_cands = hit_old_cands[ihit]
 					for iphrase in old_cands:
-						phrase = story[iphrase]
+						phrase_rec = story[iphrase]
+						phrase = phrase_rec.phrase()
 						if df_type == df_type.obj:
 							if phrase[field_id][0] == rec_def_type.obj:
 								if sel_el:
@@ -877,7 +903,7 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=
 							if var_phrase >= len(hit):
 								req = phrase[var_field_id][1]
 							else:
-								req = story[hit[var_phrase]][var_field_id][1]
+								req = (story[hit[var_phrase]].phrase())[var_field_id][1]
 							if phrase[field_id][1] == req:
 								new_cands.append(iphrase)
 					# end switch over df_type
@@ -942,7 +968,7 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=
 		# in this case it's not real. We are simply combining the phrases found in the story as if its a rule
 		# So if there's jut one phrase, it's a single otherwise we do an AND
 		if len(sel_hit) == 1:
-			phrase = story[sel_hit[0]]
+			phrase = (story[sel_hit[0]]).phrase()
 			rule_fields = []
 			for el in phrase:
 				# obj_el = els_arr[el]
@@ -951,20 +977,14 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=
 		else:
 			branches = []
 			for hit in sel_hit:
-				phrase = story[hit]
+				phrase = (story[hit]).phrase()
 				rule_fields = []
 				for el in phrase:
 					# obj_el = els_arr[el]
 					rule_fields.append(nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
 				branches.append(nt_tree_junct(single=rule_fields))
 			new_conds = nt_tree_junct(branches=branches, logic=conn_type.AND)
-		# for iphrase in sel_hit[1:]:
-		# 	phrase = story[iphrase]
-		# 	for el in phrase:
-		# 		# obj_el = els_arr[el]
-		# 		new_conds.append(nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=el[1]))
-		# 	new_conds.append(nt_rule_fld(els_set=[], df_type=df_type.conn, sel_el=conn_type.AND))
-		# new_conds = new_conds[:-1]
+
 		new_rule = nt_rule_parts(preconds=new_conds, gens=rule.gens)
 		src_recs, recs = gen_for_rule(b_gen_for_learn=False, rule=new_rule)
 		ret_src_recs.extend(src_recs)
