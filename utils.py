@@ -1,6 +1,7 @@
 from time import gmtime, strftime
 import sys
 import logging
+import collections
 
 ulogger = None
 
@@ -33,3 +34,9 @@ def combine_sets(l_sets):
 
 def set_from_l(ll, els_dict):
 	return [[els_dict[l] for l in ll], len(ll), ll]
+
+nt_el_sets = collections.namedtuple('nt_el_sets', 'names, objects, places, actions')
+
+def unpack_els_sets(els_sets):
+	return els_sets.names, els_sets.objects, els_sets.places, els_sets.actions
+

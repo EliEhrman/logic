@@ -7,7 +7,7 @@ card
 cup holder
 clip
 rock
-desk
+desk design
 mouse
 dog
 bag of grass
@@ -21,7 +21,7 @@ sheet
 glasses
 stapler
 magic wheel
-hair
+lock of hair
 lysol
 coffee pot
 encrypting keyboard
@@ -33,7 +33,7 @@ penny
 ground coffee
 doornob
 leaf
-firetruck
+firetruck design
 orange
 fairy
 missing tooth

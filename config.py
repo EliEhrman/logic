@@ -39,7 +39,7 @@ c_ovec_len = 200
 
 # logger = None
 
-query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in']
+query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that']
 person_place_action = ['is located in', 'went to']
 object_place_action = ['is located in', 'is free in' ]
 person_object_dynamic_action = ['picked up', 'put down']

@@ -1,6 +1,7 @@
 import csv
 import random
 import config
+import utils
 import rules
 from rules import df_type
 from rules import dm_type
@@ -14,7 +15,6 @@ num_conn_types = len(conn_type)
 num_rec_def_types = len(rec_def_type)
 
 # distinguishing between objs and objects. The former is generic. The latter are things you pick up, take etc
-
 def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_article=False, cap_first=False, max_new=5):
 	num_els = len(els_arr)
 	if fname:
@@ -59,7 +59,9 @@ def init_objects():
 		init_els(	alist=config.actions,
 					max_new=config.max_objects, els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
-	return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
+	els_sets = utils.nt_el_sets(names=name_set, objects=object_set, places=place_set, actions=action_set)
+	# return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
+	return els_arr, els_dict, def_article, num_els, els_sets
 
 def output_phrase(def_article, els_dict, out_str, phrase):
 	b_first = True

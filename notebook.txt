@@ -1,0 +1,15 @@
+Sunday 29th October
+
+I've decided not to implement a complete solution for timestamps. For now, I'll keep the flat structure of phrases
+and timestamp events and most consequences with current time. The exception is knowledge, which will get the timestamp
+of the earliest phrase in the phrase list.
+
+In practice, whenever we add consequences, whether for events or static knowledge, we give the timestamp of the record, the current
+record.
+
+As of now, there is no inferring from the knowledge base of a specific person. So even if John knows that Daryl went to Fiji,
+he does not directly infer that Daryl is in Fiji. Instead we use inference from the static db (objective knowledge) to do that
+
+Probably would make more sense to have a centralized step creation mechanism that includes events, inter-person questions, responses etc.
+Attach a gens-type, such as stroy-step, knowledge insertion, etc.
+

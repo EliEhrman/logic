@@ -201,22 +201,22 @@ def do_init():
 	# utils.init_logging()
 	# logger = utils.ulogger
 
-	els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set = els.init_objects()
-	gen_rules = rules.init_rules(name_set, object_set, place_set, action_set, els_dict)
+	els_arr, els_dict, def_article, num_els, els_sets = els.init_objects()
+	gen_rules = rules.init_rules(els_sets, els_dict)
 	# for rule in gen_rules:
 	# 	out_str = 'rule print: \n'
 	# 	out_str = rules.print_rule(rule, out_str)
 	# 	print(out_str)
-	story_rules = rules.init_story_rules(name_set, object_set, place_set, action_set)
-	query_rules = rules.init_query_rules(name_set, object_set, place_set, els_dict)
-	blocking_rules = rules.init_blocking_rules(name_set, object_set, place_set, action_set, els_dict)
-	del name_set, object_set, place_set, action_set
+	story_rules = rules.init_story_rules(els_sets)
+	query_rules = rules.init_query_rules(els_sets, els_dict)
+	# knowledge_query_rules = rules.init_knowledge_query_rules(els_sets, els_dict)
+	blocking_rules = rules.init_blocking_rules(els_sets, els_dict)
 
 	input_flds_arr, output_flds_arr, fld_def_arr, \
 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 		gen_phrases(gen_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
-	story_arr = story.create_story(els_dict, def_article, els_arr, story_rules, query_rules, gen_rules, blocking_rules)
-	del els_arr, gen_rules, story_rules
+	story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_rules, gen_rules, blocking_rules)
+	del els_arr, gen_rules, story_rules, els_sets
 
 	numrecs = len(input)
 	op_train_step, t_y, t_err, v_r1, v_r2, l_W \
