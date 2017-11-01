@@ -13,3 +13,36 @@ he does not directly infer that Daryl is in Fiji. Instead we use inference from 
 Probably would make more sense to have a centralized step creation mechanism that includes events, inter-person questions, responses etc.
 Attach a gens-type, such as stroy-step, knowledge insertion, etc.
 
+Tuesday 31st October
+
+Pushed the commit 'Answering personal questions'
+
+An answer is generated but the next step is to add the contents of the answer as knowledge
+
+Wednesday 1st November
+
+Finished adding the answer to an inter-person query into the story database.
+
+Will commit a version with above string
+
+I intend to remove the generation of phrases for rules just for the purpose of learning because (1) that is about to change
+and (2) some rules such as the knowledge resulting from telling rule generated millions of records.
+
+A thought about time:
+4 kinds of phrases:
+state (as in John wants the wheel - that is always true)
+current (as in Mike has the purse - this automatically updates its time. If it was true last stem, unless removed,
+        it is true the next step. Note true for objective facts but not knowledge)
+event (Harry went to the UK. Always has a specific time)
+phase (Terry knows that Mile has the purse - this is true for a time. It can go out of date unless specifically updated)
+
+Further note. Currently knows that has a time stamp of the object of the knowledge. We may need to break down a phrase into
+constinuent pieces wach with their own time.
+
+
+It doesn't make sense to have so many functions, each creating rules. There should only be one function for rule but many
+differnt types that use something like the mostly defunct 'story_based, b_db, b_story'. Each step in the story advnacing process
+must pick out the kind of rules it needs and advance them.
+
+Next, I will add motivations. The current idea is:
+(1) A steady state

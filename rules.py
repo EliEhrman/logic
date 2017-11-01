@@ -426,6 +426,39 @@ def instatiate_query(query_rule, rec):
 def extract_query_gen(query_rule):
 	return nt_rule_parts(gens = query_rule.preconds.branches[0])
 
+def init_large_rules(els_sets, els_dict):
+	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+	gen_rules = []
+	gen_rule_knows_when_told =	nt_rule_parts(
+		preconds = nt_tree_junct(logic=conn_type.AND,
+			branches=[
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='told'),
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=utils.combine_sets([name_set, object_set, place_set]), df_type=df_type.obj),
+					nt_rule_fld(els_set=utils.set_from_l(config.actions, els_dict), df_type=df_type.obj),
+					nt_rule_fld(els_set=utils.combine_sets([name_set, object_set, place_set]), df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+			]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='knows that'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)
+								]))
+	gen_rules.append(gen_rule_knows_when_told)
+	return gen_rules
+
 def init_rules(els_sets, els_dict):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	gen_rules = []

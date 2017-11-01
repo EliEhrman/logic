@@ -69,13 +69,13 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 			print(out_str)
 			continue
 
-		def infer_from_story(story_db, b_static_rules):
+		def infer_from_story(story_db, b_static_rules, story_step=None, step_time=i_story_step, step_effect_rules=gen_rules):
 			b_require_last = not b_static_rules
-			for igen, gen_rule in enumerate(gen_rules):
+			for igen, gen_rule in enumerate(step_effect_rules):
 				if b_static_rules:
 					story_to_process = story_db
 				else:
-					story_to_process = story_db + [rules.C_phrase_rec(new_phrase, i_story_step)]
+					story_to_process = story_db + [rules.C_phrase_rec(story_step, step_time)]
 				src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_to_process,
 													  gen_by_last=b_require_last, multi_ans=True)
 				if not recs:
@@ -86,13 +86,13 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 					out_str = ''
 					out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
 					print(out_str)
-					story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], i_story_step)
+					story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], step_time)
 			return story_db
 
 
 		story_steps.append(rules.C_phrase_rec(init_phrase = new_phrase, init_time=i_story_step))
 
-		story_db = infer_from_story(story_db, b_static_rules=False)
+		story_db = infer_from_story(story_db, b_static_rules=False, story_step=new_phrase)
 		# Process the rules again to update steady state knowledge. Don't use the event itself
 		# and don't require the gen_by_last
 		story_db = infer_from_story(story_db, b_static_rules=True)
@@ -177,6 +177,7 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 
 	ask_rules = rules.init_ask_rules(els_sets, els_dict)
 	ask_blocking_rules = rules.init_ask_blocking_rules(els_sets, els_dict)
+	large_rules = rules.init_large_rules(els_sets, els_dict)
 
 	for ask_rule in ask_rules:
 		ask_gen = rules.extract_query_gen(ask_rule)
@@ -211,9 +212,9 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 
 					for one_knowledge_query in knowledge_query_recs:
 						sel_knowledge_query = (one_knowledge_query.phrase())[1:-1]  # remove start-stop
-						out_str = 'Knowledge extract query: '
-						out_str = els.print_phrase(sel_knowledge_query, sel_knowledge_query, out_str, def_article, els_dict)
-						print(out_str + '?')
+						# out_str = 'Knowledge extract query: '
+						# out_str = els.print_phrase(sel_knowledge_query, sel_knowledge_query, out_str, def_article, els_dict)
+						# print(out_str + '?')
 						_, personal_db_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
 																	  story_db + [rules.C_phrase_rec(sel_knowledge_query)],
 																	  gen_by_last=True, multi_ans=True)
@@ -226,9 +227,9 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 							if query_personal_recs:
 								for ans_rec in query_personal_recs:
 									ans_phrase = ans_rec.phrase()
-									out_str = 'Answer: '
-									out_str = els.output_phrase(def_article, els_dict, out_str, ans_phrase[2:-1])
-									print(out_str)
+									# out_str = 'Answer: '
+									# out_str = els.output_phrase(def_article, els_dict, out_str, ans_phrase[2:-1])
+									# print(out_str)
 									ans_list += [ans_rec]
 						# end loop of application of queries to personal db
 					# end loop over knowlege db extraction queries
@@ -240,9 +241,14 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 							latest_idx = one_ans_idx
 							latest_ans_time = one_ans.time
 					final_ans = ans_list[latest_idx]
-					final_ans_phrase_objs = [asker, 'told', askee]
+					final_ans_phrase_objs = [askee, 'told', asker]
 					final_ans_phrase = [[rules.rec_def_type.obj, obj] for obj in final_ans_phrase_objs ]
-					final_ans_phrase_rec = rules.C_phrase_rec(final_ans_phrase + final_ans.phrase()[2:-1], latest_ans_time)
+					# final_ans_phrase_rec = rules.C_phrase_rec(final_ans_phrase + final_ans.phrase()[2:-1], latest_ans_time)
+					final_ans_phrase_rec = final_ans_phrase + final_ans.phrase()[2:-1]
+					out_str = 'Response: '
+					out_str = els.output_phrase(def_article, els_dict, out_str, final_ans_phrase_rec)
+					print(out_str)
+					infer_from_story(story_db, b_static_rules=False, story_step=final_ans_phrase_rec, step_time=latest_ans_time, step_effect_rules=large_rules)
 				else:
 					print('No answer')
 
