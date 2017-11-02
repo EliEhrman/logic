@@ -1,4 +1,4 @@
-remote
+remote controlled car
 phone
 paper
 hat
@@ -31,10 +31,10 @@ bag with the pants
 skateboard
 penny
 ground coffee
-doornob
-leaf
+doorknob
+mauve leaf
 firetruck design
-orange
+incriminating orange
 fairy
 missing tooth
 bronze nose
@@ -75,7 +75,7 @@ lemon
 apple
 mango
 watermelon
-video casette
+video cassette
 candy bar
 radio
 key to the treasure

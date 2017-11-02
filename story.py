@@ -7,6 +7,92 @@ from rules import conn_type
 import els
 
 
+def infer_from_story(els_dict, els_arr, def_article, story_db, b_static_rules=False, b_apply_results=True,
+					 story_step=None, step_time=-1, step_effect_rules=None):
+	b_require_last = not b_static_rules
+	unapplied_results = []
+	for igen, gen_rule in enumerate(step_effect_rules):
+		if b_static_rules:
+			story_to_process = story_db
+		else:
+			story_to_process = story_db + [rules.C_phrase_rec(story_step, step_time)]
+		src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_to_process,
+											  gen_by_last=b_require_last, multi_ans=True)
+		if not recs:
+			continue
+		for phrase_rec in recs:
+			mod_phrase = (phrase_rec.phrase())[1:-1]
+			# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
+			out_str = ''
+			out_str = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
+			print(out_str)
+			if b_apply_results:
+				story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], step_time)
+			else:
+				unapplied_results += [mod_phrase[1:]]
+	return story_db, unapplied_results
+
+
+def process_p2p_event(els_sets, els_dict, els_arr, query_rules, story_db, sel_query_src):
+	ans_list = []
+	events_for_queue = []
+	asker = sel_query_src[0][1]
+	askee = sel_query_src[2][1]
+	asked_query = sel_query_src[3:]
+	knowledge_query_rules = rules.init_knowledge_query_rules(els_sets, els_dict, askee)
+
+	for query_rule in knowledge_query_rules:
+		knowledge_query_gen = rules.extract_query_gen(query_rule)
+		_, knowledge_query_recs = rules.gen_for_rule(b_gen_for_learn=False, rule=knowledge_query_gen)
+
+		for one_knowledge_query in knowledge_query_recs:
+			sel_knowledge_query = (one_knowledge_query.phrase())[1:-1]  # remove start-stop
+			# out_str = 'Knowledge extract query: '
+			# out_str = els.print_phrase(sel_knowledge_query, sel_knowledge_query, out_str, def_article, els_dict)
+			# print(out_str + '?')
+			_, personal_db_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
+													   story_db + [rules.C_phrase_rec(sel_knowledge_query)],
+													   gen_by_last=True, multi_ans=True)
+			# build a db of personal knowledge for one person. To look like story_db, strip start and end
+			personal_db = [rules.C_phrase_rec((personal_db_rec.phrase())[1:-1], personal_db_rec.time) for
+						   personal_db_rec in personal_db_recs]
+			for query_rule in query_rules:
+				_, query_personal_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
+															  personal_db + [rules.C_phrase_rec(asked_query)],
+															  gen_by_last=True, multi_ans=True)
+				if query_personal_recs:
+					for ans_rec in query_personal_recs:
+						ans_phrase = ans_rec.phrase()
+						# out_str = 'Answer: '
+						# out_str = els.output_phrase(def_article, els_dict, out_str, ans_phrase[2:-1])
+						# print(out_str)
+						ans_list += [ans_rec]
+					# end loop of application of queries to personal db
+					# end loop over knowlege db extraction queries
+	# end loop over query from one person to another
+	if ans_list:
+		latest_ans_time, latest_idx = 0, -1
+		for one_ans_idx, one_ans in enumerate(ans_list):
+			if latest_ans_time < one_ans.time:
+				latest_idx = one_ans_idx
+				latest_ans_time = one_ans.time
+		final_ans = ans_list[latest_idx]
+		final_ans_phrase_objs = [askee, 'told', asker]
+		final_ans_phrase = [[rules.rec_def_type.obj, obj] for obj in final_ans_phrase_objs]
+		# final_ans_phrase_rec = rules.C_phrase_rec(final_ans_phrase + final_ans.phrase()[2:-1], latest_ans_time)
+		final_ans_phrase_rec = final_ans_phrase + final_ans.phrase()[2:-1]
+		events_for_queue += [final_ans_phrase_rec]
+		# out_str = 'Response: '
+		# out_str = els.output_phrase(def_article, els_dict, out_str, final_ans_phrase_rec)
+		# print(out_str)
+		# infer_from_story(story_db, b_static_rules=False, story_step=final_ans_phrase_rec, step_time=latest_ans_time,
+		# 				 step_effect_rules=large_rules)
+	else:
+		print('No answer')
+
+	return events_for_queue
+
+
 def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_rules, gen_rules,
 				 blocking_rules):
 	story = []
@@ -36,97 +122,110 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 		out_str = els.output_phrase(def_article, els_dict, out_str, phrase_rec.phrase())
 		print(out_str)
 
-	story_based_rules = []
-	for story_rule in story_rules:
-		if story_rule.story_based:
-			story_based_rules.append(story_rule)
+	rule_select = lambda type, ruleset:  filter(lambda one_rule: one_rule.type == type, ruleset)
+	# event_from_none_rules = filter(lambda one_rule: one_rule.type == rules.rule_type.event_from_none, story_rules)
+	event_from_none_rules = rule_select(rules.rule_type.event_from_none, story_rules)
+	event_from_event_rules = rule_select(rules.rule_type.event_from_event, story_rules)
+	# comprehension based alternative: event_from_none_rules = [one_rule for one_rule in story_rules if one_rule.type == rules.rule_type.event_from_none]
+	block_event_rules = rule_select(rules.rule_type.block_event, blocking_rules)
+
+	total_prob = sum(one_rule.prob for one_rule in event_from_none_rules)
 
 	story_steps = []
+	event_queue = [] # queue of events in respons to other events
 	for i_story_step in range(config.c_story_len):
-		# two step instead of random.choice for debugging purposes
-		i_story_rule = random.randint(0, len(story_based_rules)-1)
-		story_rule = story_based_rules[i_story_rule]
-		# story_rule = random.choice(story_based_rules)
-		src_recs, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
-		if not recs:
-			continue
-		new_phrase = (recs[0].phrase())[2:-1]
-		out_str = 'time:' + str(i_story_step) + '. Next story step: *** '
-		out_str = els.output_phrase(def_article, els_dict, out_str, new_phrase)
-		out_str += ' **** '
-		print(out_str)
-		b_blocked = False
-		for iblock, block_rule in enumerate(blocking_rules):
-			story_with_step = story_db + [rules.C_phrase_rec(new_phrase)]
+		b_person_to_person_ask = False
+		if not event_queue:
+			# two step instead of random.choice for debugging purposes
+			rule_rand_param = random.uniform(0.0, total_prob)
+			upto = 0
+			for i_story_rule, one_rule in enumerate(event_from_none_rules):
+				if upto + one_rule.prob >= rule_rand_param:
+					break
+				upto += one_rule.prob
+			else:
+				print('Should not get here!')
+				exit()
+
+			# i_story_rule = random.randint(0, len(event_from_none_rules)-1)
+			story_rule = event_from_none_rules[i_story_rule]
+			if story_rule.name in rules.person_to_person_ask_rule_names:
+				b_person_to_person_ask = True
+
+			_, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
+			if not recs:
+				continue
+			event_phrase = (recs[0].phrase())[2:-1]
+		else:
+			event_phrase = event_queue.pop(0)
+		# story_rule = random.choice(event_from_none_rules)
+		b_blocked = True
+		for iblock, block_rule in enumerate(block_event_rules):
+			story_with_step = story_db + [rules.C_phrase_rec(event_phrase)]
 			src_recs, recs = rules.gen_from_story(els_dict, els_arr, block_rule, story_with_step, gen_by_last=True)
 			if recs:
-				b_blocked = True
 				break
+		else:
+			b_blocked = False
+
 		if b_blocked:
-			out_str = 'New step blocked by the following rule: '
-			out_str = rules.print_rule(block_rule, out_str)
-			# out_str  = els.print_phrase(block_rule, block_rule, out_str, def_article, els_dict)
-			print(out_str)
+			# out_str = 'New step blocked by the following rule: '
+			# out_str = rules.print_rule(block_rule, out_str)
+			# # out_str  = els.print_phrase(block_rule, block_rule, out_str, def_article, els_dict)
+			# print(out_str)
+			if block_rule.name == 'want_dont_give_block_rule':
+				out_str = 'selfish block on:'
+				out_str = els.output_phrase(def_article, els_dict, out_str, event_phrase)
+				print(out_str)
 			continue
 
-		def infer_from_story(story_db, b_static_rules, story_step=None, step_time=i_story_step, step_effect_rules=gen_rules):
-			b_require_last = not b_static_rules
-			for igen, gen_rule in enumerate(step_effect_rules):
-				if b_static_rules:
-					story_to_process = story_db
-				else:
-					story_to_process = story_db + [rules.C_phrase_rec(story_step, step_time)]
-				src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_to_process,
-													  gen_by_last=b_require_last, multi_ans=True)
-				if not recs:
-					continue
-				for phrase_rec in recs:
-					mod_phrase = (phrase_rec.phrase())[1:-1]
-					# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
-					out_str = ''
-					out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
-					print(out_str)
-					story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], step_time)
-			return story_db
+		out_str = 'time:' + str(i_story_step) + '. Next story step: *** '
+		out_str = els.output_phrase(def_article, els_dict, out_str, event_phrase)
+		out_str += ' **** '
+		print(out_str)
+
+		# def infer_from_story(story_db, b_static_rules=False, b_apply_results=True, story_step=None, step_time=i_story_step, step_effect_rules=gen_rules):
+		# 	b_require_last = not b_static_rules
+		# 	unapplied_results = []
+		# 	for igen, gen_rule in enumerate(step_effect_rules):
+		# 		if b_static_rules:
+		# 			story_to_process = story_db
+		# 		else:
+		# 			story_to_process = story_db + [rules.C_phrase_rec(story_step, step_time)]
+		# 		src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_to_process,
+		# 											  gen_by_last=b_require_last, multi_ans=True)
+		# 		if not recs:
+		# 			continue
+		# 		for phrase_rec in recs:
+		# 			mod_phrase = (phrase_rec.phrase())[1:-1]
+		# 			# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
+		# 			out_str = ''
+		# 			out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
+		# 			print(out_str)
+		# 			if b_apply_results:
+		# 				story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], step_time)
+		# 			else:
+		# 				unapplied_results += [mod_phrase]
+		# 	return story_db, unapplied_results
 
 
-		story_steps.append(rules.C_phrase_rec(init_phrase = new_phrase, init_time=i_story_step))
+		story_steps.append(rules.C_phrase_rec(init_phrase = event_phrase, init_time=i_story_step))
 
-		story_db = infer_from_story(story_db, b_static_rules=False, story_step=new_phrase)
+		if b_person_to_person_ask:
+			event_queue += process_p2p_event(els_sets, els_dict, els_arr, query_rules, story_db, sel_query_src=event_phrase)
+
+		story_db, _ = infer_from_story(	els_dict, els_arr, def_article, story_db, story_step=event_phrase,
+										step_time=i_story_step, step_effect_rules=gen_rules)
 		# Process the rules again to update steady state knowledge. Don't use the event itself
 		# and don't require the gen_by_last
-		story_db = infer_from_story(story_db, b_static_rules=True)
+		story_db, _ = infer_from_story(	els_dict, els_arr, def_article, story_db, b_static_rules=True,
+										step_time=i_story_step, step_effect_rules=gen_rules)
+		# find events that will happen as a result of this rule
+		_, events_to_queue =  infer_from_story(	els_dict, els_arr, def_article, story_db, b_apply_results=False,
+												story_step=event_phrase, step_effect_rules=event_from_event_rules)
+		event_queue += events_to_queue
 
-		# for igen, gen_rule in enumerate(gen_rules):
-		# 	story_with_step = story_db + [rules.C_phrase_rec(new_phrase)]
-		# 	src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_with_step,
-		# 										  gen_by_last=True, multi_ans=True)
-		# 	if not recs:
-		# 		continue
-		# 	for phrase_rec in recs:
-		# 		mod_phrase = (phrase_rec.phrase())[1:-1]
-		# 		out_str  = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
-		# 		print(out_str)
-		# 		story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], i_story_step)
-		#
-		# for igen, gen_rule in enumerate(gen_rules):
-		# 	src_recs, recs = rules.gen_from_story(els_dict, els_arr, gen_rule, story_db,
-		# 										  gen_by_last=False, multi_ans=True)
-		# 	if not recs:
-		# 		continue
-		# 	for phrase_rec in recs:
-		# 		mod_phrase = (phrase_rec.phrase())[1:-1]
-		# 		out_str = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
-		# 		print(out_str)
-		# 		story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], i_story_step)
-
-	# src_recs, recs = rules.gen_for_rule(b_gen_for_learn, query_rules[0])
-	# sel_query_src = random.choice(src_recs)
-	# out_str = 'Query: '
-	# out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
-	# print(out_str)
-	# sel_query = rules.instatiate_query(query_rules[0], sel_query_src)
-	# src_recs, recs = rules.gen_from_story(els_dict, els_arr, sel_query, story_db)
+	# end loop over story event steps times choosing random rules from event_from_none rules
 
 	print('-------- New state of story DB -----')
 	for phrase_rec in story_db:
@@ -175,81 +274,81 @@ def create_story(els_sets, els_dict, def_article, els_arr, story_rules, query_ru
 
 	# do_queries(ask_who=None, specific_db=story_db)
 
-	ask_rules = rules.init_ask_rules(els_sets, els_dict)
-	ask_blocking_rules = rules.init_ask_blocking_rules(els_sets, els_dict)
-	large_rules = rules.init_large_rules(els_sets, els_dict)
-
-	for ask_rule in ask_rules:
-		ask_gen = rules.extract_query_gen(ask_rule)
-		_, ask_head_recs = rules.gen_for_rule(b_gen_for_learn, ask_gen)
-
-		for one_query in ask_head_recs:
-			sel_query_src = (one_query.phrase())[1:-1]  # remove start-stop
-			b_blocked = False
-			for i_ask_block, ask_block_rule in enumerate(ask_blocking_rules):
-				_, ask_block_recs = rules.gen_from_story(els_dict, els_arr, ask_block_rule, [rules.C_phrase_rec(sel_query_src)], gen_by_last=True)
-				if ask_block_recs:
-					b_blocked = True
-					break
-			if b_blocked:
-				continue
-			ask_src_recs, ask_recs = rules.gen_from_story(els_dict, els_arr, ask_rule,
-														  story_db + [rules.C_phrase_rec(sel_query_src)],
-														  gen_by_last=True, multi_ans=True)
-			if ask_recs:
-				out_str = 'Query: '
-				out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
-				print(out_str + '?')
-				ans_list = []
-				asker = sel_query_src[0][1]
-				askee = sel_query_src[2][1]
-				asked_query = sel_query_src[3:]
-				knowledge_query_rules = rules.init_knowledge_query_rules(els_sets, els_dict, askee)
-
-				for query_rule in knowledge_query_rules:
-					knowledge_query_gen = rules.extract_query_gen(query_rule)
-					_, knowledge_query_recs = rules.gen_for_rule(b_gen_for_learn, knowledge_query_gen)
-
-					for one_knowledge_query in knowledge_query_recs:
-						sel_knowledge_query = (one_knowledge_query.phrase())[1:-1]  # remove start-stop
-						# out_str = 'Knowledge extract query: '
-						# out_str = els.print_phrase(sel_knowledge_query, sel_knowledge_query, out_str, def_article, els_dict)
-						# print(out_str + '?')
-						_, personal_db_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
-																	  story_db + [rules.C_phrase_rec(sel_knowledge_query)],
-																	  gen_by_last=True, multi_ans=True)
-						# build a db of personal knowledge for one person. To look like story_db, strip start and end
-						personal_db = [rules.C_phrase_rec((personal_db_rec.phrase())[1:-1], personal_db_rec.time) for personal_db_rec in personal_db_recs]
-						for query_rule in query_rules:
-							_, query_personal_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
-																		  personal_db + [rules.C_phrase_rec(asked_query)],
-																		  gen_by_last=True, multi_ans=True)
-							if query_personal_recs:
-								for ans_rec in query_personal_recs:
-									ans_phrase = ans_rec.phrase()
-									# out_str = 'Answer: '
-									# out_str = els.output_phrase(def_article, els_dict, out_str, ans_phrase[2:-1])
-									# print(out_str)
-									ans_list += [ans_rec]
-						# end loop of application of queries to personal db
-					# end loop over knowlege db extraction queries
-				# end loop over query from one person to another
-				if ans_list:
-					latest_ans_time, latest_idx = 0, -1
-					for one_ans_idx, one_ans in enumerate(ans_list):
-						if latest_ans_time < one_ans.time:
-							latest_idx = one_ans_idx
-							latest_ans_time = one_ans.time
-					final_ans = ans_list[latest_idx]
-					final_ans_phrase_objs = [askee, 'told', asker]
-					final_ans_phrase = [[rules.rec_def_type.obj, obj] for obj in final_ans_phrase_objs ]
-					# final_ans_phrase_rec = rules.C_phrase_rec(final_ans_phrase + final_ans.phrase()[2:-1], latest_ans_time)
-					final_ans_phrase_rec = final_ans_phrase + final_ans.phrase()[2:-1]
-					out_str = 'Response: '
-					out_str = els.output_phrase(def_article, els_dict, out_str, final_ans_phrase_rec)
-					print(out_str)
-					infer_from_story(story_db, b_static_rules=False, story_step=final_ans_phrase_rec, step_time=latest_ans_time, step_effect_rules=large_rules)
-				else:
-					print('No answer')
+	# ask_rules = rules.init_ask_rules(els_sets, els_dict)
+	# ask_blocking_rules = rules.init_ask_blocking_rules(els_sets, els_dict)
+	# large_rules = rules.init_large_rules(els_sets, els_dict)
+	#
+	# for ask_rule in ask_rules:
+	# 	ask_gen = rules.extract_query_gen(ask_rule)
+	# 	_, ask_head_recs = rules.gen_for_rule(b_gen_for_learn, ask_gen)
+	#
+	# 	for one_query in ask_head_recs:
+	# 		sel_query_src = (one_query.phrase())[1:-1]  # remove start-stop
+	# 		b_blocked = False
+	# 		for i_ask_block, ask_block_rule in enumerate(ask_blocking_rules):
+	# 			_, ask_block_recs = rules.gen_from_story(els_dict, els_arr, ask_block_rule, [rules.C_phrase_rec(sel_query_src)], gen_by_last=True)
+	# 			if ask_block_recs:
+	# 				b_blocked = True
+	# 				break
+	# 		if b_blocked:
+	# 			continue
+	# 		ask_src_recs, ask_recs = rules.gen_from_story(els_dict, els_arr, ask_rule,
+	# 													  story_db + [rules.C_phrase_rec(sel_query_src)],
+	# 													  gen_by_last=True, multi_ans=True)
+	# 		if ask_recs:
+	# 			out_str = 'Query: '
+	# 			out_str = els.print_phrase(sel_query_src, sel_query_src, out_str, def_article, els_dict)
+	# 			print(out_str + '?')
+	# 			ans_list = []
+	# 			asker = sel_query_src[0][1]
+	# 			askee = sel_query_src[2][1]
+	# 			asked_query = sel_query_src[3:]
+	# 			knowledge_query_rules = rules.init_knowledge_query_rules(els_sets, els_dict, askee)
+	#
+	# 			for query_rule in knowledge_query_rules:
+	# 				knowledge_query_gen = rules.extract_query_gen(query_rule)
+	# 				_, knowledge_query_recs = rules.gen_for_rule(b_gen_for_learn, knowledge_query_gen)
+	#
+	# 				for one_knowledge_query in knowledge_query_recs:
+	# 					sel_knowledge_query = (one_knowledge_query.phrase())[1:-1]  # remove start-stop
+	# 					# out_str = 'Knowledge extract query: '
+	# 					# out_str = els.print_phrase(sel_knowledge_query, sel_knowledge_query, out_str, def_article, els_dict)
+	# 					# print(out_str + '?')
+	# 					_, personal_db_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
+	# 																  story_db + [rules.C_phrase_rec(sel_knowledge_query)],
+	# 																  gen_by_last=True, multi_ans=True)
+	# 					# build a db of personal knowledge for one person. To look like story_db, strip start and end
+	# 					personal_db = [rules.C_phrase_rec((personal_db_rec.phrase())[1:-1], personal_db_rec.time) for personal_db_rec in personal_db_recs]
+	# 					for query_rule in query_rules:
+	# 						_, query_personal_recs = rules.gen_from_story(els_dict, els_arr, query_rule,
+	# 																	  personal_db + [rules.C_phrase_rec(asked_query)],
+	# 																	  gen_by_last=True, multi_ans=True)
+	# 						if query_personal_recs:
+	# 							for ans_rec in query_personal_recs:
+	# 								ans_phrase = ans_rec.phrase()
+	# 								# out_str = 'Answer: '
+	# 								# out_str = els.output_phrase(def_article, els_dict, out_str, ans_phrase[2:-1])
+	# 								# print(out_str)
+	# 								ans_list += [ans_rec]
+	# 					# end loop of application of queries to personal db
+	# 				# end loop over knowlege db extraction queries
+	# 			# end loop over query from one person to another
+	# 			if ans_list:
+	# 				latest_ans_time, latest_idx = 0, -1
+	# 				for one_ans_idx, one_ans in enumerate(ans_list):
+	# 					if latest_ans_time < one_ans.time:
+	# 						latest_idx = one_ans_idx
+	# 						latest_ans_time = one_ans.time
+	# 				final_ans = ans_list[latest_idx]
+	# 				final_ans_phrase_objs = [askee, 'told', asker]
+	# 				final_ans_phrase = [[rules.rec_def_type.obj, obj] for obj in final_ans_phrase_objs ]
+	# 				# final_ans_phrase_rec = rules.C_phrase_rec(final_ans_phrase + final_ans.phrase()[2:-1], latest_ans_time)
+	# 				final_ans_phrase_rec = final_ans_phrase + final_ans.phrase()[2:-1]
+	# 				out_str = 'Response: '
+	# 				out_str = els.output_phrase(def_article, els_dict, out_str, final_ans_phrase_rec)
+	# 				print(out_str)
+	# 				infer_from_story(story_db, b_static_rules=False, story_step=final_ans_phrase_rec, step_time=latest_ans_time, step_effect_rules=large_rules)
+	# 			else:
+	# 				print('No answer')
 
 	return story

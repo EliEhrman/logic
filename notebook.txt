@@ -45,4 +45,26 @@ differnt types that use something like the mostly defunct 'story_based, b_db, b_
 must pick out the kind of rules it needs and advance them.
 
 Next, I will add motivations. The current idea is:
-(1) A steady state
+(1) A steady state of wanting
+(2) If you want x and you know that x is located in y you go to y
+(3) If you want x and you are located with x and x is free pick up x
+If you want x and you are located with x and z has x ask z for x
+
+Thursday 2nd Nov
+
+Rearrangin rules. Removed defunct b_db and b_story that weren't being used anyway. Added rule_type that falls into a number of categories:
+story_start - used to initialize where people and objects are and what objects people want
+event_from_none - used to create a story step (event) based on other states (rather that events responding to events)
+state_from_state - update states based on other states. For example if Jon is in UK and glass is in UK then Jon knows glass is in UK
+state_from_event - update states as a result of an event. Jon has the purse and Jon went to France, so create a story phrase that the purse is in France (remove old)
+event_from_event - used to create a story step (event) based on another event (John gives if John is asked)
+block_event - used to block events. So a rule that says that Jon gave to Jon is blocked
+knowledge_query query - used in response to queries to first create a personal db of the knowledge of a particular person
+
+used the opportunity to make rule indentations consistent
+
+we need to replace var_id numbers by symbolic constants. A next step could be to translate this to he current form. It's
+    just very difficult to write rles without bugs using the current form
+
+While I'm at it, do the same for referring to clauses within the AND. It will be useful for time stamps
+

@@ -34,16 +34,17 @@ c_key_num_ks = 5
 c_max_vars = 15
 c_key_dim = 15
 c_max_phrases_per_rule = 25
-c_story_len = 25
+c_story_len = 125
 c_ovec_len = 200
+c_story_only = True
 
 # logger = None
 
-query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that']
+query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that', 'asked', 'for']
 person_place_action = ['is located in', 'went to']
 object_place_action = ['is located in', 'is free in' ]
 person_object_dynamic_action = ['picked up', 'put down']
-person_object_static_action = ['has']
+person_object_static_action = ['has', 'wants']
 person_object_dynamic_3_action = ['gave to']
 knowledge_action = ['knows that']
 

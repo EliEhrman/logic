@@ -20,6 +20,8 @@ df_type = Enum('df_type', 'bool var obj varobj varmod mod conn')
 dm_type = Enum('dm_type', 'Insert Remove Modify')
 conn_type = Enum('conn_type', 'single AND OR start end Insert Remove Modify')
 rec_def_type = Enum('rec_def_type', 'obj conn var error')
+# see notebook on 2nd Nov
+rule_type = Enum('rule_type', 'story_start event_from_none state_from_state state_from_event event_from_event block_event knowledge_query query')
 
 # nt_rule_fld is the rule for one field (normally a word in the phrase). Consists of:
 # els_set. A definition of a elements set. Itself consisting of a set of el_ids, a size and a set of the els
@@ -31,8 +33,8 @@ rec_def_type = Enum('rec_def_type', 'obj conn var error')
 # Again, only applies when applying a mod to the story db
 nt_rule_fld = collections.namedtuple('nt_rule_fld', 'els_set, df_type, sel_el, var_id, rand_sel, replace_by_next')
 nt_rule_fld.__new__.__defaults__ = (None, None, None, False, False)
-nt_rule_parts = collections.namedtuple('nt_rule_parts', 'gens, preconds, story_based, b_db, b_story')
-nt_rule_parts.__new__.__defaults__ = (None, False, True, False)
+nt_rule = collections.namedtuple('nt_rule', 'gens, preconds, story_based, type, name, prob')
+nt_rule.__new__.__defaults__ = (None, False, rule_type.state_from_event, 'unnamed', 1.0)
 nt_tree_junct = collections.namedtuple('nt_tree_junct', 'logic single branches')
 nt_tree_junct.__new__.__defaults__ = (conn_type.single, [], [])
 nt_phrase_rec = collections.namedtuple('nt_phrase_rec', 'time, phrase')
@@ -57,6 +59,7 @@ class C_phrase_rec(object):
 	def phrase(self):
 		return self.__phrase
 
+person_to_person_ask_rule_names = []
 
 # rec_def = collections.namedtuple('rec_def', 'obj, conn')
 
@@ -64,20 +67,47 @@ def init_blocking_rules(els_sets, els_dict):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	blocking_rules = []
 
-	gave_to_block_rule = nt_rule_parts(
+	# if gave_to_block_rule.__class__ == nt_rule_parts:
+	# 	print(str(gave_to_block_rule.__class__))
+
+	gave_to_block_rule = nt_rule(
 		preconds = nt_tree_junct(single = [
 			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='gave to'),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 			nt_rule_fld(els_set=object_set, df_type=df_type.obj)	]),
 		gens = nt_tree_junct(single=[
-			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove)]))
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove)]),
+		type=rule_type.block_event, name='gave_to_block_rule'
+	)
 
-	# if gave_to_block_rule.__class__ == nt_rule_parts:
-	# 	print(str(gave_to_block_rule.__class__))
 	blocking_rules.append(gave_to_block_rule)
 
-	went_to_block_rule = nt_rule_parts(
+	want_dont_give_block_rule = nt_rule(
+		# preconds = nt_tree_junct(single = [
+		# 	nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+		# 	nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='gave to'),
+		# 	nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+		# 	nt_rule_fld(els_set=object_set, df_type=df_type.obj)	]),
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='gave to'),
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj),
+			]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='wants'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove)]),
+		type=rule_type.block_event, name='want_dont_give_block_rule'
+	)
+
+	blocking_rules.append(want_dont_give_block_rule)
+
+	went_to_block_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
@@ -88,9 +118,28 @@ def init_blocking_rules(els_sets, els_dict):
 				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
 				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
 		gens = nt_tree_junct(single=[
-			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove)]))
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove)]),
+		type = rule_type.block_event, name = 'went_to_block_rule'
+	)
 
 	blocking_rules.append(went_to_block_rule)
+
+	ask_self_block_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=utils.combine_sets([name_set, object_set, place_set]), df_type=df_type.obj)
+			]),
+		]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
+			]),
+		story_based = True, type=rule_type.block_event, name = 'ask_self_block_rule'
+	)
+	blocking_rules.append(ask_self_block_rule)
 
 	return blocking_rules
 
@@ -98,7 +147,7 @@ def init_knowledge_query_rules(els_sets, els_dict, name):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	query_rules = []
 
-	where_know_3_rule = nt_rule_parts(
+	where_know_3_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what does'),
@@ -117,7 +166,7 @@ def init_knowledge_query_rules(els_sets, els_dict, name):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7)]),
-						story_based = True, b_db=False, b_story=True
+		story_based = True, type=rule_type.knowledge_query, name='where_know_3_rule'
 	)
 	query_rules.append(where_know_3_rule)
 
@@ -127,57 +176,38 @@ def init_ask_rules(els_sets, els_dict):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	query_rules = []
 
-	ask_where_object_rule = nt_rule_parts(
-		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-			nt_tree_junct(single=[
-				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
-				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
-				nt_rule_fld(els_set=object_set, df_type=df_type.obj)
-			]),
-			nt_tree_junct(single=[
-				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-			nt_tree_junct(single=[
-				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7)]),
-		]),
-		gens = nt_tree_junct(single=[
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
-			]),
-						story_based = True, b_db=False, b_story=True
-	)
-	query_rules.append(ask_where_object_rule)
+	# ask_where_object_rule = nt_rule_parts(
+	# 	preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+	# 		nt_tree_junct(single=[
+	# 			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+	# 			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='wants'),
+	# 			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+	# 		]),
+	# 		nt_tree_junct(single=[
+	# 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+	# 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+	# 			nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+	# 		nt_tree_junct(single=[
+	# 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+	# 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+	# 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7)]),
+	# 	]),
+	# 	gens = nt_tree_junct(single=[
+	# 		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+	# 		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
+	# 		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+	# 		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
+	# 		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
+	# 		]),
+	# 	story_based = True, type=rule_type.event_from_none, name='ask_where_object_rule'
+	# )
+	# query_rules.append(ask_where_object_rule)
 
 	return query_rules
 
 def init_ask_blocking_rules(els_sets, els_dict):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	blocking_rules = []
-
-	ask_self_block_rule = nt_rule_parts(
-		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-			nt_tree_junct(single=[
-				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
-				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-				nt_rule_fld(els_set=action_set, df_type=df_type.obj),
-				nt_rule_fld(els_set=utils.combine_sets([name_set, object_set, place_set]), df_type=df_type.obj)
-			]),
-		]),
-		gens = nt_tree_junct(single=[
-			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
-			]),
-							story_based = True, b_db=False, b_story=True
-	)
-	blocking_rules.append(ask_self_block_rule)
 
 	return blocking_rules
 
@@ -186,157 +216,294 @@ def init_query_rules(els_sets, els_dict):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	query_rules = []
 
-	where_object_rule = nt_rule_parts(
-			preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
-			gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
-			story_based = True, b_db=False, b_story=True
+	where_object_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
+		story_based = True, type=rule_type.query, name='where_object_rule'
 	)
 	query_rules.append(where_object_rule)
 	# return query_rules
 
-	where_person_rule = nt_rule_parts(
-			preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj)]),
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='is located in'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
-			gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='is in'),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
-			story_based = True, b_db=False, b_story=True
+	where_person_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='is in'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
+		story_based = True, type = rule_type.query, name = 'where_person_rule'
 	)
 	query_rules.append(where_person_rule)
 
-	what_person_have_rule = nt_rule_parts(
-			preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what does'),
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='have')]),
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='has'),
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
-			gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
-			story_based = True, b_db=False, b_story=True
+	what_person_have_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what does'),
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='have')]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='has'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+		story_based = True, type = rule_type.query, name = 'what_person_have_rule'
 	)
 	query_rules.append(what_person_have_rule)
 
-	what_person_rule = nt_rule_parts(
-			preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what has'),
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=utils.set_from_l(config.person_object_dynamic_action, els_dict), df_type=df_type.obj)]),
-				nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
-			gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
-			story_based = True, b_db=False, b_story=True
+	what_person_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what has'),
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=utils.set_from_l(config.person_object_dynamic_action, els_dict), df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+		story_based=True, type=rule_type.query, name='what_person_rule'
 	)
 	query_rules.append(what_person_rule)
 
-	what_place_rule = nt_rule_parts(preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+	what_place_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what'),
-		nt_rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-		# nt_rule_fld(els_set=utils.combine_sets([place_set, object_set]), df_type=df_type.obj)]),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what'),
+				nt_rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
-									gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
-									story_based = True, b_db=False, b_story=True
-									)
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+		story_based=True, type=rule_type.query, name='what_place_rule'
+	)
 	query_rules.append(what_place_rule)
 
-	who_obj_rule = nt_rule_parts(preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+	who_obj_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
-		nt_rule_fld(els_set=utils.set_from_l(config.person_object_action, els_dict), df_type=df_type.obj),
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
+				nt_rule_fld(els_set=utils.set_from_l(config.person_object_action, els_dict), df_type=df_type.obj),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
-								 gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
-								 story_based = True, b_db=False, b_story=True
-								 )
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+		story_based=True, type=rule_type.query, name='who_obj_rule'
+	)
 	query_rules.append(who_obj_rule)
 
-	who_place_rule = nt_rule_parts(preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+	who_place_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
-		nt_rule_fld(els_set=utils.set_from_l(config.person_place_action, els_dict), df_type=df_type.obj),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-		# nt_rule_fld(els_set=utils.combine_sets([place_set, object_set]), df_type=df_type.obj)]),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='who'),
+				nt_rule_fld(els_set=utils.set_from_l(config.person_place_action, els_dict), df_type=df_type.obj),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
-								   gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
-								   story_based = True, b_db=False, b_story=True
-								   )
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+		story_based=True, type=rule_type.query, name='who_place_rule'
+	)
 	query_rules.append(who_place_rule)
 
 	return query_rules
 
-def init_story_rules(els_sets):
+def init_story_rules(els_sets, els_dict):
+	global person_to_person_ask_rule_names
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	story_rules = []
-	objects_start = nt_rule_parts(	gens = nt_tree_junct(single = [
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]))
+	objects_start = nt_rule(
+		gens = nt_tree_junct(single = [
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
+		story_based=False, type=rule_type.story_start, name='objects_start'
+	)
 	story_rules.append(objects_start)
 
-	people_start = nt_rule_parts(	gens = nt_tree_junct(single = [
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]))
+	people_start = nt_rule(
+		gens = nt_tree_junct(single = [
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
+		story_based=False, type=rule_type.story_start, name='people_start'
+	)
 	story_rules.append(people_start)
 
-	gave_rule = nt_rule_parts(
+	people_want_start = nt_rule(
+		gens = nt_tree_junct(single = [
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='wants'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=True)]),
+		story_based=False, type=rule_type.story_start, name='people_want_start'
+	)
+	story_rules.append(people_want_start)
+
+	ask_where_object_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='wants'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj),
+			]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+		]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='where is'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+			]),
+		story_based = True, type=rule_type.event_from_none, name='ask_where_object_rule', prob=2.0
+	)
+	person_to_person_ask_rule_names += ['ask_where_object_rule']
+	story_rules.append(ask_where_object_rule)
+
+	went_if_want_rule =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND,
+			branches=[
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='knows that'),
+					nt_rule_fld(els_set=object_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=utils.set_from_l(config.object_place_action, els_dict), df_type=df_type.obj),
+					nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='wants'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+			]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
+								]),
+		story_based = True, type=rule_type.event_from_none, name='went_if_want_rule', prob=3.0
+	)
+	story_rules.append(went_if_want_rule)
+
+	ask_to_give_rule =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND,
+			branches=[
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+					nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='wants'),
+					nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+					nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='has'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)]),
+			]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='for'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)
+								]),
+		story_based = True, type=rule_type.event_from_none, name='ask_to_give_rule'
+	)
+	story_rules.append(ask_to_give_rule)
+
+	give_for_ask_rule =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND,
+			branches=[
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+					nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+					nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='has'),
+					nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+				nt_tree_junct(single=[
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+					nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='asked'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+					nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='for'),
+					nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)]),
+			]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='gave to'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)
+								]),
+		story_based = True, type=rule_type.event_from_event, name='give_for_ask_rule'
+	)
+	story_rules.append(give_for_ask_rule)
+
+
+	gave_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
@@ -357,79 +524,74 @@ def init_story_rules(els_sets):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)
 		]),
-		story_based = True, b_db=False, b_story=True
+		story_based = True, type=rule_type.event_from_none, name='gave_rule'
 	)
 	story_rules.append(gave_rule)
 
-	pickup_rule = nt_rule_parts(preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+	pickup_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
-								gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
-								story_based = True, b_db=False, b_story=True
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
+		story_based=True, type=rule_type.event_from_none, name='pickup_rule'
 								)
 	story_rules.append(pickup_rule)
 
-	putdown_rule = nt_rule_parts(preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+	putdown_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-		nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
-								 gens = nt_tree_junct(single=[
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
-								 story_based = True, b_db=False, b_story=True
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
+		story_based=True, type=rule_type.event_from_none, name='putdown_rule', prob=0.05
 								 )
 	story_rules.append(putdown_rule)
 
-	went_rule = nt_rule_parts(
-			preconds=nt_tree_junct(single=[
-		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-			gens = nt_tree_junct(single = [
-		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-		nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
-			story_based = True, b_db = False, b_story = True
+	went_rule = nt_rule(
+		preconds=nt_tree_junct(single=[
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+			nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+		gens = nt_tree_junct(single = [
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
+		story_based=True, type=rule_type.event_from_none, name='went_rule'
 	)
 	story_rules.append(went_rule)
 
 	return story_rules
 
-def instatiate_query(query_rule, rec):
-	return nt_rule_parts(preconds=nt_tree_junct(logic=conn_type.AND, branches=[
-		nt_tree_junct(single=[
-			query_rule.preconds.branches[0].single[0],
-			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[3][1]),
-			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[4][1])
-		]),
-		nt_tree_junct(single=query_rule.preconds.branches[1])]),
-						 gens=query_rule.gens)
-
-def extract_query_gen(query_rule):
-	return nt_rule_parts(gens = query_rule.preconds.branches[0])
-
 def init_large_rules(els_sets, els_dict):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
 	gen_rules = []
-	gen_rule_knows_when_told =	nt_rule_parts(
+	return gen_rules
+
+def init_rules(els_sets, els_dict):
+	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+	gen_rules = []
+
+	gen_rule_knows_when_told =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -455,26 +617,28 @@ def init_large_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)
-								]))
+		]),
+		type=rule_type.state_from_event, name='gen_rule_knows_when_told'
+	)
 	gen_rules.append(gen_rule_knows_when_told)
-	return gen_rules
 
-def init_rules(els_sets, els_dict):
-	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
-	gen_rules = []
-	gen_rule_picked_up =	nt_rule_parts(	preconds = nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
-						nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-								gens= nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						 ]))
+
+	gen_rule_picked_up =	nt_rule(
+		preconds = nt_tree_junct(single=[
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+		gens= nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_picked_up'
+	)
 	gen_rules.append(gen_rule_picked_up)
 
-	gen_rule_went_from =	nt_rule_parts(
+	gen_rule_gave_away =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
@@ -490,74 +654,86 @@ def init_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-						 ]))
-	gen_rules.append(gen_rule_went_from)
+		]),
+		type=rule_type.state_from_event, name='gen_rule_gave_away'
+	)
+	gen_rules.append(gen_rule_gave_away)
 
 
-	gen_rule_gave_to =	nt_rule_parts(	preconds = nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='gave to'),
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-								gens= nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
-						 ]))
+	gen_rule_gave_to =	nt_rule(
+		preconds = nt_tree_junct(single=[
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='gave to'),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+		gens= nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_gave_to'
+	)
 	gen_rules.append(gen_rule_gave_to)
 
-	gen_rule_picked_up_free =	nt_rule_parts(
-								preconds = nt_tree_junct(logic=conn_type.AND, branches=[
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
-						nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
-								gens=nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in', replace_by_next=True),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
-						 ]))
+	gen_rule_picked_up_free =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in', replace_by_next=True),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_picked_up_free'
+	)
 	gen_rules.append(gen_rule_picked_up_free)
 
-	gen_rule_put_down =	nt_rule_parts(	preconds = nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-						nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-								gens= nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						 ]))
+	gen_rule_put_down =	nt_rule(
+		preconds = nt_tree_junct(single=[
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+		gens= nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_put_down'
+	)
 	gen_rules.append(gen_rule_put_down)
 
-	gen_rule_put_down_free =	nt_rule_parts(
-								preconds = nt_tree_junct(logic=conn_type.AND, branches=[
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-						nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
-								gens=nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in', replace_by_next=True),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
-						 ]))
+	gen_rule_put_down_free =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+		gens=nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in', replace_by_next=True),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_put_down_free'
+	)
 	gen_rules.append(gen_rule_put_down_free)
 
-	gen_rule_knows_dynamic_action =	nt_rule_parts(
+	gen_rule_knows_dynamic_action =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -580,12 +756,14 @@ def init_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)
-								]))
+		]),
+		type=rule_type.state_from_event, name='gen_rule_knows_dynamic_action'
+	)
 	gen_rules.append(gen_rule_knows_dynamic_action)
 
 
 	# make sure this rule is before the place modification of 'went to'
-	gen_rule_knows_went_from =	nt_rule_parts(
+	gen_rule_knows_went_from =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -608,10 +786,12 @@ def init_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
 			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)
-								]))
+		]),
+		type=rule_type.state_from_event, name='gen_rule_knows_went_from'
+	)
 	gen_rules.append(gen_rule_knows_went_from)
 
-	gen_rule_knows_went_to =	nt_rule_parts(
+	gen_rule_knows_went_to =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -630,7 +810,9 @@ def init_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
 			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='went to'),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)
-								]))
+								]),
+		type=rule_type.state_from_event, name='gen_rule_knows_went_to'
+	)
 	gen_rules.append(gen_rule_knows_went_to)
 
 	# for now, the order matters. The first rule removes the located in and leaves no located in
@@ -639,60 +821,67 @@ def init_rules(els_sets, els_dict):
 	# DOES NOT match any story db phrase or a specific disagreement between two vars (so you don't
 	# remove a previously inserted 'is located in'
 	print('replace the following with a modify!')
-	gen_rule_went_from =	nt_rule_parts(
-								preconds = nt_tree_junct(logic=conn_type.AND, branches=[
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
-								gens=nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						 ]))
+	gen_rule_went_from =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+		gens=nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_went_from'
+	)
 	gen_rules.append(gen_rule_went_from)
 
-	gen_rule_went =	nt_rule_parts(	preconds = nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-								gens= nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						 ]))
+	gen_rule_went =	nt_rule(
+		preconds = nt_tree_junct(single=[
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+			nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+		gens= nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_went'
+	)
 	gen_rules.append(gen_rule_went)
 
-	gen_rule_has_and_went =	nt_rule_parts(
-								preconds = nt_tree_junct(logic=conn_type.AND, branches=[
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-						nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-									nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-						nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
-								gens=nt_tree_junct(single=[
-						nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-						nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5, replace_by_next=True),
-						nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8),
-								]))
+	gen_rule_has_and_went =	nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+		gens=nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5, replace_by_next=True),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8),
+		]),
+		type=rule_type.state_from_event, name='gen_rule_has_and_went'
+	)
 	gen_rules.append(gen_rule_has_and_went)
 
-	gen_rule_knows_has =	nt_rule_parts(
+	gen_rule_knows_has =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -715,10 +904,12 @@ def init_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=8)
-								]))
+		]),
+		type=rule_type.state_from_event, name='gen_rule_knows_has'
+	)
 	gen_rules.append(gen_rule_knows_has)
 
-	gen_rule_knows_location =	nt_rule_parts(
+	gen_rule_knows_location =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
 			branches=[
 				nt_tree_junct(single=[
@@ -737,14 +928,30 @@ def init_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)
-								]))
+		]),
+		type=rule_type.state_from_event, name='gen_rule_knows_location'
+	)
 	gen_rules.append(gen_rule_knows_location)
 
 
 	# print gen_rules[1].preconds[0].els_set
 	# print gen_rule_picked_up.preconds[0].els_set[2]
 	return gen_rules
-	# end function init_story_rules
+	# end function init_rules
+
+def instatiate_query(query_rule, rec):
+	return nt_rule(preconds=nt_tree_junct(logic=conn_type.AND, branches=[
+		nt_tree_junct(single=[
+			query_rule.preconds.branches[0].single[0],
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[3][1]),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=rec[4][1])
+		]),
+		nt_tree_junct(single=query_rule.preconds.branches[1])]),
+				   gens=query_rule.gens)
+
+def extract_query_gen(query_rule):
+	return nt_rule(gens = query_rule.preconds.branches[0])
+
 
 """
 So far we have three functions
@@ -1077,7 +1284,10 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=
 									if phrase[field_id][1] in els_set[2]:
 										new_cands.append(iphrase)
 						elif df_type == df_type.var:
-							var_phrase, var_field_id = vars_dict[var_id]
+							try:
+								var_phrase, var_field_id = vars_dict[var_id]
+							except:
+								print('debug this')
 							if var_phrase >= len(hit):
 								req = phrase[var_field_id][1]
 							else:
@@ -1170,7 +1380,7 @@ def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=
 					time_for_rec = hit_time
 			new_conds = nt_tree_junct(branches=branches, logic=conn_type.AND)
 
-		new_rule = nt_rule_parts(preconds=new_conds, gens=rule.gens)
+		new_rule = nt_rule(preconds=new_conds, gens=rule.gens)
 		src_recs, recs = gen_for_rule(b_gen_for_learn=False, rule=new_rule, time_stamp=time_for_rec)
 		ret_src_recs.extend(src_recs)
 		ret_recs.extend(recs)

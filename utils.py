@@ -2,6 +2,7 @@ from time import gmtime, strftime
 import sys
 import logging
 import collections
+import random
 
 ulogger = None
 
@@ -40,3 +41,13 @@ nt_el_sets = collections.namedtuple('nt_el_sets', 'names, objects, places, actio
 def unpack_els_sets(els_sets):
 	return els_sets.names, els_sets.objects, els_sets.places, els_sets.actions
 
+# to be used for choosing for prioritizing some rules over others
+def weighted_choice(choices):
+   total = sum(w for c, w in choices)
+   r = random.uniform(0, total)
+   upto = 0
+   for c, w in choices:
+      if upto + w >= r:
+         return c
+      upto += w
+   assert False, "Shouldn't get here"
