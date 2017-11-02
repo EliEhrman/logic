@@ -68,3 +68,13 @@ we need to replace var_id numbers by symbolic constants. A next step could be to
 
 While I'm at it, do the same for referring to clauses within the AND. It will be useful for time stamps
 
+Added a probability for event_from_none rules so that we can prioiritize debugging or events that are caused by wants
+
+Added a probability for state_from_event so that some rules don't automatically run after an event (e.g. like)
+
+The are only two like states: likes and nothing.
+Giving something to somebody that they want is definately gonna cause a like
+Telling somebody something, which can only come after a question might get a like
+
+Committing with the label:
+Added likes and instory queries

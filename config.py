@@ -34,7 +34,7 @@ c_key_num_ks = 5
 c_max_vars = 15
 c_key_dim = 15
 c_max_phrases_per_rule = 25
-c_story_len = 125
+c_story_len = 350
 c_ovec_len = 200
 c_story_only = True
 
@@ -45,6 +45,7 @@ person_place_action = ['is located in', 'went to']
 object_place_action = ['is located in', 'is free in' ]
 person_object_dynamic_action = ['picked up', 'put down']
 person_object_static_action = ['has', 'wants']
+person_person_static_action = ['likes']
 person_object_dynamic_3_action = ['gave to']
 knowledge_action = ['knows that']
 
@@ -52,7 +53,7 @@ uniquify = lambda llist: list(set(llist))
 
 person_object_action = uniquify(person_object_dynamic_action + person_object_static_action)
 actions = uniquify(query_action + person_place_action + object_place_action
-				   + person_object_action + person_object_dynamic_3_action
+				   + person_object_action + person_person_static_action + person_object_dynamic_3_action
 				   + knowledge_action)
 # actions = ['picked up', 'put down', 'has', 'went to', 'is located in', 'is free in', 'who']
 
