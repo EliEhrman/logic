@@ -59,7 +59,8 @@ state_from_state - update states based on other states. For example if Jon is in
 state_from_event - update states as a result of an event. Jon has the purse and Jon went to France, so create a story phrase that the purse is in France (remove old)
 event_from_event - used to create a story step (event) based on another event (John gives if John is asked)
 block_event - used to block events. So a rule that says that Jon gave to Jon is blocked
-knowledge_query query - used in response to queries to first create a personal db of the knowledge of a particular person
+knowledge_query  - used in response to queries to first create a personal db of the knowledge of a particular person
+query - used to test any knowledge base
 
 used the opportunity to make rule indentations consistent
 

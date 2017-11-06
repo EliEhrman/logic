@@ -62,10 +62,39 @@ class C_phrase_rec(object):
 person_to_person_ask_rule_names = []
 
 # rec_def = collections.namedtuple('rec_def', 'obj, conn')
-
-def init_blocking_rules(els_sets, els_dict):
+def init_knowledge_query_rules(els_sets, els_dict, name):
 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
-	blocking_rules = []
+	all_rules = []
+
+	where_know_3_rule = nt_rule(
+		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what does'),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='know')
+			]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
+				nt_rule_fld(els_set=utils.set_from_l(config.knowledge_action, els_dict), df_type=df_type.obj),
+				nt_rule_fld(els_set=utils.combine_sets([name_set, object_set]), df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=utils.combine_sets([name_set, object_set, place_set]), df_type=df_type.obj),
+			])
+		]),
+		gens = nt_tree_junct(single=[
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6),
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7)]),
+		story_based = True, type=rule_type.knowledge_query, name='where_know_3_rule'
+	)
+	all_rules.append(where_know_3_rule)
+
+	return all_rules
+
+def init_all_rules(els_sets, els_dict):
+	global person_to_person_ask_rule_names
+	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+	all_rules = []
 
 	# if gave_to_block_rule.__class__ == nt_rule_parts:
 	# 	print(str(gave_to_block_rule.__class__))
@@ -81,7 +110,7 @@ def init_blocking_rules(els_sets, els_dict):
 		type=rule_type.block_event, name='gave_to_block_rule'
 	)
 
-	blocking_rules.append(gave_to_block_rule)
+	all_rules.append(gave_to_block_rule)
 
 	want_dont_give_block_rule = nt_rule(
 		# preconds = nt_tree_junct(single = [
@@ -105,7 +134,7 @@ def init_blocking_rules(els_sets, els_dict):
 		type=rule_type.block_event, name='want_dont_give_block_rule'
 	)
 
-	blocking_rules.append(want_dont_give_block_rule)
+	all_rules.append(want_dont_give_block_rule)
 
 	went_to_block_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -122,7 +151,7 @@ def init_blocking_rules(els_sets, els_dict):
 		type = rule_type.block_event, name = 'went_to_block_rule'
 	)
 
-	blocking_rules.append(went_to_block_rule)
+	all_rules.append(went_to_block_rule)
 
 	ask_self_block_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -139,42 +168,14 @@ def init_blocking_rules(els_sets, els_dict):
 			]),
 		story_based = True, type=rule_type.block_event, name = 'ask_self_block_rule'
 	)
-	blocking_rules.append(ask_self_block_rule)
+	all_rules.append(ask_self_block_rule)
 
-	return blocking_rules
+	# return all_rules
 
-def init_knowledge_query_rules(els_sets, els_dict, name):
-	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
-	query_rules = []
-
-	where_know_3_rule = nt_rule(
-		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
-			nt_tree_junct(single=[
-				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='what does'),
-				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
-				nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el='know')
-			]),
-			nt_tree_junct(single=[
-				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=1),
-				nt_rule_fld(els_set=utils.set_from_l(config.knowledge_action, els_dict), df_type=df_type.obj),
-				nt_rule_fld(els_set=utils.combine_sets([name_set, object_set]), df_type=df_type.obj),
-				nt_rule_fld(els_set=action_set, df_type=df_type.obj),
-				nt_rule_fld(els_set=utils.combine_sets([name_set, object_set, place_set]), df_type=df_type.obj),
-			])
-		]),
-		gens = nt_tree_junct(single=[
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=7)]),
-		story_based = True, type=rule_type.knowledge_query, name='where_know_3_rule'
-	)
-	query_rules.append(where_know_3_rule)
-
-	return query_rules
-
-def init_query_rules(els_sets, els_dict):
-	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
-	query_rules = []
+#
+# def init_query_rules(els_sets, els_dict):
+# 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+# 	all_rules = []
 
 	where_object_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -192,8 +193,8 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
 		story_based = True, type=rule_type.query, name='where_object_rule'
 	)
-	query_rules.append(where_object_rule)
-	# return query_rules
+	all_rules.append(where_object_rule)
+	# return all_rules
 
 	where_person_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -211,7 +212,7 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=4)]),
 		story_based = True, type = rule_type.query, name = 'where_person_rule'
 	)
-	query_rules.append(where_person_rule)
+	all_rules.append(where_person_rule)
 
 	what_person_have_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -230,7 +231,7 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
 		story_based = True, type = rule_type.query, name = 'what_person_have_rule'
 	)
-	query_rules.append(what_person_have_rule)
+	all_rules.append(what_person_have_rule)
 
 	what_person_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -249,7 +250,7 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
 		story_based=True, type=rule_type.query, name='what_person_rule'
 	)
-	query_rules.append(what_person_rule)
+	all_rules.append(what_person_rule)
 
 	what_place_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -268,7 +269,7 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
 		story_based=True, type=rule_type.query, name='what_place_rule'
 	)
-	query_rules.append(what_place_rule)
+	all_rules.append(what_place_rule)
 
 	who_obj_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -287,7 +288,7 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
 		story_based=True, type=rule_type.query, name='who_obj_rule'
 	)
-	query_rules.append(who_obj_rule)
+	all_rules.append(who_obj_rule)
 
 	who_place_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -306,14 +307,13 @@ def init_query_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)]),
 		story_based=True, type=rule_type.query, name='who_place_rule'
 	)
-	query_rules.append(who_place_rule)
+	all_rules.append(who_place_rule)
 
-	return query_rules
-
-def init_story_rules(els_sets, els_dict):
-	global person_to_person_ask_rule_names
-	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
-	story_rules = []
+# 	return all_rules
+#
+# def init_story_rules(els_sets, els_dict):
+# 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+# 	all_rules = []
 	objects_start = nt_rule(
 		gens = nt_tree_junct(single = [
 			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
@@ -322,7 +322,7 @@ def init_story_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
 		story_based=False, type=rule_type.story_start, name='objects_start'
 	)
-	story_rules.append(objects_start)
+	all_rules.append(objects_start)
 
 	people_start = nt_rule(
 		gens = nt_tree_junct(single = [
@@ -332,7 +332,7 @@ def init_story_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
 		story_based=False, type=rule_type.story_start, name='people_start'
 	)
-	story_rules.append(people_start)
+	all_rules.append(people_start)
 
 	people_want_start = nt_rule(
 		gens = nt_tree_junct(single = [
@@ -342,7 +342,7 @@ def init_story_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=True)]),
 		story_based=False, type=rule_type.story_start, name='people_want_start'
 	)
-	story_rules.append(people_want_start)
+	all_rules.append(people_want_start)
 
 	ask_where_object_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -371,7 +371,7 @@ def init_story_rules(els_sets, els_dict):
 		story_based = True, type=rule_type.event_from_none, name='ask_where_object_rule', prob=2.0
 	)
 	person_to_person_ask_rule_names += ['ask_where_object_rule']
-	story_rules.append(ask_where_object_rule)
+	all_rules.append(ask_where_object_rule)
 
 	went_if_want_rule =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -395,7 +395,7 @@ def init_story_rules(els_sets, els_dict):
 								]),
 		story_based = True, type=rule_type.event_from_none, name='went_if_want_rule', prob=3.0
 	)
-	story_rules.append(went_if_want_rule)
+	all_rules.append(went_if_want_rule)
 
 	ask_to_give_rule =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -427,7 +427,7 @@ def init_story_rules(els_sets, els_dict):
 								]),
 		story_based = True, type=rule_type.event_from_none, name='ask_to_give_rule', prob=5.0
 	)
-	story_rules.append(ask_to_give_rule)
+	all_rules.append(ask_to_give_rule)
 
 	give_for_ask_rule =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -467,7 +467,7 @@ def init_story_rules(els_sets, els_dict):
 								]),
 		story_based = True, type=rule_type.event_from_event, name='give_for_ask_rule'
 	)
-	story_rules.append(give_for_ask_rule)
+	all_rules.append(give_for_ask_rule)
 
 
 	gave_rule = nt_rule(
@@ -498,7 +498,7 @@ def init_story_rules(els_sets, els_dict):
 		]),
 		story_based = True, type=rule_type.event_from_none, name='gave_rule', prob=3.0
 	)
-	story_rules.append(gave_rule)
+	all_rules.append(gave_rule)
 
 	pickup_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -517,7 +517,7 @@ def init_story_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
 		story_based=True, type=rule_type.event_from_none, name='pickup_rule'
 								)
-	story_rules.append(pickup_rule)
+	all_rules.append(pickup_rule)
 
 	putdown_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
@@ -536,7 +536,7 @@ def init_story_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
 		story_based=True, type=rule_type.event_from_none, name='putdown_rule', prob=0.05
 								 )
-	story_rules.append(putdown_rule)
+	all_rules.append(putdown_rule)
 
 	went_rule = nt_rule(
 		preconds=nt_tree_junct(single=[
@@ -550,13 +550,13 @@ def init_story_rules(els_sets, els_dict):
 			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
 		story_based=True, type=rule_type.event_from_none, name='went_rule'
 	)
-	story_rules.append(went_rule)
+	all_rules.append(went_rule)
 
-	return story_rules
-
-def init_rules(els_sets, els_dict):
-	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
-	gen_rules = []
+# 	return all_rules
+#
+# def init_rules(els_sets, els_dict):
+# 	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+# 	all_rules = []
 
 	gen_rule_knows_when_told =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -587,7 +587,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_knows_when_told'
 	)
-	gen_rules.append(gen_rule_knows_when_told)
+	all_rules.append(gen_rule_knows_when_told)
 
 	gen_likes_if_told =	nt_rule(
 		preconds =
@@ -606,7 +606,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_likes_if_told', prob=0.8
 	)
-	gen_rules.append(gen_likes_if_told)
+	all_rules.append(gen_likes_if_told)
 
 	gen_likes_if_gives =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
@@ -627,7 +627,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_likes_if_gives', prob=1.0
 	)
-	gen_rules.append(gen_likes_if_gives)
+	all_rules.append(gen_likes_if_gives)
 
 
 	gen_rule_picked_up =	nt_rule(
@@ -643,7 +643,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_picked_up'
 	)
-	gen_rules.append(gen_rule_picked_up)
+	all_rules.append(gen_rule_picked_up)
 
 	gen_rule_gave_away =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
@@ -665,7 +665,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_gave_away',
 	)
-	gen_rules.append(gen_rule_gave_away)
+	all_rules.append(gen_rule_gave_away)
 
 
 	# gen_rule_gave_to =	nt_rule(
@@ -682,7 +682,7 @@ def init_rules(els_sets, els_dict):
 	# 	]),
 	# 	type=rule_type.state_from_event, name='gen_rule_gave_to'
 	# )
-	# gen_rules.append(gen_rule_gave_to)
+	# all_rules.append(gen_rule_gave_to)
 	#
 	gen_rule_picked_up_free =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
@@ -703,7 +703,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_picked_up_free'
 	)
-	gen_rules.append(gen_rule_picked_up_free)
+	all_rules.append(gen_rule_picked_up_free)
 
 	gen_rule_put_down =	nt_rule(
 		preconds = nt_tree_junct(single=[
@@ -718,7 +718,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_put_down'
 	)
-	gen_rules.append(gen_rule_put_down)
+	all_rules.append(gen_rule_put_down)
 
 	gen_rule_put_down_free =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
@@ -739,7 +739,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_put_down_free'
 	)
-	gen_rules.append(gen_rule_put_down_free)
+	all_rules.append(gen_rule_put_down_free)
 
 	gen_rule_knows_dynamic_action =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -767,7 +767,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_knows_dynamic_action'
 	)
-	gen_rules.append(gen_rule_knows_dynamic_action)
+	all_rules.append(gen_rule_knows_dynamic_action)
 
 
 	# make sure this rule is before the place modification of 'went to'
@@ -797,7 +797,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_knows_went_from'
 	)
-	gen_rules.append(gen_rule_knows_went_from)
+	all_rules.append(gen_rule_knows_went_from)
 
 	gen_rule_knows_went_to =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -821,7 +821,7 @@ def init_rules(els_sets, els_dict):
 								]),
 		type=rule_type.state_from_event, name='gen_rule_knows_went_to'
 	)
-	gen_rules.append(gen_rule_knows_went_to)
+	all_rules.append(gen_rule_knows_went_to)
 
 	# for now, the order matters. The first rule removes the located in and leaves no located in
 	# The following rule looks only at the went to story step and created a new located in
@@ -847,7 +847,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_went_from'
 	)
-	gen_rules.append(gen_rule_went_from)
+	all_rules.append(gen_rule_went_from)
 
 	gen_rule_went =	nt_rule(
 		preconds = nt_tree_junct(single=[
@@ -862,7 +862,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_went'
 	)
-	gen_rules.append(gen_rule_went)
+	all_rules.append(gen_rule_went)
 
 	gen_rule_has_and_went =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
@@ -887,7 +887,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_has_and_went'
 	)
-	gen_rules.append(gen_rule_has_and_went)
+	all_rules.append(gen_rule_has_and_went)
 
 	gen_rule_knows_has =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -915,7 +915,7 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_knows_has'
 	)
-	gen_rules.append(gen_rule_knows_has)
+	all_rules.append(gen_rule_knows_has)
 
 	gen_rule_knows_location =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND,
@@ -939,12 +939,12 @@ def init_rules(els_sets, els_dict):
 		]),
 		type=rule_type.state_from_event, name='gen_rule_knows_location'
 	)
-	gen_rules.append(gen_rule_knows_location)
+	all_rules.append(gen_rule_knows_location)
 
 
-	# print gen_rules[1].preconds[0].els_set
+	# print all_rules[1].preconds[0].els_set
 	# print gen_rule_picked_up.preconds[0].els_set[2]
-	return gen_rules
+	return all_rules
 	# end function init_rules
 
 def instatiate_query(query_rule, rec):
