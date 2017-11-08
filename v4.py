@@ -290,6 +290,10 @@ def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
 			logger.info(out_str)
 			del oiphrase
 
+# els.create_actions_file()
+#
+# exit()
+#
 sess, v_r1, v_r2, t_err, saver, op_train_step, \
 		op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
 		fld_def_arr, input_flds_arr, input, output, output_flds_arr, \

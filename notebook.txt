@@ -79,3 +79,48 @@ Telling somebody something, which can only come after a question might get a lik
 
 Committing with the label:
 Added likes and instory queries
+
+Monday 6th Nov
+
+Committed version with the message:
+
+"Preparing for learn. Added controlled garadual learning. curriculum. and generating possible rules to genrate results."
+
+Added curriculum.py. Similar to story.py but gets specific rules by names. At first is just adds a simple pickup rule and
+gets the 'has' consequence phrase.
+
+This is then passed with the story and the event to cascade.py which finds all phrases that includes the input words and
+then cascades on all the words it finds
+
+Back in curruculum.py, take all the permutations of the cascaded phrases and for each perm creates a rule with no vars.
+Next, grenerate a rule replacing all repeated occurences of words with vars and looking like a rule.
+
+Now I will work to incorporate standard GloVe or Word2Vec vectors for all words so that we can create an embedding for the rule.
+
+Wednesday 8th Nov
+
+About to commit a version with the message:
+
+Added parse.py and embed.py together to create .glv files for embedding.
+
+Added two stand-alones. parse.py calls StanfordNLP to create a dep tree of each of the objects and actions.
+It creates a .nlp file where each row contains
+1. The original text
+2. The number of words
+3. For each word:
+    The dep relation for which that word is the dependent
+    The idx (1-based) of its governing word
+    The word itself
+
+embed.py creates a .glv for each of actions, names, objects and countries. Countries and names are simply looked up in
+a GloVe database and the 50 values appended as an embedding. Objects and Names parse the .nlp and add the following
+embed vectors:
+1. the word itself - the vec from GloVe
+2. The dep relation - a one hot binary float vec
+3. The governing idx a one hot up to the max idx
+
+If phrases are longer than 4 words they are rejected. If they are less they are padded with an <invalid> dep rel, zeros and
+max index + 1.
+
+
+

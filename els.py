@@ -14,7 +14,17 @@ import numpy as np
 num_conn_types = len(conn_type)
 num_rec_def_types = len(rec_def_type)
 
-# distinguishing between objs and objects. The former is generic. The latter are things you pick up, take etc
+def create_actions_file():
+	actions_fn = 'actions.txt'
+	actions_fh = open(actions_fn, 'wb')
+	actions_csvr = csv.writer(actions_fh, delimiter=',', quoting=csv.QUOTE_NONE)
+
+	for action in config.actions:
+		actions_csvr.writerow([str(action)])
+
+	actions_fh.close()
+
+# distinguishing between els and objects. The former is generic. The latter are things you pick up, take etc
 def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_article=False, cap_first=False, max_new=5):
 	num_els = len(els_arr)
 	if fname:

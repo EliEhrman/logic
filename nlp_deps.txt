@@ -1,0 +1,13 @@
+case
+cop
+nsubj
+dep
+advmod
+det
+nmod
+dobj
+iobj
+compound:prt
+compound
+amod
+root

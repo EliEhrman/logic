@@ -1,0 +1,99 @@
+remote controlled car,3,root,0,car,amod,3,remote,amod,3,controlled
+phone,1,root,0,phone
+paper,1,root,0,paper
+hat,1,root,0,hat
+pen,1,root,0,pen
+card,1,root,0,card
+cup holder,2,root,0,cup,dep,1,holder
+clip,1,root,0,clip
+rock,1,root,0,rock
+desk design,2,root,0,desk,dep,1,design
+mouse,1,root,0,mouse
+dog,1,root,0,dog
+bag of grass,3,root,0,bag,case,3,of,nmod,1,grass
+bowl,1,root,0,bowl
+picture,1,root,0,picture
+shoe,1,root,0,shoe
+incriminating dirt,2,root,0,incriminating,dobj,1,dirt
+light,1,root,0,light
+chair,1,root,0,chair
+sheet,1,root,0,sheet
+glasses case,2,root,0,glasses,dep,1,case
+stapler,1,root,0,stapler
+magic wheel,2,root,0,wheel,amod,2,magic
+lock of hair,3,root,0,lock,case,3,of,nmod,1,hair
+lysol,1,root,0,lysol
+coffee pot,2,root,0,coffee,dep,1,pot
+encrypting keyboard,2,root,0,encrypting,dobj,1,keyboard
+wood,1,root,0,wood
+weed,1,root,0,weed
+bag with the pants,4,root,0,bag,case,4,with,det,4,the,nmod,1,pants
+skateboard,1,root,0,skateboard
+penny,1,root,0,penny
+ground coffee,2,root,0,ground,dep,1,coffee
+doorknob,1,root,0,doorknob
+mauve leaf,2,root,0,leaf,amod,2,mauve
+firetruck design,2,root,0,firetruck,dep,1,design
+incriminating orange,2,root,0,incriminating,dobj,1,orange
+fairy,1,root,0,fairy
+missing tooth,2,root,0,missing,advmod,1,tooth
+bronze nose,2,root,0,bronze,dep,1,nose
+silver ear,2,root,0,silver,dep,1,ear
+fake eye,2,root,0,eye,amod,2,fake
+dessicated quarter,2,root,0,quarter,amod,2,dessicated
+money,1,root,0,money
+photo of the roof,4,root,0,photo,case,4,of,det,4,the,nmod,1,roof
+fake shingle,2,root,0,shingle,amod,2,fake
+salt,1,root,0,salt
+pepper,1,root,0,pepper
+Remote control,2,root,0,control,amod,2,Remote
+Soda,1,root,0,Soda
+Barbie doll,2,root,0,Barbie,dep,1,doll
+Watch,1,root,0,Watch
+Purple pen,2,root,0,Purple,dep,1,pen
+Dollar Bill,2,root,0,Bill,compound,2,Dollar
+stuffed animal,2,root,0,stuffed,dobj,1,animal
+Hair clip,2,root,0,Hair,dep,1,clip
+lead brick,2,root,0,brick,amod,2,lead
+T shirt,2,root,0,T,dep,1,shirt
+Purse,1,root,0,Purse
+Towel,1,root,0,Towel
+Camera,1,root,0,Camera
+Hand sanitizer bottle,3,root,0,Hand,iobj,1,sanitizer,dobj,1,bottle
+Porcelian Budda,2,root,0,Budda,compound,2,Porcelian
+Photo,1,root,0,Photo
+dog bone,2,root,0,dog,dep,1,bone
+Hair brush,2,root,0,Hair,dep,1,brush
+Birthday card,2,root,0,Birthday,dep,1,card
+mystery sock,2,root,0,mystery,dep,1,sock
+glass shoe,2,root,0,glass,dep,1,shoe
+stuffed monkey,2,root,0,stuffed,dobj,1,monkey
+bag of chips,3,root,0,bag,case,3,of,nmod,1,chips
+snapple,1,root,0,snapple
+laptop,1,root,0,laptop
+lemon,1,root,0,lemon
+apple,1,root,0,apple
+mango,1,root,0,mango
+watermelon,1,root,0,watermelon
+video cassette,2,root,0,video,dep,1,cassette
+candy bar,2,root,0,bar,nsubj,2,candy
+radio,1,root,0,radio
+key to the treasure,4,root,0,key,case,4,to,det,4,the,nmod,1,treasure
+golden egg,2,root,0,egg,amod,2,golden
+duck,1,root,0,duck
+bottle of perfume,3,root,0,bottle,case,3,of,nmod,1,perfume
+Soap,1,root,0,Soap
+Toilet Paper,2,root,0,Paper,compound,2,Toilet
+Napkin,1,root,0,Napkin
+stolen fork,2,root,0,stolen,dobj,1,fork
+Remote Control,2,root,0,Control,compound,2,Remote
+Pen,1,root,0,Pen
+Dog Collar,2,root,0,Dog,dep,1,Collar
+Poster,1,root,0,Poster
+CD Player,2,root,0,Player,compound,2,CD
+Phone,1,root,0,Phone
+Plate,1,root,0,Plate
+TV,1,root,0,TV
+Cup,1,root,0,Cup
+Hair Tie,2,root,0,Hair,dep,1,Tie
+Nail Polish,2,root,0,Nail,dobj,1,Polish
