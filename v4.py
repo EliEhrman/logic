@@ -62,6 +62,8 @@ def build_nn_run(name_scope, t_nn_x, v_W):
 
 # A gen rule is how to generate records
 # A fld or fld_def (input_flds or output_flds) defines a record of fields for manipulating and learning records
+# For now, this function is to be considered deprecated and will be removed soon
+# It has been moved to gen_trainset in curriculum.py
 def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 	global logger
 	curr_flds_id = -1
@@ -202,23 +204,22 @@ def do_init():
 	# utils.init_logging()
 	# logger = utils.ulogger
 
-	els_arr, els_dict, def_article, num_els, els_sets = els.init_objects()
+	els_arr, els_dict, glv_dict, def_article, num_els, els_sets = els.init_objects()
 	all_rules = rules.init_all_rules(els_sets, els_dict)
-	# for rule in gen_rules:
+	# for rule in all_rules:
 	# 	out_str = 'rule print: \n'
 	# 	out_str = rules.print_rule(rule, out_str)
 	# 	print(out_str)
-	# story_rules = rules.init_story_rules(els_sets, els_dict)
-	# query_rules = rules.init_query_rules(els_sets, els_dict)
-	# knowledge_query_rules = rules.init_knowledge_query_rules(els_sets, els_dict)
-	# blocking_rules = rules.init_blocking_rules(els_sets, els_dict)
 
-	if not config.c_story_only:
-		input_flds_arr, output_flds_arr, fld_def_arr, \
-		input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
-			gen_phrases(all_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
-	curriculum.do_learn(els_sets, els_dict, def_article, els_arr, all_rules)
-	story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, all_rules)
+	# if not config.c_story_only:
+	# 	input_flds_arr, output_flds_arr, fld_def_arr, \
+	# 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
+	# 		gen_phrases(all_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
+
+	input_flds_arr, output_flds_arr, fld_def_arr, \
+	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
+		curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
+	# story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, all_rules)
 	del els_arr, all_rules, els_sets
 
 	if config.c_story_only:

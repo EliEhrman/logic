@@ -122,5 +122,50 @@ embed vectors:
 If phrases are longer than 4 words they are rejected. If they are less they are padded with an <invalid> dep rel, zeros and
 max index + 1.
 
+fixed bug in els.py: make_vec. If there was only one record, the code output a shape of dim 1 instead of 2
 
+Sunday 12th November
+
+Start of day todo:
+
+Move the initialization of elements into cuuriculum.py
+
+Apply state to story and move the story along to enrich the types of rules we are trying to learn
+
+Batch inputs of rules according to length of input
+
+Put headers on the vec representation of phrases or rules. These headers recurse into the body
+
+A header consists of a number and that number of offsets
+    Any number can be represented as a 0-1 float by appliying a factor of ten multiplier. To make up to 1000, div by 10000
+    Three els in a phrase (john, picked up, the ball) are represented as 3, 0, 125, 325 if that is where each el starts
+    An el itself can be composed of deps, so an el begins with a header with the number of deps and their offsets
+    A dep consists of the word, its dep rel and the index of the governor. So a dep, too begins with num (3) and offset
+
+Monday 13th November
+
+Yesterday I completed batching of inputs. For now I assume that in curriculum.py processes rules that come from cascade and
+only have the sel_el field set and no groups. Therefore each rule can only generate one rec. Once the rules are batched by input
+length, there needs to be an indexing into the original rule list or a rearrangement of that list.
+
+After much thinking I think the best plan is as follows:
+
+1. Learn a transformation of the rule vec into a short fixed-length key vector *key1*
+    a. This transformation can consist of multiple nets, one for each length
+    b. A net could be as simple as a matmul
+2. Cascade to find all phrases related to an input event plus the event itself
+3. Create all orderings of each component of the cascade (query options)
+    a. Apply var_dict processing to each query option to make later matching easier
+4. Transform the vec of all the query options to a key of the same length as 1.
+5. Match each query option (not the vec) to each of the rules in the db. Generate the gens from the preconds *key2*
+    a. The instantiation of the vars in the gens is from the values in the query option
+    b. Padding is required so that all vars can get something - even if it is only an empty string
+    c. Another option is to immediately decide that this query option fails to match on this rule
+6. Compare the gens of the match in the last step to the training result of the event
+    a. [TBD] what if there are more than one result
+    b. If the (instantiated) gens matches, we want key1 and key2 to be close to each other (cosine distance close) to 1
+        else, far apart
+
+Committing before starting to implement this with the message:
+Implemented batching of rules by vec length
 

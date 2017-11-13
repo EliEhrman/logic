@@ -14,7 +14,7 @@ tf.flags.DEFINE_string('save_dir', '/tmp/logicmodels',
 					   'directory to save model to. If empty, dont save')
 tf.flags.DEFINE_float('fine_thresh', 0.00,
 					 'once error drops below this switch to 50% like pairs ')
-tf.flags.DEFINE_bool('learn', False,
+tf.flags.DEFINE_bool('learn', True,
 					 'learn rather than test ')
 
 batch_size = 256
@@ -31,12 +31,15 @@ else:
 c_eval_db_factor = 1 # fraction of database to consider
 c_test_pct = 0.1
 c_key_num_ks = 5
-c_max_vars = 15
+c_max_vars = 35
 c_key_dim = 15
 c_max_phrases_per_rule = 25
 c_story_len = 350
-c_ovec_len = 200
-c_story_only = True
+c_ovec_len = 500
+c_story_only = False
+c_curriculum_story_len = 1
+c_curriculum_num_stories = 3
+
 
 # logger = None
 

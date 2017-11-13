@@ -8,7 +8,7 @@ import els
 
 
 def infer_from_story(els_dict, els_arr, def_article, story_db, b_static_rules=False, b_apply_results=True,
-					 story_step=None, step_time=-1, step_effect_rules=None):
+					 story_step=None, step_time=-1, step_effect_rules=None, b_remove_mod_hdr = True):
 	b_require_last = not b_static_rules
 	unapplied_results = []
 	for igen, gen_rule in enumerate(step_effect_rules):
@@ -33,7 +33,10 @@ def infer_from_story(els_dict, els_arr, def_article, story_db, b_static_rules=Fa
 			if b_apply_results:
 				story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], step_time)
 			else:
-				unapplied_results += [mod_phrase[1:]]
+				if b_remove_mod_hdr:
+					unapplied_results += [mod_phrase[1:]]
+				else:
+					unapplied_results += [mod_phrase]
 	return story_db, unapplied_results
 
 
