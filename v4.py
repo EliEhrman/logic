@@ -24,6 +24,7 @@ import utils
 from utils import ulogger as logger
 import config
 import els
+import dmlearn
 
 # df_type_bool = 0
 # df_type_var = 1
@@ -32,13 +33,6 @@ import els
 num_df_types = len(df_type)
 num_dm_types = len(dm_type)
 num_conn_types = len(conn_type)
-
-def stop_reached(datum, tensor):
-	if datum.node_name == 't_for_stop': # and tensor > 100:
-		return True
-	return False
-
-t_for_stop = tf.constant(5.0, name='t_for_stop')
 
 
 def build_nn(var_scope, input_dim, b_reuse):
@@ -119,14 +113,13 @@ def gen_phrases(gen_rules, els_dict, els_arr, max_phrases_per_rule):
 			ivec_pos_list, all_ovecs, ivec_arr, ivec_dim_dict, ivec_dim_by_rule
 
 
-def init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs):
+def init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs, dict_id_list_of_lists):
 	# num_ivec_types = len(ivec_dim_dict)
 	# input_dim = ivec.shape[1]
 	# extra = np.asarray([[1.0, 0.0] if output[i][3] else [0.0, 1.0] for i in range(numrecs)])
 	# ovec = np.concatenate((ovec, extra), axis=1)
 
 	norm = lambda vec: vec / np.linalg.norm(vec, axis=1, keepdims=True)
-
 
 	ovec_norm = norm(ovec)
 	l_W = [None] * len(ivec_dim_dict)
@@ -135,9 +128,11 @@ def init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs)
 
 	l_y = []
 	for iivec, one_ivec in enumerate(ivec_arr):
+		# norm in the following line works on 2D arrays too, one sum for each row
 		ivec_normed = norm(one_ivec)
 		v_x = tf.Variable(tf.constant(ivec_normed.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_x')
-		l_y.append(build_nn_run(name_scope='main', t_nn_x=v_x, v_W=l_W[ivec_dim_by_rule[iivec]]))
+		# l_y.append(build_nn_run(name_scope='main', t_nn_x=v_x, v_W=l_W[ivec_dim_by_rule[iivec]]))
+		l_y.append(build_nn_run(name_scope='main', t_nn_x=v_x, v_W=l_W[iivec]))
 
 	t_y =tf.concat(l_y, axis=0, name='t_y')
 
@@ -179,26 +174,6 @@ def init_eval_tensors(numrecs, t_y):
 	return t_r_test, t_key_cds, t_key_idxs, op_y, v_r_eval
 
 
-def init_learn(l_W):
-	sess = tf.Session()
-	sess.run(tf.global_variables_initializer())
-
-	saver_dict = {'W_'+str(i): W for i, W in enumerate(l_W)}
-
-	saver = tf.train.Saver(saver_dict, max_to_keep=3)
-	ckpt = None
-	if config.FLAGS.save_dir:
-		ckpt = tf.train.get_checkpoint_state(config.FLAGS.save_dir)
-	if ckpt and ckpt.model_checkpoint_path:
-		logger.info('restoring from %s', ckpt.model_checkpoint_path)
-		saver.restore(sess, ckpt.model_checkpoint_path)
-
-	if config.FLAGS.debug:
-		sess = tf_debug.LocalCLIDebugWrapperSession(sess, ui_type="curses")
-		sess.add_tensor_filter("stop_reached", stop_reached)
-
-	return sess, saver
-
 
 def do_init():
 	# utils.init_logging()
@@ -217,7 +192,8 @@ def do_init():
 	# 		gen_phrases(all_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
 
 	input_flds_arr, output_flds_arr, fld_def_arr, \
-	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
+	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule, \
+	dict_id_list_of_lists = \
 		curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
 	# story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, all_rules)
 	del els_arr, all_rules, els_sets
@@ -227,14 +203,14 @@ def do_init():
 
 	numrecs = len(input)
 	op_train_step, t_y, t_err, v_r1, v_r2, l_W \
-		= init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs)
+		= init_train_tensors(ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule, numrecs, dict_id_list_of_lists)
 	del ovec, ivec_dim_dict, ivec_arr, ivec_dim_by_rule
 
 	t_r_test, t_key_cds, t_key_idxs, op_y, v_r_eval \
 		= init_eval_tensors(numrecs, t_y)
 	del t_y, numrecs
 
-	sess, saver = init_learn(l_W)
+	sess, saver = dmlearn.init_learn(l_W)
 	del l_W
 
 	return sess, v_r1, v_r2, t_err, saver, op_train_step, \

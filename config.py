@@ -25,7 +25,7 @@ c_num_inputs = 3
 c_num_outputs = 3
 c_rsize = ((max_names*max_objects)**2) / 8
 if FLAGS.learn:
-	c_num_steps = 100000
+	c_num_steps = 10000
 else:
 	c_num_steps = 0
 c_eval_db_factor = 1 # fraction of database to consider
@@ -39,6 +39,14 @@ c_ovec_len = 500
 c_story_only = False
 c_curriculum_story_len = 1
 c_curriculum_num_stories = 3
+c_query_story_len = 1
+c_query_num_stories = 1
+c_eval_story_len = 1
+c_eval_num_stories = 1
+c_match_batch_size = 3
+c_mismatch_batch_size = 5
+c_num_k_eval = 5
+
 
 
 # logger = None

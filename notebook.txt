@@ -169,3 +169,17 @@ After much thinking I think the best plan is as follows:
 Committing before starting to implement this with the message:
 Implemented batching of rules by vec length
 
+Potential inefficiency. In init_train_tensors, each vec for each rule will be multiplied separately
+OK. Couln't stand the inefficiency and fixed it.
+
+Moved do learn into a helper function called create_train_vecs. Now do_learn() can call the latter twice, once for
+a database and once for queries. The only real difference is that queries expand out to all permutations of each combination.
+
+I don't know whether we should query compare the recs or the rule. First shot the recs.
+
+Sunday 19th November
+
+Checking in a version with the following comment:
+
+Training and Evaluation working on very simple rules
+
