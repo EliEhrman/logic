@@ -46,6 +46,10 @@ c_eval_num_stories = 1
 c_match_batch_size = 3
 c_mismatch_batch_size = 5
 c_num_k_eval = 5
+c_num_clusters = 5
+c_kmeans_num_batches = 1
+c_kmeans_num_db_segs = 2
+c_kmeans_iters = 6
 
 
 

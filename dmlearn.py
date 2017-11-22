@@ -38,7 +38,7 @@ norm = lambda vec: vec / np.linalg.norm(vec, axis=1, keepdims=True)
 def init_output_tensors(ivec_arr, name_scope_prefix, l_W):
 	l_y = []
 	for iivec, one_ivec in enumerate(ivec_arr):
-		if one_ivec == None:
+		if one_ivec == []:
 			# This will happen when there were no records for that input_vec_dim
 			continue
 		# norm in the following line works on 2D arrays too, one sum for each row

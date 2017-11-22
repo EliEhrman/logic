@@ -183,3 +183,48 @@ Checking in a version with the following comment:
 
 Training and Evaluation working on very simple rules
 
+The training consists of creating rules-like description of succesful instances. Creating a db of all combinations as described above
+Embedding these using a set of matrices all to the standard key length
+Doing this again for queries and using embedding matrices to get to the same key length
+Creating a success matrix for xomparison of each query rule with a db rule. Success means that any object substitution
+    still yields the expected result of the query
+Learning the embedding such that the hits in the success matrix put the db items with their queries
+
+The evaluation consists of another set of queries
+This time all queries that end up with an embedding vector length are discarded
+Compare each eval-query to all rules in the db. Cosine Distance is used for now
+Find the closest 5 rules to the query in embedded space
+Create a score based on how many of these 5 are hits divide by min(k, total-hits)
+
+Next the goal is to search for a symbolic representation of the rules
+Proposal is as follows:
+1. Do a k-means on the db in embedded space.
+2. For each cluster, find rules (actually recs) of the same length (number of phrases)
+3. Evaluate the distance within the cluster of the different members at each phrase
+4. Define a groupimg for each such phrase-distance group
+5. Look for the same grouping in other places.
+6. Create versions of the rule that can utilize these groupings.
+
+Monday 20th November
+
+We're pretending we are creating the y_db in batches.Right now there is only one batch
+and the y_db is passed in from the outside.
+
+Tuesday 21st November
+
+Created a function out of the code for match_phrases that just matches the preconds. This is needed for the build_sym_rules()
+so that we can create clusters out of the embedded db recs where in fact all the members of the clusters are compatible.
+
+Actually, to explain a little, what I did was to first take the embedded version of all the db recs and do a kmeans on
+them to get clusters. However, I want all members of a cluster to be compatible, so I split the clusters themselves
+into a lower-level cluster where each low-level cluster is compatible with all other members. Compatible means the
+same number of els in the rec and the all vars match by id and all objs match all objs
+
+Wednesday 22nd November
+
+Checking in a version with the following comment:
+
+Added kmeans clustering of embedded recs of the db
+
+
+

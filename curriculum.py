@@ -9,6 +9,7 @@ import cascade
 from rules import conn_type
 import els
 import dmlearn
+import ykmeans
 
 
 def pad_ovec(vecs):
@@ -86,7 +87,7 @@ def gen_trainset(gen_rules, event_results_unsorted, glv_dict, max_phrases_per_ru
 	idx_rule = -1
 	for dict_id, dict_id_list in enumerate(igen_list_by_dict_id):
 		if not dict_id_list:
-			ivec_arr.append(None)
+			ivec_arr.append([])
 			continue
 		idx_of_this_dict_id_list = []
 		for igen_idx, one_igen in enumerate( dict_id_list):
@@ -229,28 +230,60 @@ def create_train_vecs(els_sets, els_dict, glv_dict, def_article, els_arr, all_ru
 
 	# print ('done')
 
-def match_phrases(phrase_db, phrase_q, gens_phrase_db, event_result):
-	db_result = gens_phrase_db[1:-1]
-	if len(phrase_db) != len(phrase_q) or len(db_result) != len(event_result):
-		return False
 
+def match_rec(rec0, rec1):
+	b_matched = True
 	var_dict = dict()
 
-	for iel in range(len(phrase_db)):
-		rt_db = phrase_db[iel][0]
-		rt_q = phrase_q[iel][0]
-		el_db = phrase_db[iel][1]
-		el_q = phrase_q[iel][1]
-		if rt_db != rt_q:
-			return False
-		if rt_db == rules.rec_def_type.conn:
-			if el_db != el_q:
-				return False
-		elif rt_db == rules.rec_def_type.var:
-			if el_db != el_q:
-				return False
+	if len(rec0) != len(rec1):
+		return False, var_dict
+
+	for iel in range(len(rec0)):
+		rt0 = rec0[iel][0]
+		rt1 = rec1[iel][0]
+		el0 = rec0[iel][1]
+		el1 = rec1[iel][1]
+		if rt0 != rt1:
+			b_matched = False
+			break
+		if rt0 == rules.rec_def_type.conn:
+			if el0 != el1:
+				b_matched = False
+				break
+		elif rt0 == rules.rec_def_type.var:
+			if el0 != el1:
+				b_matched = False
+				break
 		else:
-			var_dict[iel] = el_q
+			var_dict[iel] = el1
+
+	return b_matched, var_dict
+
+def match_phrases(phrase_db, phrase_q, gens_phrase_db, event_result):
+	db_result = gens_phrase_db[1:-1]
+	if len(db_result) != len(event_result):
+		return False
+
+	b_matched, var_dict = match_rec(phrase_db, phrase_q)
+
+	if not b_matched:
+		return False
+
+	# for iel in range(len(phrase_db)):
+	# 	rt_db = phrase_db[iel][0]
+	# 	rt_q = phrase_q[iel][0]
+	# 	el_db = phrase_db[iel][1]
+	# 	el_q = phrase_q[iel][1]
+	# 	if rt_db != rt_q:
+	# 		return False
+	# 	if rt_db == rules.rec_def_type.conn:
+	# 		if el_db != el_q:
+	# 			return False
+	# 	elif rt_db == rules.rec_def_type.var:
+	# 		if el_db != el_q:
+	# 			return False
+	# 	else:
+	# 		var_dict[iel] = el_q
 
 	for iel in range(len(event_result)):
 		rt_db = db_result[iel][0]
@@ -285,6 +318,33 @@ def eval_eval(nd_top_cds, nd_top_idxs, success_matrix):
 		return total_score / num_scored
 	else:
 		return 0.5
+
+def build_sym_rules(nd_cluster_id_for_each_rec, input_db, output_db):
+	clusters = [[] for _ in range(config.c_num_clusters * config.c_kmeans_num_batches)]
+	for irec, icluster in enumerate(nd_cluster_id_for_each_rec):
+		input_rec = input_db[irec]
+		clusters[icluster].append(input_rec)
+
+	new_clusters = []
+	for icluster, cluster in enumerate(clusters):
+		if not cluster:
+			continue
+		rule_group_arr = [[cluster[0]]]
+		for rule_from_cluster in cluster[1:]:
+			b_found = False
+			for rule_group in rule_group_arr:
+				b_recs_match, _ = match_rec(rule_from_cluster.phrase(), rule_group[0].phrase())
+				if b_recs_match:
+					rule_group.append(rule_from_cluster)
+					b_found = True
+					break
+			if not b_found:
+				rule_group_arr.append([rule_from_cluster])
+		if rule_group_arr:
+			new_clusters += rule_group_arr
+
+	return new_clusters
+
 
 def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
 	input_flds_arr, output_flds_arr, fld_def_arr, \
@@ -342,6 +402,8 @@ def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
 	t_top_cds_eval, t_top_idxs_eval = dmlearn.prep_eval(ivec_arr_eval, t_y_db, l_W_q)
 
 	sess, saver = dmlearn.init_learn(l_W_db + l_W_q)
+	nd_cluster_id_for_each_rec = ykmeans.cluster_db(sess, len(input_db), t_y_db, config.c_num_clusters)
+	build_sym_rules(nd_cluster_id_for_each_rec, input_db, output_db)
 	nd_top_cds, nd_top_idxs = dmlearn.run_eval(sess, t_top_cds_eval, t_top_idxs_eval)
 	print ('pre-learn eval score:', eval_eval(nd_top_cds, nd_top_idxs, success_matrix_eval))
 	dmlearn.run_learning(sess, l_batch_assigns, t_err, saver, op_train_step)
