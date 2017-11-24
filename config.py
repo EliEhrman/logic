@@ -55,6 +55,7 @@ c_kmeans_iters = 6
 
 # logger = None
 
+sample_el = 'has' # used as an example that must be in el db or glv dict
 query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that', 'asked', 'for']
 person_place_action = ['is located in', 'went to']
 object_place_action = ['is located in', 'is free in' ]

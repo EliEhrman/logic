@@ -1,4 +1,5 @@
 from __future__ import print_function
+import sys
 import numpy as np
 import random
 
@@ -319,7 +320,22 @@ def eval_eval(nd_top_cds, nd_top_idxs, success_matrix):
 	else:
 		return 0.5
 
-def build_sym_rules(nd_cluster_id_for_each_rec, input_db, output_db):
+def group_rule_els(glv_dict, rule_cluster):
+	veclen = len[glv_dict[config.sample_el]]
+	for iel, el in enumerate(rule_cluster[0].phrase()):
+		if el[0] != rules.rec_def_type.obj:
+			continue
+		vec_sum = [0.0 for _ in range(veclen)]
+		# vec_max = [sys.float_info.min for _ in range(veclen)]
+		# vec_min = [sys.float_info.max for _ in range(veclen)]
+		for rule in rule_cluster:
+			phrase = rule.phrase()
+			vec = glv_dict[phrase[iel][1]]
+			vec_sum = [vec_sum[i] + vec[i] for i in range(veclen)]
+			# vec_max = [vec[i] if vec[i] > vec_max[i] else vec_max[i] for i in range(veclen)]
+			# vec_min = [vec[i] if vec[i] < vec_min[i] else vec_min[i] for i in range(veclen)]
+
+def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
 	clusters = [[] for _ in range(config.c_num_clusters * config.c_kmeans_num_batches)]
 	for irec, icluster in enumerate(nd_cluster_id_for_each_rec):
 		input_rec = input_db[irec]
@@ -403,7 +419,7 @@ def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
 
 	sess, saver = dmlearn.init_learn(l_W_db + l_W_q)
 	nd_cluster_id_for_each_rec = ykmeans.cluster_db(sess, len(input_db), t_y_db, config.c_num_clusters)
-	build_sym_rules(nd_cluster_id_for_each_rec, input_db, output_db)
+	build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
 	nd_top_cds, nd_top_idxs = dmlearn.run_eval(sess, t_top_cds_eval, t_top_idxs_eval)
 	print ('pre-learn eval score:', eval_eval(nd_top_cds, nd_top_idxs, success_matrix_eval))
 	dmlearn.run_learning(sess, l_batch_assigns, t_err, saver, op_train_step)

@@ -226,5 +226,11 @@ Checking in a version with the following comment:
 
 Added kmeans clustering of embedded recs of the db
 
+Thursday 23rd November
+
+Checking in a version with the following comment:
+
+Changed embed module to combine all vecs of el phrase to one vec
+
 
 

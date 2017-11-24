@@ -1,3 +1,18 @@
+"""
+This module is a stand-alone pre-processor for the logic project
+
+It takes files such as lists of objects, with some properties and uses the Stanford parser to create a text file .nlp
+that lists the dependencies tree of the phrase. Format of this file is:
+1. word of phrase
+2. Number of dependencies listed
+3, List of dep tree elements:
+	a. dep name
+	b. which word in the phrase is its governor
+	c. word itself
+
+This file is used by the embed module to build a embedding for the phrase
+"""
+
 from __future__ import print_function
 import csv
 import sys
