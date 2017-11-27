@@ -320,19 +320,82 @@ def eval_eval(nd_top_cds, nd_top_idxs, success_matrix):
 	else:
 		return 0.5
 
-def group_rule_els(glv_dict, rule_cluster):
-	veclen = len[glv_dict[config.sample_el]]
+def compress_el_sets(el_set_arr, veclen):
+	new_el_set_arr = []
+	new_set_dict = dict()
+	valid_sets = [True for _ in el_set_arr]
+	idx_new_set = -1
+	for iset1, set1 in enumerate(el_set_arr):
+		if not valid_sets[iset1]:
+			continue
+		idx_new_set += 1
+		new_set_dict[iset1] = idx_new_set
+		new_set = set1
+		for iset2, set2 in enumerate(el_set_arr):
+			if iset2 <= iset1:
+				continue
+			if not valid_sets[iset2]:
+				continue
+			vec_avg1, min_cd1, vec_list1 = new_set
+			vec_avg2, min_cd2, vec_list2 = set2
+			higher_of_min_cds = max(min_cd1, min_cd2)
+			cd = sum([vec_avg2[i] * vec_avg1[i] for i in range(veclen)])
+			b_combine = False
+			if cd >= higher_of_min_cds:
+				comb_vec_list = vec_list1 + vec_list2
+				vec_avg, min_cd = get_avg_min_cd(comb_vec_list, veclen)
+				if min_cd >=  higher_of_min_cds * config.c_set_compress_cd_factor:
+					b_combine = True
+			if b_combine:
+				new_set = [vec_avg, min_cd, comb_vec_list]
+				valid_sets[iset2] = False
+				new_set_dict[iset2] = idx_new_set
+
+		new_el_set_arr.append(new_set)
+
+	return new_el_set_arr, new_set_dict
+
+
+
+def get_avg_min_cd(vec_list, veclen):
+	num_rules = 0.0
+	vec_sum = [0.0 for _ in range(veclen)]
+	for vec in vec_list:
+		vec_sum = [vec_sum[i] + vec[i] for i in range(veclen)]
+		num_rules += 1.0
+
+	vec_avg = [vec_sum[i] / num_rules for i in range(veclen)]
+	min_cd = 1.0
+	for vec in vec_list:
+		cd = sum([vec_avg[i] * vec[i] for i in range(veclen)])
+		if cd < min_cd:
+			min_cd = cd
+
+	return vec_avg, min_cd
+
+
+def group_rule_els(glv_dict, rule_cluster, el_set_arr):
+	veclen = len(glv_dict[config.sample_el])
+	rule_phrase = []
+	new_sets = []
 	for iel, el in enumerate(rule_cluster[0].phrase()):
 		if el[0] != rules.rec_def_type.obj:
+			rule_phrase.append([el[0], el[1]])
 			continue
-		vec_sum = [0.0 for _ in range(veclen)]
-		# vec_max = [sys.float_info.min for _ in range(veclen)]
-		# vec_min = [sys.float_info.max for _ in range(veclen)]
+		vec_list = []
 		for rule in rule_cluster:
 			phrase = rule.phrase()
 			vec = glv_dict[phrase[iel][1]]
-			vec_sum = [vec_sum[i] + vec[i] for i in range(veclen)]
-			# vec_max = [vec[i] if vec[i] > vec_max[i] else vec_max[i] for i in range(veclen)]
+			vec_list.append(vec)
+
+		vec_avg, min_cd = get_avg_min_cd(vec_list, veclen)
+		rule_phrase.append([rules.rec_def_type.set, len(el_set_arr)])
+		el_set_arr.append([vec_avg, min_cd, vec_list])
+
+	return rules.C_phrase_rec(init_phrase=rule_phrase)
+
+
+		# vec_max = [vec[i] if vec[i] > vec_max[i] else vec_max[i] for i in range(veclen)]
 			# vec_min = [vec[i] if vec[i] < vec_min[i] else vec_min[i] for i in range(veclen)]
 
 def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
@@ -359,7 +422,20 @@ def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
 		if rule_group_arr:
 			new_clusters += rule_group_arr
 
-	return new_clusters
+	el_set_arr = []
+	new_rec_rules = []
+	for rule_cluster in new_clusters:
+		if len(rule_cluster) < 2:
+			continue
+		new_rule = group_rule_els(glv_dict, rule_cluster, el_set_arr)
+		new_rec_rules.append(new_rule)
+
+	el_set_arr, new_set_dict = compress_el_sets(el_set_arr, len(el_set_arr[0][0]))
+	for rec_rule in new_rec_rules:
+		for el in rec_rule.phrase():
+			if el[0] == rules.rec_def_type.set:
+				el[1] = new_set_dict[el[1]]
+	return new_rec_rules, el_set_arr
 
 
 def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
@@ -419,7 +495,7 @@ def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
 
 	sess, saver = dmlearn.init_learn(l_W_db + l_W_q)
 	nd_cluster_id_for_each_rec = ykmeans.cluster_db(sess, len(input_db), t_y_db, config.c_num_clusters)
-	build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
+	new_rec_rules, el_set_arr = build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
 	nd_top_cds, nd_top_idxs = dmlearn.run_eval(sess, t_top_cds_eval, t_top_idxs_eval)
 	print ('pre-learn eval score:', eval_eval(nd_top_cds, nd_top_idxs, success_matrix_eval))
 	dmlearn.run_learning(sess, l_batch_assigns, t_err, saver, op_train_step)

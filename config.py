@@ -50,6 +50,7 @@ c_num_clusters = 5
 c_kmeans_num_batches = 1
 c_kmeans_num_db_segs = 2
 c_kmeans_iters = 6
+c_set_compress_cd_factor = 0.8
 
 
 

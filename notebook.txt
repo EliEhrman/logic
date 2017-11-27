@@ -232,5 +232,16 @@ Checking in a version with the following comment:
 
 Changed embed module to combine all vecs of el phrase to one vec
 
+Sat 25th November
+
+How do we represent a rule that was built from instances in a cluser
+
+The first idea is to add two fields to rec_def_type
+
+Monday 27th November
+
+Checking in with comment:
+
+Created first pass of sym rules, creating sets and some combination.
 
 
