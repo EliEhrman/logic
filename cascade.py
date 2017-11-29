@@ -25,12 +25,19 @@ def get_obj_cascade(els_sets, target_phrase, story_db, event_phrase, b_for_query
 	phrase_idx_set = set()
 	all_perms = []
 
-	recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_set, all_perms, recursions_left = 4)
+	recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_set, all_perms,
+				   recursions_left = config.c_cascade_level)
+
+	limited_all_perms = []
+	for one_perm in all_perms:
+		if len(one_perm) <= config.c_cascade_max_phrases:
+			limited_all_perms.append(one_perm)
+	all_perms = limited_all_perms
 
 	if b_for_query:
 		all_perms = [k for j in [list(itertools.permutations(i, len(i))) for i in all_perms] for k in j]
 
-	return all_perms
+	return [[]] + all_perms
 
 def recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_used, all_perms, recursions_left):
 	recursions_left -= 1

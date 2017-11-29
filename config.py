@@ -38,7 +38,7 @@ c_story_len = 350
 c_ovec_len = 500
 c_story_only = False
 c_curriculum_story_len = 1
-c_curriculum_num_stories = 3
+c_curriculum_num_stories = 19
 c_query_story_len = 1
 c_query_num_stories = 1
 c_eval_story_len = 1
@@ -51,6 +51,9 @@ c_kmeans_num_batches = 1
 c_kmeans_num_db_segs = 2
 c_kmeans_iters = 6
 c_set_compress_cd_factor = 0.8
+c_cascade_level = 2 # should be at least 3
+c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
+c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5]
 
 
 

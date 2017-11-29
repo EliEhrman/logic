@@ -1,5 +1,6 @@
 from time import gmtime, strftime
 import sys
+import math
 import logging
 import collections
 import random
@@ -51,3 +52,24 @@ def weighted_choice(choices):
          return c
       upto += w
    assert False, "Shouldn't get here"
+
+def get_avg_min_cd(vec_list, veclen):
+	num_rules = 0.0
+	vec_sum = [0.0 for _ in range(veclen)]
+	for vec in vec_list:
+		vec_sum = [vec_sum[i] + vec[i] for i in range(veclen)]
+		num_rules += 1.0
+
+	vec_avg = [vec_sum[i] / num_rules for i in range(veclen)]
+	min_cd = 1.0
+	for ivec, vec in enumerate(vec_list):
+		cd = sum([vec_avg[i] * vec[i] for i in range(veclen)])
+		if cd < min_cd:
+			min_cd = cd
+
+	return vec_avg, min_cd
+
+def vec_norm(vec):
+	sq = math.sqrt(sum([el * el for el in vec]))
+	return [el/sq for el in vec]
+

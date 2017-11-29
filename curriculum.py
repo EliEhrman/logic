@@ -1,5 +1,6 @@
 from __future__ import print_function
 import sys
+import math
 import numpy as np
 import random
 
@@ -11,6 +12,9 @@ from rules import conn_type
 import els
 import dmlearn
 import ykmeans
+import utils
+
+
 
 
 def pad_ovec(vecs):
@@ -203,7 +207,10 @@ def create_train_vecs(els_sets, els_dict, glv_dict, def_article, els_arr, all_ru
 								rule_fields.append(rules.nt_rule_fld(els_set=[], df_type=rules.df_type.var, var_id=var_field_id))
 							field_id += 1
 						branches.append(rules.nt_tree_junct(single=rule_fields))
-					new_conds = rules.nt_tree_junct(branches=branches, logic=conn_type.AND)
+					if len(rule_cand) == 1:
+						new_conds = rules.nt_tree_junct(single=rule_fields)
+					else:
+						new_conds = rules.nt_tree_junct(branches=branches, logic=conn_type.AND)
 
 					rule_fields = []
 					for el in event_result[1:]:
@@ -230,6 +237,72 @@ def create_train_vecs(els_sets, els_dict, glv_dict, def_article, els_arr, all_ru
 						max_phrases_per_rule=config.c_max_phrases_per_rule, ivec_dim_dict_fixed=ivec_dim_dict_fixed)
 
 	# print ('done')
+
+def match_rec_with_set(glv_dict, el_set_arr, set_rec, q_rec):
+	b_matched = True
+	var_dict = dict()
+
+	if len(set_rec) != len(q_rec):
+		return False, var_dict
+
+	for iel in range(len(set_rec)):
+		set_rt = set_rec[iel][0]
+		q_rt = q_rec[iel][0]
+		set_el = set_rec[iel][1]
+		q_el = q_rec[iel][1]
+		if not (set_rt == rules.rec_def_type.set and q_rt == rules.rec_def_type.obj) and set_rt != q_rt:
+			b_matched = False
+			break
+		if set_rt == rules.rec_def_type.conn:
+			if set_el != q_el:
+				b_matched = False
+				break
+		elif set_rt == rules.rec_def_type.var:
+			if set_el != q_el:
+				b_matched = False
+				break
+		elif set_rt == rules.rec_def_type.set and q_rt == rules.rec_def_type.obj:
+			q_vec = glv_dict[q_el]
+			set_vec, set_cd, _ = el_set_arr[set_el]
+			cd = sum([q_vec[i] * set_val for i, set_val in enumerate(set_vec)])
+			if cd < set_cd:
+				b_matched = False
+				break
+			var_dict[iel] = q_el
+		else:
+			b_matched = False
+			break
+
+	return b_matched, var_dict
+
+
+def match_rule_with_phrase(glv_dict, el_set_arr, phrase_rule, phrase_q, gens_phrase_db, event_result):
+	db_result = gens_phrase_db[1:-1]
+	if len(db_result) != len(event_result):
+		return False, False
+
+	b_matched, var_dict = match_rec_with_set(glv_dict, el_set_arr, phrase_rule, phrase_q)
+
+	if not b_matched:
+		return False, False
+
+	for iel in range(len(event_result)):
+		rt_db = db_result[iel][0]
+		rt_q = event_result[iel][0]
+		el_db = db_result[iel][1]
+		el_q = event_result[iel][1]
+		if rt_db == rules.rec_def_type.var and var_dict.get(el_db, None) != el_q:
+			return True, False
+		if rt_db == rules.rec_def_type.obj and el_db != el_q:
+			return True, False
+		if rt_db == rules.rec_def_type.set:
+			q_vec = glv_dict[el_q]
+			set_vec, set_cd, _ = el_set_arr[el_db]
+			cd = sum([q_vec[i] * set_val for i, set_val in enumerate(set_vec)])
+			if cd < set_cd:
+				return True, False
+
+	return True, True
 
 
 def match_rec(rec0, rec1):
@@ -270,22 +343,6 @@ def match_phrases(phrase_db, phrase_q, gens_phrase_db, event_result):
 	if not b_matched:
 		return False
 
-	# for iel in range(len(phrase_db)):
-	# 	rt_db = phrase_db[iel][0]
-	# 	rt_q = phrase_q[iel][0]
-	# 	el_db = phrase_db[iel][1]
-	# 	el_q = phrase_q[iel][1]
-	# 	if rt_db != rt_q:
-	# 		return False
-	# 	if rt_db == rules.rec_def_type.conn:
-	# 		if el_db != el_q:
-	# 			return False
-	# 	elif rt_db == rules.rec_def_type.var:
-	# 		if el_db != el_q:
-	# 			return False
-	# 	else:
-	# 		var_dict[iel] = el_q
-
 	for iel in range(len(event_result)):
 		rt_db = db_result[iel][0]
 		rt_q = event_result[iel][0]
@@ -295,6 +352,7 @@ def match_phrases(phrase_db, phrase_q, gens_phrase_db, event_result):
 				return False
 		if rt_db == rules.rec_def_type.obj and el_db != el_q:
 			return False
+
 
 
 	return True
@@ -338,16 +396,20 @@ def compress_el_sets(el_set_arr, veclen):
 				continue
 			vec_avg1, min_cd1, vec_list1 = new_set
 			vec_avg2, min_cd2, vec_list2 = set2
-			higher_of_min_cds = max(min_cd1, min_cd2)
-			cd = sum([vec_avg2[i] * vec_avg1[i] for i in range(veclen)])
-			b_combine = False
-			if cd >= higher_of_min_cds:
-				comb_vec_list = vec_list1 + vec_list2
-				vec_avg, min_cd = get_avg_min_cd(comb_vec_list, veclen)
-				if min_cd >=  higher_of_min_cds * config.c_set_compress_cd_factor:
-					b_combine = True
+			b_combine = True
+			if min_cd1 != min_cd2:
+				b_combine = False
 			if b_combine:
-				new_set = [vec_avg, min_cd, comb_vec_list]
+				cd = sum([vec_avg2[i] * vec_avg1[i] for i in range(veclen)])
+				if cd < min_cd1: # they are the same if the code reaches here
+					b_combine = False
+			if b_combine:
+				comb_vec_list = vec_list1 + vec_list2
+				vec_avg, min_cd = utils.get_avg_min_cd(comb_vec_list, veclen)
+				if min_cd <  min_cd1:
+					b_combine = False
+			if b_combine:
+				new_set = [vec_avg, min_cd1, comb_vec_list]
 				valid_sets[iset2] = False
 				new_set_dict[iset2] = idx_new_set
 
@@ -355,54 +417,85 @@ def compress_el_sets(el_set_arr, veclen):
 
 	return new_el_set_arr, new_set_dict
 
+def compress_rec_rules(rec_rule_arr):
+	new_rec_rules = []
+	new_rule_dict = dict()
+	valid_rules = [True for _ in rec_rule_arr]
+	idx_new_rule = -1
+	for irule1, rule1 in enumerate(rec_rule_arr):
+		if not valid_rules[irule1]:
+			continue
+		idx_new_rule += 1
+		new_rule_dict[irule1] = idx_new_rule
+		new_rule = rule1
+		for irule2, rule2 in enumerate(rec_rule_arr):
+			if irule2 <= irule1:
+				continue
+			if not valid_rules[irule2]:
+				continue
+			b_combine = True
+			rec0, rec1 = rule1[0], rule2[0]
+			ilen0, ilen1 = rule1[1], rule2[1]
+			if len(rec0) != len(rec1) or ilen0 != ilen1:
+				b_combine = False
+			if b_combine:
+				for iel in range(len(rec0)):
+					rt0 = rec0[iel][0]
+					rt1 = rec1[iel][0]
+					el0 = rec0[iel][1]
+					el1 = rec1[iel][1]
+					if rt0 != rt1:
+						b_combine = False
+						break
+					if el0 != el1:
+						b_combine = False
+						break
+			if b_combine:
+				valid_rules[irule2] = False
+				new_rule_dict[irule2] = idx_new_rule
 
+		new_rec_rules.append(new_rule)
 
-def get_avg_min_cd(vec_list, veclen):
-	num_rules = 0.0
-	vec_sum = [0.0 for _ in range(veclen)]
-	for vec in vec_list:
-		vec_sum = [vec_sum[i] + vec[i] for i in range(veclen)]
-		num_rules += 1.0
+	return new_rec_rules
 
-	vec_avg = [vec_sum[i] / num_rules for i in range(veclen)]
-	min_cd = 1.0
-	for vec in vec_list:
-		cd = sum([vec_avg[i] * vec[i] for i in range(veclen)])
-		if cd < min_cd:
-			min_cd = cd
-
-	return vec_avg, min_cd
-
+def find_quant_thresh(cd):
+	for thresh in config.c_rule_cluster_thresh_levels:
+		if cd >= thresh:
+			return thresh
+	return -1.0
 
 def group_rule_els(glv_dict, rule_cluster, el_set_arr):
 	veclen = len(glv_dict[config.sample_el])
 	rule_phrase = []
 	new_sets = []
-	for iel, el in enumerate(rule_cluster[0].phrase()):
+	for iel, el in enumerate(rule_cluster[0]):
 		if el[0] != rules.rec_def_type.obj:
 			rule_phrase.append([el[0], el[1]])
 			continue
 		vec_list = []
-		for rule in rule_cluster:
-			phrase = rule.phrase()
+		for phrase in rule_cluster:
+			# phrase = rule.phrase[0]
 			vec = glv_dict[phrase[iel][1]]
 			vec_list.append(vec)
 
-		vec_avg, min_cd = get_avg_min_cd(vec_list, veclen)
+		vec_avg, min_cd = utils.get_avg_min_cd(vec_list, veclen)
+		min_cd = find_quant_thresh(min_cd)
 		rule_phrase.append([rules.rec_def_type.set, len(el_set_arr)])
 		el_set_arr.append([vec_avg, min_cd, vec_list])
 
-	return rules.C_phrase_rec(init_phrase=rule_phrase)
+	return rule_phrase
+	# return rules.C_phrase_rec(init_phrase=rule_phrase)
 
 
 		# vec_max = [vec[i] if vec[i] > vec_max[i] else vec_max[i] for i in range(veclen)]
 			# vec_min = [vec[i] if vec[i] < vec_min[i] else vec_min[i] for i in range(veclen)]
 
-def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
+def build_sym_rules_old(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
 	clusters = [[] for _ in range(config.c_num_clusters * config.c_kmeans_num_batches)]
 	for irec, icluster in enumerate(nd_cluster_id_for_each_rec):
-		input_rec = input_db[irec]
-		clusters[icluster].append(input_rec)
+		# input_rec = input_db[irec]
+		# clusters[icluster].append([input_db[irec], output_db[irec]])
+		clusters[icluster].append(input_db[irec])
 
 	new_clusters = []
 	for icluster, cluster in enumerate(clusters):
@@ -412,6 +505,7 @@ def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
 		for rule_from_cluster in cluster[1:]:
 			b_found = False
 			for rule_group in rule_group_arr:
+				# cluster_phrases,
 				b_recs_match, _ = match_rec(rule_from_cluster.phrase(), rule_group[0].phrase())
 				if b_recs_match:
 					rule_group.append(rule_from_cluster)
@@ -435,7 +529,90 @@ def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
 		for el in rec_rule.phrase():
 			if el[0] == rules.rec_def_type.set:
 				el[1] = new_set_dict[el[1]]
+	new_rec_rules = compress_rec_rules(new_rec_rules)
 	return new_rec_rules, el_set_arr
+
+def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
+	# First we put the rec ids into clusters where each cluster holds those from that cluster
+	clusters = [[] for _ in range(config.c_num_clusters * config.c_kmeans_num_batches)]
+	for irec, icluster in enumerate(nd_cluster_id_for_each_rec):
+		# input_rec = input_db[irec]
+		# clusters[icluster].append([input_db[irec], output_db[irec]])
+		clusters[icluster].append(irec)
+
+	# The problem now is that we may have totally incompatible records in the same cluster
+	# So we break up each cluster into a rule group. We start off by creating one rule group
+	# from the first rec in the cluster. If any match it gets added to the rule group,
+	# otherwise, we start a new rule group. Henceforth, within the cluster, it will try
+	# and match the first from each of the rule groups and only if all fail start its
+	# own rule group
+	new_clusters = []
+	for icluster, cluster in enumerate(clusters):
+		if not cluster:
+			continue
+		rule_group_arr = [[cluster[0]]]
+		for rule_from_cluster in cluster[1:]:
+			b_found = False
+			for rule_group in rule_group_arr:
+				cluster_phrases = input_db[rule_from_cluster].phrase() + output_db[rule_from_cluster].phrase()
+				group_phrases = input_db[rule_group[0]].phrase() + output_db[rule_group[0]].phrase()
+				b_recs_match, _ = match_rec(cluster_phrases, group_phrases)
+				# Take care of a rather difficult to believe scenario where everything matches but the output len does not
+				if b_recs_match and len(input_db[rule_group[0]].phrase()) != len(input_db[rule_from_cluster].phrase()):
+					b_recs_match = False
+				if b_recs_match:
+					rule_group.append(rule_from_cluster)
+					b_found = True
+					break
+			if not b_found:
+				rule_group_arr.append([rule_from_cluster])
+		if rule_group_arr:
+			new_clusters += rule_group_arr
+
+	el_set_arr = []
+	new_rec_rules = []
+	for rule_cluster in new_clusters:
+		rule_phrase_cluster = \
+			[input_db[irule].phrase() + output_db[irule].phrase() for irule in rule_cluster]
+		if len(rule_cluster) < 2:
+			continue
+		new_phrase = group_rule_els(glv_dict, rule_phrase_cluster, el_set_arr)
+		# We now need to record the length of the original preconds. So we create a format where each rule
+		# contains both input and output phrases and the length of the input phrase
+		# At this point we know that all rules in the cluster (that have now been combined into one rule)
+		# have the same input and output length.
+		new_rec_rules.append([new_phrase, len(input_db[rule_cluster[0]].phrase())])
+
+	el_set_arr, new_set_dict = compress_el_sets(el_set_arr, len(el_set_arr[0][0]))
+	for rec_rule in new_rec_rules:
+		for el in rec_rule[0]:
+			if el[0] == rules.rec_def_type.set:
+				el[1] = new_set_dict[el[1]]
+	new_rec_rules = compress_rec_rules(new_rec_rules)
+	return new_rec_rules, el_set_arr
+
+def do_set_eval(glv_dict, sess, input_db, output_db,  t_y_db, input_eval, event_results_eval):
+	nd_cluster_id_for_each_rec = ykmeans.cluster_db(sess, len(input_db), t_y_db, config.c_num_clusters)
+	new_rec_rules, el_set_arr = build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
+
+	set_eval_score = 0.0
+	set_eval_num = 0.0
+	for idb, one_phrase_db in enumerate(new_rec_rules):
+		rule_preconds_phrase = one_phrase_db[0][:one_phrase_db[1]]
+		rule_gens_phrase = one_phrase_db[0][one_phrase_db[1]:]
+		for ieval, one_phrase_eval in enumerate(input_eval):
+			b_rule_match, b_result_match = \
+				match_rule_with_phrase(	glv_dict, el_set_arr, rule_preconds_phrase,
+										one_phrase_eval.phrase(), rule_gens_phrase,
+										event_results_eval[ieval])
+			if b_rule_match:
+				set_eval_num += 1.0
+				if b_result_match:
+						set_eval_score += 1.0
+	if set_eval_num == 0.0:
+		print('Not one set eval matched.')
+	else:
+		print('Set eval result:', set_eval_score / set_eval_num)
 
 
 def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
@@ -494,11 +671,11 @@ def do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules):
 	t_top_cds_eval, t_top_idxs_eval = dmlearn.prep_eval(ivec_arr_eval, t_y_db, l_W_q)
 
 	sess, saver = dmlearn.init_learn(l_W_db + l_W_q)
-	nd_cluster_id_for_each_rec = ykmeans.cluster_db(sess, len(input_db), t_y_db, config.c_num_clusters)
-	new_rec_rules, el_set_arr = build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
+	do_set_eval(glv_dict, sess, input_db, output_db,  t_y_db, input_eval, event_results_eval)
 	nd_top_cds, nd_top_idxs = dmlearn.run_eval(sess, t_top_cds_eval, t_top_idxs_eval)
 	print ('pre-learn eval score:', eval_eval(nd_top_cds, nd_top_idxs, success_matrix_eval))
 	dmlearn.run_learning(sess, l_batch_assigns, t_err, saver, op_train_step)
 	nd_top_cds, nd_top_idxs = dmlearn.run_eval(sess, t_top_cds_eval, t_top_idxs_eval)
 	print ('post-learn eval score:', eval_eval(nd_top_cds, nd_top_idxs, success_matrix_eval))
+	do_set_eval(glv_dict, sess, input_db, output_db,  t_y_db, input_eval, event_results_eval)
 	return

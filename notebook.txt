@@ -244,4 +244,12 @@ Checking in with comment:
 
 Created first pass of sym rules, creating sets and some combination.
 
+Wednesday 29th November
+
+for now everything is in do_learn. Ignore all the rest
+
+Checking in with comment:
+
+Creating first pass learned rules. Some evaluation but not excluding unnecessary clauses.
+
 

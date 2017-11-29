@@ -180,7 +180,14 @@ def do_init():
 	# logger = utils.ulogger
 
 	els_arr, els_dict, glv_dict, def_article, num_els, els_sets = els.init_objects()
+	# els.quality_of_els_sets(glv_dict, els_sets)
 	all_rules = rules.init_all_rules(els_sets, els_dict)
+
+	# for now everything is in do_learn. Ignore all the rest
+
+	curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
+
+	exit()
 	# for rule in all_rules:
 	# 	out_str = 'rule print: \n'
 	# 	out_str = rules.print_rule(rule, out_str)
@@ -197,6 +204,8 @@ def do_init():
 		curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
 	# story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, all_rules)
 	del els_arr, all_rules, els_sets
+
+	exit()
 
 	if config.c_story_only:
 		exit()

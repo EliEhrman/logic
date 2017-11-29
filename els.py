@@ -14,6 +14,32 @@ import numpy as np
 num_conn_types = len(conn_type)
 num_rec_def_types = len(rec_def_type)
 
+# this is not the right place for these functions. It is here because this module has the components it needs
+def quality_of_el_set(glv_dict, els_set):
+	vecs = []
+	for name in els_set[2]:
+		vecs.append(glv_dict[name])
+
+	utils.get_avg_min_cd(vecs, len(vecs[0]))
+
+def quality_of_els_sets(glv_dict, els_sets):
+	# for ilen in range(5):
+	# 	veclen = ilen * 100 + 4
+	# 	vecs = [utils.vec_norm([random.uniform(-1.0, 1.0) for _ in range(veclen)]) for _ in range(20)]
+	# 	utils.get_avg_min_cd(vecs, len(vecs[0]))
+	#
+	all_els = []
+	for els_set in els_sets:
+		quality_of_el_set(glv_dict, els_set)
+		all_els += els_set[2][:5]
+
+	vecs = []
+	for name in all_els:
+		vecs.append(glv_dict[name])
+
+	utils.get_avg_min_cd(vecs, len(vecs[0]))
+
+
 def create_actions_file():
 	actions_fn = 'actions.txt'
 	actions_fh = open(actions_fn, 'wb')
@@ -24,6 +50,8 @@ def create_actions_file():
 
 	actions_fh.close()
 
+# gels1 = []
+# gels2 = []
 # distinguishing between els and objects. The former is generic. The latter are things you pick up, take etc
 def init_els(els_dict, glv_dict, els_arr, def_article, fname=None, alist=None, new_def_article=False, cap_first=False, max_new=5):
 	num_els = len(els_arr)
@@ -39,6 +67,12 @@ def init_els(els_dict, glv_dict, els_arr, def_article, fname=None, alist=None, n
 
 		if max_new < 0:
 			max_new = len(new_els)
+
+		# global gels1, gels2
+		# if fname == 'objects.glv':
+		# 	gels1 = new_el_vecs
+		# elif fname == 'countries.glv':
+		# 	gels2 = new_el_vecs
 
 		shuffle_stick = range(len(new_els))
 		random.shuffle(shuffle_stick)
@@ -79,6 +113,8 @@ def init_objects():
 	action_set, num_els =\
 		init_els(	fname='actions.glv', max_new=-1,
 					els_dict=els_dict, glv_dict=glv_dict, els_arr=els_arr, def_article=def_article)
+
+	# utils.get_avg_min_cd(gels1+gels2, len(gels1[0]))
 
 	els_sets = utils.nt_el_sets(names=name_set, objects=object_set, places=place_set, actions=action_set)
 	# return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
