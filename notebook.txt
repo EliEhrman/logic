@@ -263,3 +263,7 @@ Checking in with comment:
 
 Learned rules succeeds for simplest stories
 
+Checking in with comment:
+
+Added a criteria of most specific rule wins
+

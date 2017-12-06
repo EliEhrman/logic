@@ -620,6 +620,36 @@ def build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db):
 	new_rec_rules = compress_rec_rules(new_rec_rules)
 	return new_rec_rules, el_set_arr
 
+# For two otherwise identical rules, determine if one is always equal or more specific to the other
+# return resolved, if resolved 0 won
+def rule_rec_more_specific(rule0, rule1, el_set_arr):
+	b_0_advtg, b_1_advtg =  False, False
+	for iel, rel0 in enumerate(rule0[0]):
+		rt0 = rule0[0][iel][0]
+		rt1 = rule1[0][iel][0]
+		el0 = rule0[0][iel][1]
+		el1 = rule1[0][iel][1]
+		if rt0 != rt1:
+			return False, False
+		if rt0 != rules.rec_def_type.set:
+			if el0 != el1:
+				return False, False
+		else:
+			set0, set1 = el_set_arr[el0], el_set_arr[el1]
+			if set0[1] > set1[1]:
+				b_0_advtg = True
+			elif set0[1] < set1[1]:
+				b_1_advtg = True
+
+	if (b_0_advtg and b_1_advtg) or (not b_0_advtg and not b_1_advtg):
+		return False, False
+
+	return  b_0_advtg
+
+
+
+
+
 def do_set_eval(glv_dict, def_article_dict, sess, input_db, output_db,  t_y_db, input_eval, event_results_eval, event_result_id_arr):
 	nd_cluster_id_for_each_rec = ykmeans.cluster_db(sess, len(input_db), t_y_db, config.c_num_clusters)
 	new_rec_rules, el_set_arr = build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
@@ -721,6 +751,18 @@ def do_set_eval(glv_dict, def_article_dict, sess, input_db, output_db,  t_y_db, 
 				elif good_rule_len[gidb1] >  good_rule_len[gidb2]:
 					irule_holding[gidb1] = False
 					break
+				else:
+					assert good_rule_len[gidb1] ==  good_rule_len[gidb2]
+					b_resolved, b_first_wins = \
+						rule_rec_more_specific(new_rec_rules[good_rule_to_orig_map[gidb1]],
+											   new_rec_rules[good_rule_to_orig_map[gidb2]],
+											   el_set_arr)
+					if b_resolved:
+						if b_first_wins:
+							irule_holding[gidb2] = False
+						else:
+							irule_holding[gidb1] = False
+							break
 			else:
 				continue
 
