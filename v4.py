@@ -179,13 +179,14 @@ def do_init():
 	# utils.init_logging()
 	# logger = utils.ulogger
 
-	els_arr, els_dict, glv_dict, def_article, num_els, els_sets = els.init_objects()
-	# els.quality_of_els_sets(glv_dict, els_sets)
-	all_rules = rules.init_all_rules(els_sets, els_dict)
+	glv_dict, def_article_dict = els.init_glv()
+	# els_arr, els_dict, glv_dict, def_article, num_els, els_sets = els.init_objects()
+	# # els.quality_of_els_sets(glv_dict, els_sets)
+	# all_rules = rules.init_all_rules(els_sets, els_dict)
 
 	# for now everything is in do_learn. Ignore all the rest
 
-	curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
+	curriculum.do_learn(glv_dict, def_article_dict)
 
 	exit()
 	# for rule in all_rules:
@@ -198,15 +199,14 @@ def do_init():
 	# 	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule = \
 	# 		gen_phrases(all_rules, els_dict=els_dict, els_arr=els_arr, max_phrases_per_rule=config.c_max_phrases_per_rule)
 
-	input_flds_arr, output_flds_arr, fld_def_arr, \
-	input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule, \
-	dict_id_list_of_lists = \
-		curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
-	# story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, all_rules)
-	del els_arr, all_rules, els_sets
+	# input_flds_arr, output_flds_arr, fld_def_arr, \
+	# input, output, ivec_pos_list, ovec, ivec_arr, ivec_dim_dict, ivec_dim_by_rule, \
+	# dict_id_list_of_lists = \
+	# 	curriculum.do_learn(els_sets, els_dict, glv_dict, def_article, els_arr, all_rules)
+	# # story_arr = story.create_story(els_sets, els_dict, def_article, els_arr, all_rules)
+	# del els_arr, all_rules, els_sets
 
-	exit()
-
+"""
 	if config.c_story_only:
 		exit()
 
@@ -226,6 +226,7 @@ def do_init():
 		   op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
 		   fld_def_arr, input_flds_arr, input, output, output_flds_arr, \
 		   def_article, els_dict
+"""
 
 def do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step):
 
@@ -251,10 +252,10 @@ def do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step):
 
 def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
 			fld_def_arr, input_flds_arr, input, output,
-			def_article, els_dict):
+			def_article_dict, els_dict):
 	sess.run(op_y)
 	sess.run(tf.variables_initializer([v_r_eval]))
-	sess.run(t_for_stop)
+	# sess.run(t_for_stop)
 	r_r_test, r_key_cds, r_key_idxs = sess.run([t_r_test, t_key_cds, t_key_idxs])
 	logger.info([r_r_test, r_key_cds, r_key_idxs])
 
@@ -266,13 +267,13 @@ def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
 		input_flds = input_flds_arr[fld_def]
 		out_phrase = output[r_key_idxs[itest][0]]
 		out_str = "input: "
-		out_str = els.print_phrase(phrase_rec, phrase, out_str, def_article, els_dict)
+		out_str = els.print_phrase(phrase_rec, phrase, out_str, def_article_dict)
 		logger.info(out_str)
 		for iout in range(config.c_key_num_ks-1):
 			oiphrase = r_key_idxs[itest][iout]
 			o_fld_def = fld_def_arr[oiphrase]
 			out_str = els.print_phrase(	phrase_rec, (output[oiphrase]).phrase(),
-									out_str, def_article, els_dict)
+									out_str, def_article_dict)
 			logger.info(out_str)
 			del oiphrase
 
@@ -283,14 +284,14 @@ def do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs,
 sess, v_r1, v_r2, t_err, saver, op_train_step, \
 		op_y, v_r_eval, t_r_test, t_key_cds, t_key_idxs, \
 		fld_def_arr, input_flds_arr, input, output, output_flds_arr, \
-		def_article, els_dict \
+		def_article_dict, els_dict \
 	= do_init()
 
 do_learn(sess, v_r1, v_r2, t_err, saver, op_train_step)
 
 do_eval(sess, op_y, v_r_eval, t_r_test, t_key_cds,
 		t_key_idxs, fld_def_arr, input_flds_arr, input, output,
-		def_article, els_dict)
+		def_article_dict, els_dict)
 
 sess.close()
 

@@ -7,7 +7,7 @@ from rules import conn_type
 import els
 
 
-def infer_from_story(els_dict, els_arr, def_article, story_db, b_static_rules=False, b_apply_results=True,
+def infer_from_story(els_dict, els_arr, def_article_dict, story_db, b_static_rules=False, b_apply_results=True,
 					 story_step=None, step_time=-1, step_effect_rules=None, b_remove_mod_hdr = True):
 	b_require_last = not b_static_rules
 	unapplied_results = []
@@ -28,7 +28,7 @@ def infer_from_story(els_dict, els_arr, def_article, story_db, b_static_rules=Fa
 			mod_phrase = (phrase_rec.phrase())[1:-1]
 			# out_str = els.output_phrase(def_article, els_dict, out_str, mod_phrase)
 			out_str = ''
-			out_str = els.print_phrase(src_recs, mod_phrase, out_str, def_article, els_dict)
+			out_str = els.print_phrase(src_recs, mod_phrase, out_str, def_article_dict)
 			print(out_str)
 			if b_apply_results:
 				story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(mod_phrase)], step_time)
@@ -99,7 +99,7 @@ def process_p2p_event(els_sets, els_dict, els_arr, query_rules, story_db, sel_qu
 
 	return events_for_queue
 
-def do_queries(els_dict, els_arr, def_article, ask_who, specific_db, story_steps, query_rules):
+def do_queries(els_dict, els_arr, def_article_dict, ask_who, specific_db, story_steps, query_rules):
 	for query_rule in query_rules:
 		query_gen = rules.extract_query_gen(query_rule)
 		src_recs, query_recs = rules.gen_for_rule(b_gen_for_learn=False, rule=query_gen)
@@ -108,7 +108,7 @@ def do_queries(els_dict, els_arr, def_article, ask_who, specific_db, story_steps
 			if not ask_who:
 				one_query_core = (one_query_rec.phrase())[1:-1] # remove start-stop
 				out_str = 'Query: '
-				out_str = els.print_phrase(one_query_core, one_query_core, out_str, def_article, els_dict)
+				out_str = els.print_phrase(one_query_core, one_query_core, out_str, def_article_dict)
 				print(out_str + '?')
 				phrase_db = specific_db + [rules.C_phrase_rec(one_query_core)]
 			else:
@@ -128,7 +128,7 @@ def do_queries(els_dict, els_arr, def_article, ask_who, specific_db, story_steps
 				for ans_rec in ans_recs:
 					ans_phrase = ans_rec.phrase()
 					out_str = 'Answer: '
-					out_str = els.output_phrase(def_article, els_dict, out_str, ans_phrase[2:-1])
+					out_str = els.output_phrase(def_article_dict, out_str, ans_phrase[2:-1])
 					print(out_str)
 					out_str = []
 			else:
@@ -137,7 +137,7 @@ def do_queries(els_dict, els_arr, def_article, ask_who, specific_db, story_steps
 		# end loop to iterate random generated queries
 	# end for query_rule over query_rules that gen queries (ie where's the hat, where's the tie ...)
 
-def create_story_event(els_dict, els_arr, def_article, story_db, total_event_rule_prob,
+def create_story_event(els_dict, els_arr, def_article_dict, story_db, total_event_rule_prob,
 					   event_queue, i_story_step, event_rules, block_event_rules):
 
 	b_person_to_person_ask = False
@@ -181,18 +181,18 @@ def create_story_event(els_dict, els_arr, def_article, story_db, total_event_rul
 		# print(out_str)
 		if block_rule.name == 'want_dont_give_block_rule':
 			out_str = 'selfish block on:'
-			out_str = els.output_phrase(def_article, els_dict, out_str, event_phrase)
+			out_str = els.output_phrase(def_article_dict, out_str, event_phrase)
 			print(out_str)
 		return [], event_queue, b_person_to_person_ask
 
 	out_str = 'time:' + str(i_story_step) + '. Next story step: *** '
-	out_str = els.output_phrase(def_article, els_dict, out_str, event_phrase)
+	out_str = els.output_phrase(def_article_dict, out_str, event_phrase)
 	out_str += ' **** '
 	print(out_str)
 
 	return event_phrase, event_queue, b_person_to_person_ask
 
-def create_story(els_sets, els_dict, def_article, els_arr, all_rules):
+def create_story(els_sets, els_dict, def_article_dict, els_arr, all_rules):
 	story = []
 	story_db = []
 
@@ -226,7 +226,7 @@ def create_story(els_sets, els_dict, def_article, els_arr, all_rules):
 	print('Current state of story DB')
 	for phrase_rec in story_db:
 		out_str = ''
-		out_str = els.output_phrase(def_article, els_dict, out_str, phrase_rec.phrase())
+		out_str = els.output_phrase(def_article_dict, out_str, phrase_rec.phrase())
 		print(out_str)
 
 	total_event_rule_prob = sum(one_rule.prob for one_rule in event_from_none_rules)
@@ -235,11 +235,11 @@ def create_story(els_sets, els_dict, def_article, els_arr, all_rules):
 	event_queue = [] # queue of events in respons to other events
 	for i_story_step in range(config.c_story_len):
 		if not event_queue and random.uniform(0.0, 1.0) > 0.95:
-			do_queries(els_dict, els_arr, def_article, ask_who=None, specific_db=story_db, story_steps=story_steps,
+			do_queries(els_dict, els_arr, def_article_dict, ask_who=None, specific_db=story_db, story_steps=story_steps,
 					   query_rules=query_rules)
 
 		event_phrase, event_queue, b_person_to_person_ask =\
-			create_story_event(els_dict, els_arr, def_article, story_db,
+			create_story_event(els_dict, els_arr, def_article_dict, story_db,
 								total_event_rule_prob, event_queue,
 								i_story_step, event_rules=event_from_none_rules,
 								block_event_rules=block_event_rules)
@@ -252,14 +252,14 @@ def create_story(els_sets, els_dict, def_article, els_arr, all_rules):
 		if b_person_to_person_ask:
 			event_queue += process_p2p_event(els_sets, els_dict, els_arr, query_rules, story_db, sel_query_src=event_phrase)
 
-		story_db, _ = infer_from_story(	els_dict, els_arr, def_article, story_db, story_step=event_phrase,
+		story_db, _ = infer_from_story(	els_dict, els_arr, def_article_dict, story_db, story_step=event_phrase,
 										step_time=i_story_step, step_effect_rules=state_from_event_rules)
 		# Process the rules again to update steady state knowledge. Don't use the event itself
 		# and don't require the gen_by_last
-		story_db, _ = infer_from_story(	els_dict, els_arr, def_article, story_db, b_static_rules=True,
+		story_db, _ = infer_from_story(	els_dict, els_arr, def_article_dict, story_db, b_static_rules=True,
 										step_time=i_story_step, step_effect_rules=state_from_state_rules)
 		# find events that will happen as a result of this rule
-		_, events_to_queue =  infer_from_story(	els_dict, els_arr, def_article, story_db, b_apply_results=False,
+		_, events_to_queue =  infer_from_story(	els_dict, els_arr, def_article_dict, story_db, b_apply_results=False,
 												story_step=event_phrase, step_effect_rules=event_from_event_rules)
 		event_queue += events_to_queue
 
@@ -269,7 +269,7 @@ def create_story(els_sets, els_dict, def_article, els_arr, all_rules):
 	for phrase_rec in story_db:
 		phrase = phrase_rec.phrase()
 		out_str = ''
-		out_str = els.output_phrase(def_article, els_dict, out_str, phrase)
+		out_str = els.output_phrase(def_article_dict, els_dict, out_str, phrase)
 		print(out_str)
 
 

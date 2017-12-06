@@ -10,8 +10,9 @@ tf.flags.DEFINE_bool('use_log_file', False,
 					 'send output to pylog.txt ')
 tf.flags.DEFINE_float('nn_lrn_rate', 0.003,
 					 'base learning rate for nn ')
-tf.flags.DEFINE_string('save_dir', '/tmp/logicmodels',
-					   'directory to save model to. If empty, dont save')
+# tf.flags.DEFINE_string('save_dir', '/tmp/logicmodels',
+tf.flags.DEFINE_string('save_dir', '',
+						  'directory to save model to. If empty, dont save')
 tf.flags.DEFINE_float('fine_thresh', 0.00,
 					 'once error drops below this switch to 50% like pairs ')
 tf.flags.DEFINE_bool('learn', True,
@@ -37,23 +38,23 @@ c_max_phrases_per_rule = 25
 c_story_len = 350
 c_ovec_len = 500
 c_story_only = False
-c_curriculum_story_len = 1
+c_curriculum_story_len = 5
 c_curriculum_num_stories = 19
-c_query_story_len = 1
-c_query_num_stories = 1
-c_eval_story_len = 1
-c_eval_num_stories = 1
+c_query_story_len = 3
+c_query_num_stories = 3
+c_eval_story_len = 3
+c_eval_num_stories = 3
 c_match_batch_size = 3
 c_mismatch_batch_size = 5
 c_num_k_eval = 5
-c_num_clusters = 5
+c_num_clusters = 15
 c_kmeans_num_batches = 1
 c_kmeans_num_db_segs = 2
 c_kmeans_iters = 6
 c_set_compress_cd_factor = 0.8
-c_cascade_level = 2 # should be at least 3
+c_cascade_level = 3 # should be at least 3
 c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
-c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5]
+c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
 
 
 

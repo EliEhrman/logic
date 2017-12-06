@@ -53,7 +53,7 @@ def create_actions_file():
 # gels1 = []
 # gels2 = []
 # distinguishing between els and objects. The former is generic. The latter are things you pick up, take etc
-def init_els(els_dict, glv_dict, els_arr, def_article, fname=None, alist=None, new_def_article=False, cap_first=False, max_new=5):
+def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_article=False, cap_first=False, max_new=5):
 	num_els = len(els_arr)
 	if fname:
 		fh_names = open(fname, 'rb')
@@ -62,8 +62,8 @@ def init_els(els_dict, glv_dict, els_arr, def_article, fname=None, alist=None, n
 			new_els = [lname[0].lower().title() for lname in fr_names]
 		else:
 			new_els = [lname[0].lower() for lname in fr_names]
-		fh_names.seek(0)
-		new_el_vecs = [[float(fs) for fs in glv_row[1:]] for glv_row in fr_names]
+		# fh_names.seek(0)
+		# new_el_vecs = [[float(fs) for fs in glv_row[1:]] for glv_row in fr_names]
 
 		if max_new < 0:
 			max_new = len(new_els)
@@ -77,21 +77,52 @@ def init_els(els_dict, glv_dict, els_arr, def_article, fname=None, alist=None, n
 		shuffle_stick = range(len(new_els))
 		random.shuffle(shuffle_stick)
 		new_els = [new_els[i] for i in shuffle_stick]
-		new_el_vecs = [new_el_vecs[i] for i in shuffle_stick]
+		# new_el_vecs = [new_el_vecs[i] for i in shuffle_stick]
 		new_els = new_els[0:min(max_new, len(new_els))]
-		new_el_vecs = new_el_vecs[0:min(max_new, len(new_els))]
+		# new_el_vecs = new_el_vecs[0:min(max_new, len(new_els))]
+		fh_names.close()
 	else:
 		new_els = alist
 
 	els_arr += new_els
 	for iel, el_name in enumerate(new_els):
 		els_dict[el_name] = num_els + iel
-		glv_dict[el_name] = new_el_vecs[iel]
+		# glv_dict[el_name] = new_el_vecs[iel]
 	def_article += [new_def_article for id in new_els]
 	num_new_els = len(new_els)
 	new_els_range = range(num_els, num_els+num_new_els)
 	num_els += num_new_els
 	return [new_els_range, num_new_els, new_els], num_els
+
+def init_glv():
+	fnames = ['names.glv', 'objects.glv', 'countries.glv', 'actions.glv']
+	cap_first_arr = [True, False, True, False]
+	def_article_arr = [False, True, False, False]
+	glv_dict = {}
+	new_el_vecs = []
+	new_els = []
+	def_article_dict = {}
+	for ifname, fname in enumerate(fnames):
+		fh_names = open(fname, 'rb')
+		fr_names = csv.reader(fh_names, delimiter=',')
+		if cap_first_arr[ifname]:
+			all_names = [lname[0].lower().title() for lname in fr_names]
+		else:
+			all_names = [lname[0].lower() for lname in fr_names]
+
+		new_els += all_names
+		for name in all_names:
+			def_article_dict[name] = def_article_arr[ifname]
+
+		fh_names.seek(0)
+		new_el_vecs += [[float(fs) for fs in glv_row[1:]] for glv_row in fr_names]
+		fh_names.close()
+
+	for iitem, item in enumerate(new_el_vecs):
+		glv_dict[new_els[iitem]] = item
+
+	return glv_dict, def_article_dict
+
 
 def init_objects():
 	els_arr = []
@@ -101,26 +132,26 @@ def init_objects():
 	# name_ids, num_els, num_names, names = \
 	name_set, num_els = \
 		init_els(	fname='names.glv', cap_first=True, max_new=config.max_names,
-					els_dict=els_dict, glv_dict=glv_dict, els_arr=els_arr, def_article=def_article)
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 	# object_ids, num_els, num_objects, objects = \
 	object_set, num_els = \
 		init_els(	fname='objects.glv', new_def_article=True, max_new=config.max_objects,
-					els_dict=els_dict, glv_dict=glv_dict, els_arr=els_arr, def_article=def_article)
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 	place_set, num_els =\
 		init_els(	fname='countries.glv', cap_first=True, max_new=config.max_countries,
-					els_dict=els_dict, glv_dict=glv_dict, els_arr=els_arr, def_article=def_article)
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
 	action_set, num_els =\
 		init_els(	fname='actions.glv', max_new=-1,
-					els_dict=els_dict, glv_dict=glv_dict, els_arr=els_arr, def_article=def_article)
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
 
 	# utils.get_avg_min_cd(gels1+gels2, len(gels1[0]))
 
 	els_sets = utils.nt_el_sets(names=name_set, objects=object_set, places=place_set, actions=action_set)
 	# return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
-	return els_arr, els_dict, glv_dict, def_article, num_els, els_sets
+	return els_arr, els_dict, def_article, num_els, els_sets
 
-def output_phrase(def_article, els_dict, out_str, phrase):
+def output_phrase(def_article_dict, out_str, phrase):
 	b_first = True
 	for iel, el in enumerate(phrase):
 		if el[0] == rec_def_type.error:
@@ -129,7 +160,7 @@ def output_phrase(def_article, els_dict, out_str, phrase):
 		else:
 			if len(el) > 2 and el[2]:
 				out_str += '{search for: '
-			if el[0] == rec_def_type.obj and def_article[els_dict[el[1]]]:
+			if el[0] == rec_def_type.obj and def_article_dict[el[1]]:
 				if b_first:
 					out_str += 'The '
 					b_first = False
@@ -149,7 +180,7 @@ def output_phrase(def_article, els_dict, out_str, phrase):
 
 def complete_phrase(src_phrase,
 					out_phrase,
-					out_str):
+					out_str, el_set_arr = None, glv_dict = None):
 	filled_phrase = []
 	for el in out_phrase:
 		if el[0] == rec_def_type.conn:
@@ -168,17 +199,30 @@ def complete_phrase(src_phrase,
 			elif el[1] == conn_type.Remove:
 				out_str = 'Remove: '
 		elif el[0] == rec_def_type.var:
-			filled_phrase.append((src_phrase.phrase())[el[1]])
+			# filled_phrase.append((src_phrase.phrase())[el[1]])
+			filled_phrase.append([el[0], '{var:' + str(el[1]) + '}'])
 			if len(el) > 2:
 				filled_phrase[-1].append(el[2])
 		elif el[0] == rec_def_type.obj:
 			filled_phrase.append(el)
+		elif el[0] == rec_def_type.set:
+			# glv_dict must be passed as an actual value here and not default param
+			# if you get an assert here, that is the reason why
+			set_vec, set_cd, _ = el_set_arr[el[1]]
+			best_cd = -1.0
+			best_name = 'not found!'
+			for sym, one_vec in glv_dict.iteritems():
+				cd = sum([one_vec[i] * set_val for i, set_val in enumerate(set_vec)])
+				if cd > best_cd:
+					best_name, best_cd = sym, cd
+			filled_phrase.append([el[0], '{set#' + str(len(filled_phrase)) + ':' + best_name + '-like (' + str(set_cd) + ')}'])
+
 	return filled_phrase, out_str
 
-def print_phrase(src_phrase, out_phrase, out_str, def_article, els_dict):
+def print_phrase(src_phrase, out_phrase, out_str, def_article_dict, el_set_arr = None, glv_dict = None):
 
-	filled_phrase, out_str = complete_phrase(src_phrase, out_phrase, out_str)
-	return output_phrase(def_article, els_dict, out_str, filled_phrase)
+	filled_phrase, out_str = complete_phrase(src_phrase, out_phrase, out_str, el_set_arr, glv_dict)
+	return output_phrase(def_article_dict, out_str, filled_phrase)
 
 def make_vec(recs, glv_dict):
 	# numrecs = len(recs)

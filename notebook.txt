@@ -252,4 +252,14 @@ Checking in with comment:
 
 Creating first pass learned rules. Some evaluation but not excluding unnecessary clauses.
 
+Thursday 30th November
+
+Moved the glv_dict creation outside the curriculum learning but all other set creation and rule initiation happens inside
+each iteration of story creation, whether for the database, queries or evaluation set
+
+Wednesday 6th December
+
+Checking in with comment:
+
+Learned rules succeeds for simplest stories
 
