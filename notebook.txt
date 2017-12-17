@@ -267,3 +267,153 @@ Checking in with comment:
 
 Added a criteria of most specific rule wins
 
+Wednesday 13th December
+
+
+Conversation opened. 1 read message.
+
+
+Skip to content
+rec text
+Inbox
+x
+
+Eli Ehrman <ehrman.eli@gmail.com>
+Attachments4:37 PM (21 minutes ago)
+
+to me
+Attachments area
+
+Click here to Reply or Forward
+13.37 GB (89%) of 15 GB used
+Manage
+Terms - Privacy
+Last account activity: 4 minutes ago
+Details
+
+
+csc_list
+sort by len  = total number of words in a all phrases
+for each csc comb, find all permutations
+	select all equally high-scored perms (var positions etc)
+	create rec with vars
+	calc rec len and svo pattern
+		There is a svo for the preconds and a svo plus o list for the gens
+		svo rules
+			c for conn
+			followed by s, e, a and r (r for or)
+			v for var
+			followed by two digit var num 0 padded
+			o for obj (will translate to anyobj, obj and set)
+			g placed between preconds and gens only for lexical ordering
+				correction ordering must be based on preconds alone
+	for each rec
+		Find its len grp, templ,
+		Is there ust one gg or many?
+		if one:
+			do i match gg?
+			if not, create new gg
+		if > 1 gg, whether from before or now
+			does new input match on one of the gg's mrg?
+			does it fail to mmap on competing gg's mrg's
+			if both yes, add to the statistic and cosider upgrading mrg confidence
+			if not,
+				attempt to broaden
+				look at other rec of the mrg as well as recs from other gg's
+				if competing gg's now fit ito broadened category
+					backtrack on broadening and trycreating a new mrg
+					do the same checks
+				if you cant't make this work - shout for help
+					might need a NN solution here
+				if there is a longer rule that has none of these problems, give him the confidence
+				might need to take recs out of the mothballs
+		dig down to mrg
+		if complete confidence reached
+			remove all event insertions
+			stop
+		if confidence relative to longer
+			keep going as long as incming recs are no longer
+		if fail where no prev failure on high confidence
+			TBD
+		if match grp found, and success
+			add to eid success group
+			add mrgid to event list successes
+		if mrg match but fail
+			search
+
+list of len groups, sorted by len
+c_len_grp
+	len
+	template list (sorted by var score?)
+c_templ_grp
+	var score?
+	svo pattern
+	event_id_set success
+	eid fail
+	gens grp list
+		if only one, template is enough
+c_gens_grp
+	svo pattern and olist (only obj allowed, not anyobj or set)
+	match rec group (mrg) list
+		at least one, the top level with all o fields set to anyobj ????
+		at least one, defining how to distinguish recs that match the parent template from other cgg's
+c_mrg
+	o-list. list of all obj fields.
+		anyobj, obj and set.
+	eid success list
+	eid fail
+	child mrgs
+		defined as same o-list but one field more restricted, otherwise a sibling not a child
+rec_match_group.txt
+Open with
+Displaying rec_match_group.txt.
+
+Thursday 14th December
+
+More details on the same:
+
+c_gg test
+	list of c_mrgs
+	for each mrg
+		if !match
+			irrelevent
+		if match and !correct
+			problem for the whole gg and maybe template
+		if match and correct
+			match_found
+	if !match_found
+		for each mrg
+			add to perm_list
+			create new rule
+				for each gg in templ
+					if not curr gg
+						continue
+					for each perm_rec in gg
+						if match perm_rec to new rule
+							fail on new rule
+
+		create new mrg
+			???repeat test for all other gg's
+
+
+for each new perm
+	for each templ match
+		for each gg
+			if correct (test with gg is all that's needed)
+				for each mrg
+					look for at least one match
+				if founf add to scoring for that mrg
+				if !found do above proc
+			if !correct
+				for each mrg,
+					check that no match
+					but if match add to fail scoring
+
+Sunday,  17th December
+
+Giving up on the direction of mrg.
+
+Checking in just to keep some record of the code with the message:
+
+Version not working. Giving up on mrg
+

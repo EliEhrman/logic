@@ -828,7 +828,42 @@ def init_all_rules(els_sets, els_dict):
 	# The reliance on rule ordering seems poor. A better method would either allow a rule that
 	# DOES NOT match any story db phrase or a specific disagreement between two vars (so you don't
 	# remove a previously inserted 'is located in'
-	print('replace the following with a modify!')
+	# print('replace the following with a modify!')
+	# gen_rule_went_from =	nt_rule(
+	# 	preconds = nt_tree_junct(logic=conn_type.AND, branches=[
+	# 		nt_tree_junct(single=[
+	# 			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+	# 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+	# 			nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+	# 		nt_tree_junct(single=[
+	# 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+	# 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+	# 			nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
+	# 	gens=nt_tree_junct(single=[
+	# 			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
+	# 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+	# 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+	# 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+	# 	]),
+	# 	type=rule_type.state_from_event, name='gen_rule_went_from'
+	# )
+	# all_rules.append(gen_rule_went_from)
+	#
+	# gen_rule_went =	nt_rule(
+	# 	preconds = nt_tree_junct(single=[
+	# 		nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+	# 		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
+	# 		nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+	# 	gens= nt_tree_junct(single=[
+	# 		nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+	# 		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
+	# 		nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+	# 		nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+	# 	]),
+	# 	type=rule_type.state_from_event, name='gen_rule_went'
+	# )
+	# all_rules.append(gen_rule_went)
+	#
 	gen_rule_went_from =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[
 			nt_tree_junct(single=[
@@ -840,29 +875,15 @@ def init_all_rules(els_sets, els_dict):
 				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
 				nt_rule_fld(els_set=place_set, df_type=df_type.obj)])]),
 		gens=nt_tree_junct(single=[
-				nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Remove),
+				nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Modify),
 				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
-		]),
-		type=rule_type.state_from_event, name='gen_rule_went_from'
-	)
-	all_rules.append(gen_rule_went_from)
-
-	gen_rule_went =	nt_rule(
-		preconds = nt_tree_junct(single=[
-			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-			nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
-		gens= nt_tree_junct(single=[
-			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
-			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2, replace_by_next=True),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5),
 		]),
 		type=rule_type.state_from_event, name='gen_rule_went'
 	)
-	all_rules.append(gen_rule_went)
+	all_rules.append(gen_rule_went_from)
 
 	gen_rule_has_and_went =	nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches=[

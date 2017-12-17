@@ -1,0 +1,196 @@
+from __future__ import print_function
+import sys
+import math
+import numpy as np
+import random
+import itertools
+
+import config
+import rules
+import story
+import cascade
+from rules import conn_type
+import els
+import dmlearn
+import ykmeans
+import utils
+
+def make_rule_from_phrases(rule_base, one_perm, story_db, event_result):
+	rule_cand = list(rule_base)
+	for iphrase in one_perm:
+		rule_cand += [story_db[iphrase].phrase()]
+
+	branches = []
+	vars_dict = {}
+	field_id = 0
+	for one_phrase in rule_cand:
+		rule_fields = []
+		for el in one_phrase:
+			word = el[1]
+			var_field_id = vars_dict.get(word, -1)
+			if var_field_id == -1:
+				vars_dict[word] = field_id
+				rule_fields.append(rules.nt_rule_fld(els_set=[], df_type=rules.df_type.obj, sel_el=word))
+			else:
+				rule_fields.append(rules.nt_rule_fld(els_set=[], df_type=rules.df_type.var, var_id=var_field_id))
+			field_id += 1
+		branches.append(rules.nt_tree_junct(single=rule_fields))
+	if len(rule_cand) == 1:
+		new_conds = rules.nt_tree_junct(single=rule_fields)
+	else:
+		new_conds = rules.nt_tree_junct(branches=branches, logic=conn_type.AND)
+
+	rule_fields = []
+	for el in event_result:
+		if el[0] == rules.rec_def_type.obj:
+			word = el[1]
+			var_field_id = vars_dict.get(word, -1)
+			if var_field_id == -1:
+				rule_fields.append(rules.nt_rule_fld(els_set=[], df_type=rules.df_type.obj, sel_el=word))
+			else:
+				rule_fields.append(rules.nt_rule_fld(els_set=[], df_type=rules.df_type.var, var_id=var_field_id))
+		elif el[0] == rules.rec_def_type.conn:
+			rule_fields.append(rules.nt_rule_fld(els_set=[], df_type=rules.df_type.mod, sel_el=el[1]))
+		else:
+			print('Unexpected type in event_result!')
+			exit()
+	new_gens = rules.nt_tree_junct(single=rule_fields)
+	return rules.nt_rule(preconds=new_conds, gens=new_gens)
+
+def gen_cvo_str(rec):
+	cvo_str = ''
+	for el in rec:
+		if el[0] == rules.rec_def_type.conn:
+			cvo_str += 'c'
+			if el[1] == rules.conn_type.AND:
+				cvo_str += 'a'
+			elif el[1] == rules.conn_type.OR:
+				cvo_str += 'r'
+			if el[1] == rules.conn_type.start:
+				cvo_str += 's'
+			if el[1] == rules.conn_type.end:
+				cvo_str += 'e'
+		elif el[0] == rules.rec_def_type.var:
+			cvo_str += 'v'
+			cvo_str += str(el[1]).rjust(2, '0')
+		else:
+			cvo_str += 'o'
+
+	return cvo_str
+
+
+def match_gens_phrase(rec0, rec1):
+	b_matched = True
+
+	if len(rec0) != len(rec1):
+		return False
+
+	for iel in range(len(rec0)):
+		rt0 = rec0[iel][0]
+		rt1 = rec1[iel][0]
+		el0 = rec0[iel][1]
+		el1 = rec1[iel][1]
+		if rt0 != rt1:
+			b_matched = False
+			break
+		if rt0 == rules.rec_def_type.conn or rt0 == rules.rec_def_type.var:
+			if el0 != el1:
+				b_matched = False
+				break
+		elif rt0 == rules.rec_def_type.obj:
+			if el0 != el1:
+				b_matched = False
+				break
+		else:
+			print('incorrect rec_def_type of match_instance_phrase. Exiting!')
+			exit()
+
+	return b_matched
+
+def get_result_for_cvo_and_rec(preconds_rec, gens_rec):
+	# sleft = str(scvo)
+	#
+	# while sleft != '':
+	# 	c, sleft = sleft[0], sleft[1:]
+	result = []
+	for el in gens_rec:
+		if el[0] == rules.rec_def_type.var:
+			ivar = el[1]
+			result.append(preconds_rec[ivar])
+		else:
+			result.append(el)
+
+	return result
+
+def match_rec_exact(rec0, rec1):
+	for iel,_ in enumerate(rec0):
+		if rec0[iel][0] != rec1[iel][0] or rec0[iel][1] != rec1[iel][1]:
+			return False
+
+	return True
+
+def match_instance_to_rule(glv_dict, el_set_arr, set_rec, q_rec):
+	b_matched = True
+	var_dict = dict()
+
+	if len(set_rec) != len(q_rec):
+		return False, var_dict
+
+	for iel in range(len(set_rec)):
+		set_rt = set_rec[iel][0]
+		q_rt = q_rec[iel][0]
+		set_el = set_rec[iel][1]
+		q_el = q_rec[iel][1]
+		if not (set_rt == rules.rec_def_type.set and q_rt == rules.rec_def_type.obj) and set_rt != q_rt:
+			b_matched = False
+			break
+		if set_rt == rules.rec_def_type.conn:
+			if set_el != q_el:
+				b_matched = False
+				break
+		elif set_rt == rules.rec_def_type.var:
+			if set_el != q_el:
+				b_matched = False
+				break
+		elif set_rt == rules.rec_def_type.set and q_rt == rules.rec_def_type.obj:
+			q_vec = glv_dict[q_el]
+			set_vec, set_cd, _ = el_set_arr[set_el]
+			cd = sum([q_vec[i] * set_val for i, set_val in enumerate(set_vec)])
+			if cd < set_cd:
+				b_matched = False
+				break
+			var_dict[iel] = q_el
+		else:
+			b_matched = False
+			break
+
+	return b_matched, var_dict
+
+def find_quant_thresh(cd):
+	for thresh in config.c_rule_cluster_thresh_levels:
+		if cd >= thresh:
+			return thresh
+	return -1.0
+
+def make_rule_grp(glv_dict, rule_cluster, el_set_arr):
+	veclen = len(glv_dict[config.sample_el])
+	rule_phrase = []
+	for iel, el in enumerate(rule_cluster[0]):
+		if el[0] != rules.rec_def_type.obj:
+			rule_phrase.append([el[0], el[1]])
+			continue
+		vec_list = []
+		for phrase in rule_cluster:
+			# phrase = rule.phrase[0]
+			vec = glv_dict[phrase[iel][1]]
+			vec_list.append(vec)
+
+		vec_avg, min_cd = utils.get_avg_min_cd(vec_list, veclen)
+		min_cd = find_quant_thresh(min_cd)
+		rule_phrase.append([rules.rec_def_type.set, len(el_set_arr)])
+		el_set_arr.append([vec_avg, min_cd, vec_list])
+
+	return rule_phrase
+
+
+

@@ -15,6 +15,25 @@ def all_combinations(src_set):
 		results += itertools.combinations(src_set, i+1)
 	return results
 
+def get_cascade_combs(els_sets, story_db, event_phrase):
+	story_els_set = utils.combine_sets([els_sets.objects, els_sets.places, els_sets.names])
+	story_els = story_els_set[2]
+	cascade_db = [event_phrase]
+	phrase_idx_set = set()
+	all_perms = []
+
+	recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_set, all_perms,
+				   recursions_left = config.c_cascade_level)
+
+	limited_all_perms = []
+	for one_perm in all_perms:
+		if len(one_perm) <= config.c_cascade_max_phrases:
+			limited_all_perms.append(one_perm)
+	all_perms = limited_all_perms
+
+	return [[]] + all_perms
+
+
 def get_obj_cascade(els_sets, target_phrase, story_db, event_phrase, b_for_query):
 	story_els_set = utils.combine_sets([els_sets.objects, els_sets.places, els_sets.names])
 	story_els = story_els_set[2]

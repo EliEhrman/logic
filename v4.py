@@ -20,6 +20,7 @@ from rules import dm_type
 from rules import conn_type
 import story
 import curriculum
+import recgrp
 import utils
 from utils import ulogger as logger
 import config
@@ -186,7 +187,8 @@ def do_init():
 
 	# for now everything is in do_learn. Ignore all the rest
 
-	curriculum.do_learn(glv_dict, def_article_dict)
+	recgrp.do_learn(glv_dict, def_article_dict)
+	# curriculum.do_learn(glv_dict, def_article_dict)
 
 	exit()
 	# for rule in all_rules:

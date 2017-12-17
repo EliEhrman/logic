@@ -111,11 +111,11 @@ def gen_trainset(gen_rules, event_results_raw, event_result_ids_raw, glv_dict, m
 			# gens_str = els.print_phrase(input_unsorted[one_igen].phrase(), event_results_unsorted[one_igen], out_str, def_article_dict,
 			# 							el_set_arr, glv_dict)
 			# print(out_str + '\n\t\t\tgens:' + gens_str)
-			if input_unsorted[one_igen].phrase()[3][1] != event_results_unsorted[one_igen][3][1] \
-					and input_unsorted[one_igen].phrase()[3][1] != event_results_unsorted[one_igen][1][1] \
-					and input_unsorted[one_igen].phrase()[4][1] != event_results_unsorted[one_igen][3][1] \
-					and input_unsorted[one_igen].phrase()[4][1] != event_results_unsorted[one_igen][1][1]:
-				print('there may be a mismatch on eval phrase #', dict_id, igen_idx)
+			# if input_unsorted[one_igen].phrase()[3][1] != event_results_unsorted[one_igen][3][1] \
+			# 		and input_unsorted[one_igen].phrase()[3][1] != event_results_unsorted[one_igen][1][1] \
+			# 		and input_unsorted[one_igen].phrase()[4][1] != event_results_unsorted[one_igen][3][1] \
+			# 		and input_unsorted[one_igen].phrase()[4][1] != event_results_unsorted[one_igen][1][1]:
+			# 	print('there may be a mismatch on eval phrase #', dict_id, igen_idx)
 
 			if len(input_sorted) == 1:
 				# all_ivecs = ivec
@@ -151,8 +151,8 @@ def gen_trainset(gen_rules, event_results_raw, event_result_ids_raw, glv_dict, m
 def create_train_vecs(glv_dict, def_article_dict,
 					  num_stories, num_story_steps, b_for_query, ivec_dim_dict_fixed = None):
 	start_rule_names = ['objects_start', 'people_start']
-	event_rule_names = ['pickup_rule']
-	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free']
+	event_rule_names = ['pickup_rule', 'went_rule']
+	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went']
 
 	train_rules = []
 	event_results = []
@@ -665,11 +665,11 @@ def do_set_eval(glv_dict, def_article_dict, sess, input_db, output_db,  t_y_db, 
 		gens_str = els.print_phrase(one_phrase_eval.phrase(), event_results_eval[ieval], out_str, def_article_dict,
 									el_set_arr, glv_dict)
 		print(out_str + '\n\t\t\tgens:' + gens_str)
-		if 		one_phrase_eval.phrase()[3][1] != event_results_eval[ieval][3][1] \
-				and one_phrase_eval.phrase()[3][1] != event_results_eval[ieval][1][1] \
-				and one_phrase_eval.phrase()[4][1] != event_results_eval[ieval][3][1] \
-				and one_phrase_eval.phrase()[4][1] != event_results_eval[ieval][1][1]:
-			print('there may be a mismatch on eval phrase #', ieval)
+		# if 		one_phrase_eval.phrase()[3][1] != event_results_eval[ieval][3][1] \
+		# 		and one_phrase_eval.phrase()[3][1] != event_results_eval[ieval][1][1] \
+		# 		and one_phrase_eval.phrase()[4][1] != event_results_eval[ieval][3][1] \
+		# 		and one_phrase_eval.phrase()[4][1] != event_results_eval[ieval][1][1]:
+		# 	print('there may be a mismatch on eval phrase #', ieval)
 
 	# new_rec_rules, el_set_arr = build_sym_rules(glv_dict, nd_cluster_id_for_each_rec, input_db, output_db)
 
