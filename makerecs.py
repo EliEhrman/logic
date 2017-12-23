@@ -192,5 +192,17 @@ def make_rule_grp(glv_dict, rule_cluster, el_set_arr):
 
 	return rule_phrase
 
+def get_olen(scvo):
+	return scvo.count('o')
+
+def make_vec(glv_dict, perm_rec, olen, glv_len):
+	vec = np.zeros(olen*glv_len, dtype=np.float32)
+	io = -1
+	for el in perm_rec:
+		if el[0] == rules.rec_def_type.obj:
+			io += 1
+			vec[io*glv_len:(io+1)*glv_len] = glv_dict[el[1]]
+
+	return vec
 
 

@@ -27,6 +27,10 @@ def create_train_vecs(glv_dict, def_article_dict,
 	event_rule_names = ['pickup_rule', 'went_rule']
 	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went']
 
+	cl_templ_grp.glv_dict = glv_dict
+	cl_templ_grp.glv_len = len(glv_dict[config.sample_el])
+	sess = dmlearn.init_templ_learn()
+
 	train_rules = []
 	event_results = []
 	event_result_id = -1
@@ -81,8 +85,16 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 			for event_result in events_to_queue:
 				event_result_id += 1
+				print('Evaluating the following result:')
+				out_str = ''
+				out_str = els.print_phrase(event_result, event_result, out_str,
+										   def_article_dict)
+				print(out_str)
 				# all_perms = cascade.get_obj_cascade(els_sets, event_result[1:], story_db, event_phrase, b_for_query=b_for_query)
 				all_combs = cascade.get_cascade_combs(els_sets, story_db, event_phrase)
+
+				# b_rule_confidence_good = False
+				comb_len_passed = -1
 
 				for one_comb in all_combs:
 					all_perms = list(itertools.permutations(one_comb, len(one_comb)))
@@ -111,6 +123,16 @@ def create_train_vecs(glv_dict, def_article_dict,
 					plist_min = [iperm for iperm, scvo in enumerate(pcvo_list) if scvo <= pstr_min ]
 					for iperm in plist_min:
 						comb_len = len(perm_preconds_list[iperm])
+						# if b_rule_confidence_good and comb_len > comb_len_passed:
+						# 	continue
+						print('Evaluating the following perm:')
+						out_str = ''
+						out_str = els.print_phrase(perm_preconds_list[iperm], perm_preconds_list[iperm], out_str, def_article_dict)
+						print(out_str)
+						out_str = ''
+						out_str = els.print_phrase(perm_gens_list[iperm], perm_gens_list[iperm], out_str, def_article_dict)
+						print(out_str)
+
 						i_len_grp = -1
 						for igrp, len_grp in enumerate(db_len_grps):
 							if len_grp.len() == comb_len:
@@ -118,39 +140,71 @@ def create_train_vecs(glv_dict, def_article_dict,
 								perm_templ = len_grp.find_templ(pcvo_list[iperm])
 								if not perm_templ:
 									gg = cl_gens_grp(gens_rec=perm_gens_list[iperm], preconds_rec=perm_preconds_list[iperm])
-									len_grp.add_templ(cl_templ_grp(pcvo_list[iperm], gens_grp=gg, preconds_rec=perm_preconds_list[iperm]))
+									len_grp.add_templ(cl_templ_grp(comb_len, pcvo_list[iperm],
+																   preconds_rec=perm_preconds_list[iperm],
+																   gens_rec=perm_gens_list[iperm],
+																   event_result=event_result,
+																   eid=event_result_id))
 								else:
-									perm_gg, perm_igg = perm_templ.find_gg(gens_rec=perm_gens_list[iperm])
-									if not perm_gg:
-										gg = cl_gens_grp(gens_rec=perm_gens_list[iperm],
-														 preconds_rec=perm_preconds_list[iperm])
-										perm_igg = perm_templ.add_gg(gg, preconds_rec=perm_preconds_list[iperm])
-									else:
-										perm_gg.add_perm(preconds_rec=perm_preconds_list[iperm])
-										perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm])
-									gg_list = perm_templ.get_gg_list()
-									for igg, test_gg in enumerate(gg_list):
-										generated_result = mr.get_result_for_cvo_and_rec(perm_preconds_list[iperm], perm_gens_list[iperm])
-										mrg_list = test_gg.get_mrg_list()
-										if mr.match_rec_exact(generated_result, event_result):
-											b_matched = False
-											for mrg in mrg_list:
-												b_this_matched = mrg.test(glv_dict, el_set_arr, perm_preconds_list[iperm])
-												if b_this_matched:
-													b_matched = True
-													# add to score for mrg
-											if not b_matched:
-												for mrg in mrg_list:
-													mrg_perm_list = mrg.get_perm_list()
-													new_rule = mr.make_rule_grp(glv_dict, mrg_perm_list, el_set_arr)
-										else:
-											for mrg in mrg_list:
-												b_this_matched = mrg.test(glv_dict, el_set_arr, perm_preconds_list[iperm])
-												# if b_this_matched:
-													# decrease score for mrg
-									break
+									# b_this_test_passed = False
+									num_pggs = perm_templ.get_num_pggs()
+									if num_pggs >= 2:
+										# print('Evaluating for single gg templ')
+										# perm_templ.printout(def_article_dict)
+										# generated_result = mr.get_result_for_cvo_and_rec(perm_preconds_list[iperm],
+										# 												 gg_list[0].get_gens_rec())
+										# if mr.match_rec_exact(generated_result[1:-1], event_result):
+										# 	print('match success!')
+										# 	if perm_templ.get_num_perms() > config.c_num_k_eval:
+										# 		print('match without alternatives')
+										# 		b_rule_confidence_good = True
+										# 		comb_len_passed = comb_len
+										# 		b_this_test_passed = True
+										# else:
+										# 	print('match fail!')
+									# else:
+										print('Getting score for multi-gg templ.')
+										perm_templ.printout(def_article_dict)
+										score = perm_templ.get_match_score(perm_preconds_list[iperm], event_result)
+										if score >= 1.0:
+											print('match perfect!')
+											# b_rule_confidence_good = True
+											comb_len_passed = comb_len
+											# b_this_test_passed = True
+
+									perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm],
+														gens_rec=perm_gens_list[iperm],
+														perm_result=event_result,
+														eid=event_result_id)
+									# perm_gg, perm_igg = perm_templ.find_gg(gens_rec=perm_gens_list[iperm])
+									# if not perm_gg:
+									# 	if b_this_test_passed:
+									# 		print('Strange! Score was perfect yet requires adding a new gg!')
+									# 	gg = cl_gens_grp(gens_rec=perm_gens_list[iperm],
+									# 					 preconds_rec=perm_preconds_list[iperm])
+									# 	perm_igg = perm_templ.add_gg(gg, preconds_rec=perm_preconds_list[iperm])
+									# else:
+									# 	if not b_this_test_passed:
+									# 		perm_gg.add_perm(preconds_rec=perm_preconds_list[iperm])
+									# 		perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm], gens_rec=perm_gens_list[iperm], igg=perm_igg)
+
+									# if not b_this_test_passed:
+									print('Doing learning.')
+									perm_templ.printout(def_article_dict)
+									perm_templ.do_learn(sess)
+									score = perm_templ.get_match_score(perm_preconds_list[iperm], event_result, b_real_score=False)
+
+								# gg_list = perm_templ.get_gg_list()
+									# for igg, test_gg in enumerate(gg_list):
+									# 	generated_result = mr.get_result_for_cvo_and_rec(perm_preconds_list[iperm], perm_gens_list[iperm])
+									# 	if mr.match_rec_exact(generated_result[1:-1], event_result):
+									# 		b_matched = False
+								break
+							#end if len matches
+						# end loop over len groups
 						if i_len_grp == -1:
-							db_len_grps.append(cl_len_grp(comb_len, pcvo_list[iperm], perm_preconds_list[iperm], perm_gens_list[iperm]))
+							db_len_grps.append(cl_len_grp(comb_len, pcvo_list[iperm], perm_preconds_list[iperm],
+														  perm_gens_list[iperm], event_result, event_result_id))
 
 				#end of one_comb in all_combs
 

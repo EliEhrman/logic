@@ -2,11 +2,13 @@
 
 import math
 import os
+import time
 import numpy as np
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
 from utils import ulogger as logger
 import config
+import makerecs as mr
 
 def stop_reached(datum, tensor):
 	if datum.node_name == 't_for_stop': # and tensor > 100:
@@ -14,6 +16,89 @@ def stop_reached(datum, tensor):
 	return False
 
 t_for_stop = tf.constant(5.0, name='t_for_stop')
+
+def build_templ_nn(var_scope, input_dim, b_reuse):
+	weight_factor = 1.0 / (input_dim * config.c_key_dim)
+	# weight_factor = 1.0 / 150 * 15
+	# t_shape = tf.constant([2], dtype=tf.int32)
+	with tf.variable_scope(var_scope, reuse=b_reuse):
+		# v_W = tf.Variable(tf.random_normal(shape=[num_inputs, c_key_dim], mean=0.0, stddev=weight_factor), dtype=tf.float32)
+		v_W = tf.get_variable('v_W', shape=[input_dim, config.c_key_dim], dtype=tf.float32,
+							  initializer=tf.random_normal_initializer(mean=0.0, stddev=weight_factor) )
+
+
+	with tf.name_scope(var_scope):
+		ph_input = tf.placeholder(tf.float32, shape=(None, input_dim), name='input')
+		t_y = tf.nn.l2_normalize(tf.matmul(ph_input, v_W), dim=1, name='t_y_')
+
+	return ph_input, v_W, t_y
+
+def create_tmpl_dml_tensors(t_y, var_scope):
+	ph_numrecs = tf.placeholder(tf.int32, shape=(), name='ph_numrecs_'+var_scope)
+	ph_o = tf.placeholder(tf.int32, shape=(None), name='ph_o_'+var_scope)
+	# v_o = tf.Variable(tf.constant(ovec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_o')
+	v_r1 = tf.Variable(	tf.zeros([config.c_rsize], dtype=tf.int32),
+						trainable=False, name='v_r1')
+	v_r2 = tf.Variable(	tf.zeros([config.c_rsize], dtype=tf.int32),
+						trainable=False, name='v_r2')
+	op_r1 = tf.assign(	v_r1, tf.random_uniform([config.c_rsize], minval=0, maxval=ph_numrecs, dtype=tf.int32),
+						name='op_r1')
+	op_r2 = tf.assign(v_r2, tf.random_uniform([config.c_rsize], minval=0, maxval=ph_numrecs, dtype=tf.int32),
+						name='op_r2')
+
+	t_o1 = tf.gather(ph_o, v_r1, name='t_o1')
+	t_o2 = tf.gather(ph_o, v_r2, name='t_o2')
+
+	t_y1 = tf.gather(t_y, v_r1, name='t_y1')
+	t_y2 = tf.gather(t_y, v_r2, name='t_y2')
+
+	t_cdo = tf.where(tf.equal(t_o1, t_o2), tf.ones([config.c_rsize], dtype=tf.float32), tf.zeros([config.c_rsize], dtype=tf.float32), name='t_cdo')
+	t_cdy = tf.reduce_sum(tf.multiply(t_y1, t_y2), axis=1, name='t_cdy')
+	t_err = tf.reduce_mean((t_cdo - t_cdy) ** 2, name='t_err')
+	op_train_step = tf.train.GradientDescentOptimizer(config.FLAGS.nn_lrn_rate).minimize(t_err, name='op_train_step')
+
+	return op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o
+
+def init_templ_learn():
+	sess = tf.Session()
+	sess.run(tf.global_variables_initializer())
+
+	# saver_dict = {'W_'+str(i): W for i, W in enumerate(l_W_all)}
+
+	# # saver = tf.train.Saver(saver_dict, max_to_keep=3)
+	# ckpt = None
+	# if config.FLAGS.save_dir:
+	# 	ckpt = tf.train.get_checkpoint_state(config.FLAGS.save_dir)
+	# if ckpt and ckpt.model_checkpoint_path:
+	# 	logger.info('restoring from %s', ckpt.model_checkpoint_path)
+	# 	saver.restore(sess, ckpt.model_checkpoint_path)
+
+	if config.FLAGS.debug:
+		sess = tf_debug.LocalCLIDebugWrapperSession(sess, ui_type="curses")
+		sess.add_tensor_filter("stop_reached", stop_reached)
+
+	return sess\
+		# , saver
+
+def do_templ_learn(sess, learn_params, perm_arr, igg_arr, scvo):
+	ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = learn_params
+	numrecs = len(igg_arr)
+	print('numrecs:', numrecs, 'igg_arr:', igg_arr, 'scvo', scvo)
+	time.sleep(1)
+	sess.run(tf.global_variables_initializer())
+	nd_perm_arr = np.stack(perm_arr, axis=0)
+
+	sess.run(t_for_stop)
+	for i in range(50000):
+		sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
+		if i % 10000 == 0:
+			print('lrn step ', i, sess.run(t_err, feed_dict={ph_numrecs:numrecs, ph_input:nd_perm_arr, ph_o:igg_arr}))
+		sess.run(op_train_step, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
+
+	nd_W, nd_y =  sess.run([v_W, t_y], feed_dict={ph_input:nd_perm_arr, ph_o:igg_arr})
+	nd_norms = np.linalg.norm(nd_y, axis=1)
+	nd_db = nd_y / nd_norms[:, None]
+	return nd_W, nd_db
 
 
 def build_nn(var_scope, input_dim, b_reuse):
@@ -196,6 +281,31 @@ def run_learning(sess, l_batch_assigns, t_err, saver, op_train_step):
 def run_eval(sess, t_top_cds, t_top_idxs):
 	return sess.run([t_top_cds, t_top_idxs])
 
+def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result):
+	perm_embed = np.matmul(perm_vec, nd_W)
+	en = np.linalg.norm(perm_embed)
+	perm_embed = perm_embed / en
+	nd_cd = np.matmul(nd_db, perm_embed )
+	print('nd_cd', nd_cd)
+	ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
+	# score = 0.0
+	success_set, fail_set = set(), set()
+	for iind, one_ind in enumerate(ind):
+		igg = igg_arr[one_ind]
+		if igg == 0:
+			b_match_success = False
+		else:
+			generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gg_list[igg].get_gens_rec())
+			b_match_success =  mr.match_rec_exact(generated_result[1:-1], event_result)
+		if b_match_success:
+			success_set.add(eid_arr[one_ind])
+			print('event result match on:', one_ind)
+			# score += 1.0
+		else:
+			fail_set.add(eid_arr[one_ind])
+
+	num_success, num_fail = float(len(success_set)), float(len(fail_set))
+	return num_success / (num_success + num_fail)
 
 
 

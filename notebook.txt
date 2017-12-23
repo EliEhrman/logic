@@ -417,3 +417,79 @@ Checking in just to keep some record of the code with the message:
 
 Version not working. Giving up on mrg
 
+I think i'm going to take a different tack
+Yes to len grps and templ groups
+yes there are a number of different gens for each templ group
+no to gens groups and mrg's
+use nn, distance metric learning and cosine distance
+c_templ_grp
+	o-len
+	gens_arr (with dict?)
+	list of perm_rec with gens_arr_idx
+	tf call tree
+	nn_transform
+	db of transformed perm_rec with gens_arr_idx
+	(loss function uses distance between gens's?)
+
+new perm_rec
+	if num prev perm > 2 and num gg's  > 1
+		if nn/transform is none
+	        create new instance of nn/transform
+	do transform
+	do knn on all recs so far
+	generate result
+		use two stage:
+			build var dict from preconds
+			fill in results for each match
+				perhaps cache results of gens that was already calculated
+	create score
+		score a fn of:
+			number of results if less than k
+			% correct
+				n number correct / k. (even if there are not k results)
+			average cd
+				n * cd / k
+		if score passes thresh
+			add eid to success list for gens
+    else
+do a few rounds of learning
+	get matching gens
+		if no match: extend gens_arr
+
+Once confidence is reached, go to other templates with the same eids and delete the perm recs
+	Can do this
+
+Saturday 23rd December
+
+Sent myself the following:
+
+for all ggs that have graduated
+
+for any event, not event result , see if it is activated
+
+create a special nn:
+    lots of spare nodes of input
+    every graduated gg is an input and output
+
+Actually gonna change tack again (within the last tack, sort of)
+
+I want to join the event results for each event step (story step). So a record in the db is associated
+with the event step. Then each record might have a number of different gens or event results associated
+with it. After all, the cascade is on the event step and not the results so it is the same for
+all results of that step.
+
+Before proceeding, I check in what I wrote so far. It actually works well except that it does not achieve
+the desired result. The nn learns as well as it can the gens. The problem is that if all the inputs are
+identical, it cannot learn to really distinguish the same input doing this or that.
+
+I will check in with the comment:
+
+Learning each gg for each preconds rec separately, but learning only on ggs substantiated with many eids
+
+One last comment on the change just made is the concept of a graduated gg. A graduated gg is a gg that
+has a threshold number of eids. The idea is that a gens with a non-variable which is diferent for each
+eid is not something worth loearning. To deeal with this I introduced the provisional gg (pgg)
+
+In the new porposed scheme you find close examples of preconds recs but each one can have multiple events it generated.
+
+

@@ -8,7 +8,7 @@ tf.flags.DEFINE_bool('heavy', True,
 					 'run on a serious GPGPU ')
 tf.flags.DEFINE_bool('use_log_file', False,
 					 'send output to pylog.txt ')
-tf.flags.DEFINE_float('nn_lrn_rate', 0.003,
+tf.flags.DEFINE_float('nn_lrn_rate', 0.03,
 					 'base learning rate for nn ')
 # tf.flags.DEFINE_string('save_dir', '/tmp/logicmodels',
 tf.flags.DEFINE_string('save_dir', '',
@@ -55,6 +55,7 @@ c_set_compress_cd_factor = 0.8
 c_cascade_level = 3 # should be at least 3
 c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
 c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
+c_gg_graduate_len = 5
 
 
 
