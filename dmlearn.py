@@ -34,8 +34,10 @@ def build_templ_nn(var_scope, input_dim, b_reuse):
 	return ph_input, v_W, t_y
 
 def create_tmpl_dml_tensors(t_y, var_scope):
+	# output and errors should depend on the list of igg
 	ph_numrecs = tf.placeholder(tf.int32, shape=(), name='ph_numrecs_'+var_scope)
-	ph_o = tf.placeholder(tf.int32, shape=(None), name='ph_o_'+var_scope)
+	# ph_o should be shape [numrecs, num_ggs] where num_ggs is the number of graduated ggs for the template
+	ph_o = tf.placeholder(tf.float32, shape=([None, None]), name='ph_o_'+var_scope)
 	# v_o = tf.Variable(tf.constant(ovec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_o')
 	v_r1 = tf.Variable(	tf.zeros([config.c_rsize], dtype=tf.int32),
 						trainable=False, name='v_r1')
@@ -52,7 +54,8 @@ def create_tmpl_dml_tensors(t_y, var_scope):
 	t_y1 = tf.gather(t_y, v_r1, name='t_y1')
 	t_y2 = tf.gather(t_y, v_r2, name='t_y2')
 
-	t_cdo = tf.where(tf.equal(t_o1, t_o2), tf.ones([config.c_rsize], dtype=tf.float32), tf.zeros([config.c_rsize], dtype=tf.float32), name='t_cdo')
+	# t_cdo = tf.where(tf.equal(t_o1, t_o2), tf.ones([config.c_rsize], dtype=tf.float32), tf.zeros([config.c_rsize], dtype=tf.float32), name='t_cdo')
+	t_cdo = tf.reduce_sum(tf.multiply(t_o1, t_o2), axis=1, name='t_cdo')
 	t_cdy = tf.reduce_sum(tf.multiply(t_y1, t_y2), axis=1, name='t_cdy')
 	t_err = tf.reduce_mean((t_cdo - t_cdy) ** 2, name='t_err')
 	op_train_step = tf.train.GradientDescentOptimizer(config.FLAGS.nn_lrn_rate).minimize(t_err, name='op_train_step')
@@ -92,7 +95,10 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr, scvo):
 	for i in range(50000):
 		sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
 		if i % 10000 == 0:
-			print('lrn step ', i, sess.run(t_err, feed_dict={ph_numrecs:numrecs, ph_input:nd_perm_arr, ph_o:igg_arr}))
+			err = sess.run(t_err, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
+			print('lrn step ', i, err)
+			if err < 0.01:
+				break
 		sess.run(op_train_step, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
 
 	nd_W, nd_y =  sess.run([v_W, t_y], feed_dict={ph_input:nd_perm_arr, ph_o:igg_arr})
@@ -281,13 +287,32 @@ def run_learning(sess, l_batch_assigns, t_err, saver, op_train_step):
 def run_eval(sess, t_top_cds, t_top_idxs):
 	return sess.run([t_top_cds, t_top_idxs])
 
-def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result):
+def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result_list, event_result_score_list, templ_len, templ_scvo):
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
 	nd_cd = np.matmul(nd_db, perm_embed )
 	print('nd_cd', nd_cd)
 	ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
+
+	igg_sums = np.zeros([len(igg_arr[0])], np.float32)
+	for iind, one_ind in enumerate(ind):
+		igg_sums += igg_arr[one_ind]
+
+	igg_sums /= float(len(ind))
+
+	for igg, gg in enumerate(gg_list):
+		if igg == 0:
+			continue
+		if igg_sums[igg] > 0.3:
+			generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gg.get_gens_rec())
+			for iresult, event_result in enumerate(event_result_list):
+				if mr.match_rec_exact(generated_result[1:-1], event_result):
+					event_result_score_list[iresult].append([igg_sums[igg], templ_len, templ_scvo, igg])
+
+	return event_result_score_list
+
+"""
 	# score = 0.0
 	success_set, fail_set = set(), set()
 	for iind, one_ind in enumerate(ind):
@@ -306,9 +331,32 @@ def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_
 
 	num_success, num_fail = float(len(success_set)), float(len(fail_set))
 	return num_success / (num_success + num_fail)
+"""
+
+def l2_norm_arr(nd_arr):
+	en = np.linalg.norm(nd_arr)
+	return nd_arr / en
 
 
+def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
+	perm_embed = np.matmul(perm_vec, nd_W)
+	en = np.linalg.norm(perm_embed)
+	perm_embed = perm_embed / en
+	nd_cd = np.matmul(nd_db, perm_embed )
+	print('#', templ_iperm, ': nd_cd', nd_cd)
+	ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
 
+	igg_sums = np.zeros([len(igg_arr[0])], np.float32)
+	cd_sum = 0.0
+	for iind, one_ind in enumerate(ind):
+		igg_sums += igg_arr[one_ind]
+		cd_sum += nd_cd[one_ind]
+
+	igg_sums /= float(len(ind))
+	cd_sum /= float(len(ind))
+	print('igg_sums:', igg_sums, 'cd_sum:', cd_sum)
+
+	return igg_sums, cd_sum
 
 
 

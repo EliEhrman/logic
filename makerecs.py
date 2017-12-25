@@ -15,7 +15,7 @@ import dmlearn
 import ykmeans
 import utils
 
-def make_rule_from_phrases(rule_base, one_perm, story_db, event_result):
+def make_preconds_rule_from_phrases(rule_base, one_perm, story_db):
 	rule_cand = list(rule_base)
 	for iphrase in one_perm:
 		rule_cand += [story_db[iphrase].phrase()]
@@ -40,6 +40,10 @@ def make_rule_from_phrases(rule_base, one_perm, story_db, event_result):
 	else:
 		new_conds = rules.nt_tree_junct(branches=branches, logic=conn_type.AND)
 
+	return new_conds, vars_dict
+
+def make_gens_rule_from_phrases(vars_dict, event_result):
+
 	rule_fields = []
 	for el in event_result:
 		if el[0] == rules.rec_def_type.obj:
@@ -55,6 +59,8 @@ def make_rule_from_phrases(rule_base, one_perm, story_db, event_result):
 			print('Unexpected type in event_result!')
 			exit()
 	new_gens = rules.nt_tree_junct(single=rule_fields)
+
+	return new_gens
 	return rules.nt_rule(preconds=new_conds, gens=new_gens)
 
 def gen_cvo_str(rec):

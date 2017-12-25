@@ -56,6 +56,7 @@ c_cascade_level = 3 # should be at least 3
 c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
 c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
 c_gg_graduate_len = 5
+c_gg_confirm_thresh = 5
 
 
 

@@ -492,4 +492,50 @@ eid is not something worth loearning. To deeal with this I introduced the provis
 
 In the new porposed scheme you find close examples of preconds recs but each one can have multiple events it generated.
 
+Sunday 24th December
 
+Todo:
+    Write a new get_score function so that it scores an indvidual graduated gg (startt with get_match_score)
+    Write a summary of the successes for an event to decide whether to promote graduated to successful
+
+match score:
+
+for each event
+	for each perm
+		find template
+		if first-pass and template has confirmed or second-pass and template has graduated
+			find closest perms in template db
+			for each gg
+				if closest matches support this gg:
+					gen result
+					if result list not known (inference stage only)
+						if gg confirmed
+							output result!!!!!!!
+					else if result in result list:
+						for that result_list entry add the len, template and score
+						if gg confirmed:
+							mark result as match-confirm
+							if all results have match-confirm
+								continue to next event!!!!!!
+					else result not in result list and list exhaustive
+						mark gg as bad
+
+
+	for each result:
+		find best gg among results
+			best score and if tied, shortest len
+			give a point to the gg
+
+	if a gg crosses a point thresh
+		add to confirmed list
+
+Monday 25th December
+
+Yet again I will change tack.
+
+The NN will need to be on a per gg basis (not pgg) rather than on a per-template basis. The result will be yes/no
+on the specific gg.
+
+First I will check in current code with the following comment:
+
+Code running but unsatisfactory results. Check in beore change to per-gg NN
