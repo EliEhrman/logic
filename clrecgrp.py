@@ -38,7 +38,7 @@ class cl_match_rec_grp(object):
 
 
 class cl_gens_grp(object):
-	def __init__(self, gens_rec, templ_iperm=None):
+	def __init__(self, gens_rec, igg, templ_iperm=None):
 		if templ_iperm == None:
 			self.__iperm_list = []
 		else:
@@ -46,38 +46,89 @@ class cl_gens_grp(object):
 		self.__gens_rec = gens_rec
 		self.__num_points = 0
 		self.__b_confirmed = False
-		# add a match rec whenever you add a gg
-		# self.__mrg_list = [cl_match_rec_grp(preconds_rec)]
+		self.__perm_match_list = []
+		self.__igg = igg # index number of gg or pgg in template container
+		self.__num_tests = 0.0
+		self.__num_successes = 0.0
 
 	def gens_matches(self, gens_rec):
 		return mr.match_gens_phrase(self.__gens_rec, gens_rec)
 
 	def add_perm(self, templ_iperm):
 		self.__iperm_list.append(templ_iperm)
-		# mr.make_rule_grp(glv_dict, self.__perm_list, el_set_arr)
+
+	def mark_templ_perm_matched(self, b_match):
+		self.__perm_match_list.append(b_match)
 
 	def get_gens_rec(self):
 		return self.__gens_rec
 
 	def print_gens_rec(self, igg, def_article_dict):
 		out_str = ''
-		out_str = els.print_phrase(self.__gens_rec, self.__gens_rec, out_str, def_article_dict)
+		if self.__gens_rec != None:
+			out_str = els.print_phrase(self.__gens_rec, self.__gens_rec, out_str, def_article_dict)
 		print(str(igg), ':',out_str)
 
 	def add_point(self):
 		self.__num_points += 1
 		if self.__num_points >= config.c_gg_confirm_thresh:
-			self.__b_confirmed = True
+			if not self.__b_confirmed:
+				print('gg now confirmed for igg:', self.__igg, 'gens rec:', self.__gens_rec)
+				self.__b_confirmed = True
 
 		return self.__b_confirmed
 
 	def clear_perms(self):
 		self.__perm_list = []
+		self.__perm_match_list = []
 
-	def set_match_limits(self, templ_nd_W, templ_nd_db, templ_perm_list, templ_perm_igg_arr, templ_len, glv_len, glv_dict):
+	def set_match_limits(self, templ_perm_list, templ_perm_igg_arr, templ_len, glv_len, glv_dict):
+		self.__thresh_cd = 1.0
 		for one_iperm in self.__iperm_list:
 			perm_vec = mr.make_vec(glv_dict, templ_perm_list[one_iperm], templ_len, glv_len)
-			dmlearn.get_score_stats(one_iperm, perm_vec, templ_nd_W, templ_nd_db, templ_perm_igg_arr)
+			min_cd = dmlearn.get_score_stats(one_iperm, perm_vec, self.__nd_W, self.__nd_db, templ_perm_igg_arr)
+			if min_cd < self.__thresh_cd:
+				self.__thresh_cd = min_cd
+
+	def init_for_learn(self, vec_len, templ_scvo, igg):
+		var_scope = 'gg_'+str(vec_len).rjust(5, '0')+str(igg).rjust(3, '0')+templ_scvo
+		self.__nn_params = []
+		self.__nn_params += dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
+		self.__nn_params += dmlearn.create_tmpl_dml_tensors(self.__nn_params[2], var_scope)
+
+	def do_learn(self, sess, templ_perm_vec_list, templ_perm_list, templ_olen, glv_len, glv_dict):
+		print('Learning for gg:', self.__igg)
+		self.__nd_W, self.__nd_db = dmlearn.do_templ_learn(sess, self.__nn_params, templ_perm_vec_list, self.__perm_match_list)
+		self.set_match_limits(templ_perm_list, self.__perm_match_list, templ_olen, glv_len, glv_dict)
+		# for one_gg in self.__gg_list:
+		# 	one_gg.set_match_limits(self.__nd_W, self.__nd_db, self.__perm_list, self.__perm_igg_arr, self.__olen, self.glv_len, self.glv_dict)
+		# self.__db_valid = True
+
+	def get_perm_match_list(self):
+		return self.__perm_match_list
+
+	def get_perm_match_val(self, iperm):
+		if len(self.__perm_match_list) <= iperm:
+			return 'NA'
+		return self.__perm_match_list[iperm]
+
+	def get_igg(self):
+		return self.__igg
+
+	def get_match_score(self, preconds_rec, perm_vec, event_result_list, event_result_score_list,
+						templ_len, templ_scvo, result_confirmed_list):
+		print('Calculating score for igg:', self.__igg, 'match list:', self.__perm_match_list)
+		b_hit, b_success = dmlearn.get_gg_score(	preconds_rec, perm_vec, self.__nd_W, self.__nd_db ,
+													self.__igg, self.__perm_match_list,
+													self.__thresh_cd, self.get_gens_rec(), event_result_list,
+													event_result_score_list, templ_len, templ_scvo,
+													self.__b_confirmed, result_confirmed_list,
+													self.__num_successes / self.__num_tests if self.__num_tests else 0.0)
+		if b_hit:
+			self.__num_tests += 1.0
+			if b_success:
+				self.__num_successes += 1.0
+		return event_result_score_list
 
 
 	# def test_mrg_list(self, preconds_rec, event_result):
@@ -87,8 +138,9 @@ class cl_gens_grp(object):
 	# 	return self.__mrg_list
 
 class cl_prov_gens_grp(cl_gens_grp):
-	def __init__(self, gens_rec, templ_iperm, eid):
-		super(cl_prov_gens_grp, self).__init__(gens_rec, templ_iperm)
+	def __init__(self, gens_rec, templ_iperm, igg, eid):
+		# super(cl_prov_gens_grp, self).__init__(gens_rec, igg, templ_iperm)
+		cl_gens_grp.__init__(self, gens_rec, igg, templ_iperm)
 		self.__eid_set = set([eid])
 		self.__b_graduated = False
 
@@ -97,6 +149,7 @@ class cl_prov_gens_grp(cl_gens_grp):
 		self.__eid_set.add(eid)
 		if not self.__b_graduated and len(self.__eid_set) > config.c_gg_graduate_len:
 			self.__b_graduated = True
+			print('gg graduated. igg:', self.get_igg())
 			return True
 
 		return False
@@ -116,26 +169,24 @@ class cl_templ_grp(object):
 		self.__olen = mr.get_olen(scvo)
 		pgg_list = []
 		for one_gens in gens_rec_list:
-			pgg_list.append(cl_prov_gens_grp(gens_rec=one_gens, templ_iperm=0, eid=eid))
+			pgg_list.append(cl_prov_gens_grp(gens_rec=one_gens, igg=len(pgg_list), templ_iperm=0, eid=eid))
 		self.__pgg_list = pgg_list
 		self.__perm_list = [preconds_rec]
 		self.__perm_result_list = [event_result_list]
 		self.__perm_eid_list = [eid]
 		self.__perm_ipgg_arr = [range(len(pgg_list))] # list in list here
 		self.__perm_vec_list = [mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len)]
-		var_scope = 'templ'+str(templ_len)+scvo
-		vec_len = self.__olen * self.glv_len
-		# ph_input, v_W, t_y = dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
-		# op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = dmlearn.create_tmpl_dml_tensors(t_y, var_scope)
-		# consider recreate nn params every time you reclib
-		self.__nn_params = []
-		self.__nn_params += dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
-		self.__nn_params += dmlearn.create_tmpl_dml_tensors(self.__nn_params[2], var_scope)
+		# var_scope = 'templ'+str(templ_len)+scvo
+		# vec_len = self.__olen * self.glv_len
+		# self.__nn_params = []
+		# self.__nn_params += dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
+		# self.__nn_params += dmlearn.create_tmpl_dml_tensors(self.__nn_params[2], var_scope)
 		# self.__nn_params = [ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o]
 		self.__db_valid = False
 		self.__b_db_graduated = False
 		self.__gg_list = []
 		self.__b_confirmed = False
+		self.__num_perm_adds_till_next_learn = -1
 
 	def get_nn_params(self):
 		return self.__nn_params
@@ -173,7 +224,7 @@ class cl_templ_grp(object):
 			b_pgg_needs_graduating = False
 			perm_pgg, perm_ipgg = self.find_pgg(gens_rec=one_gens)
 			if not perm_pgg:
-				perm_pgg = cl_prov_gens_grp(gens_rec=one_gens, templ_iperm=iperm, eid=eid)
+				perm_pgg = cl_prov_gens_grp(gens_rec=one_gens, igg=len(self.__pgg_list), templ_iperm=iperm, eid=eid)
 				perm_ipgg = self.add_pgg(perm_pgg)
 			else:
 				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid)
@@ -184,18 +235,23 @@ class cl_templ_grp(object):
 				self.__perm_ipgg_arr[-1].append(perm_ipgg)
 
 			if b_pgg_needs_graduating:
+				print('gg graduated in template:', self.__scvo, 'len:', self.__templ_len)
 				if len(self.__gg_list) == 0:
-					gg_null = cl_gens_grp([])
+					gg_null = cl_gens_grp([], 0)
 					self.__gg_list = [gg_null]
-				gg = cl_gens_grp(perm_pgg.get_gens_rec())
+				gg = cl_gens_grp(perm_pgg.get_gens_rec(), len(self.__gg_list))
+				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
 				self.__gg_list.append(gg)
 				b_needs_recalib = True
+				self.__num_perm_adds_till_next_learn = 0
 
 		if b_needs_recalib:
 			self.recalib_ggs()
 		else:
 			if self.__b_db_graduated:
-				self.__perm_igg_arr.append(self.assign_gg(iperm, preconds_rec, perm_result_list))
+				self.assign_gg(iperm, preconds_rec, perm_result_list)
+				self.__num_perm_adds_till_next_learn -= 1
+				# self.__perm_igg_arr.append(self.assign_gg(iperm, preconds_rec, perm_result_list))
 
 	def get_num_pggs(self):
 		return len(self.__pgg_list)
@@ -203,19 +259,23 @@ class cl_templ_grp(object):
 	def get_num_perms(self):
 		return len(self.__perm_pigg_arr)
 
-	def get_match_score(self, preconds_rec, event_result_list, event_result_score_list, b_real_score=True):
+	def get_match_score(self, preconds_rec, event_result_list, event_result_score_list, result_confirmed_list, b_real_score=True):
 		# rewrite for result list and gg list
 		if self.__db_valid:
 			if b_real_score:
-				print('Calculating score:')
+				print('Calculating score for all ggs in template:', self.__scvo, 'len:', self.__templ_len)
 				score_list = event_result_score_list
 			else:
 				score_list = [[] for _ in event_result_score_list]
 
 			perm_vec = mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len)
-			return dmlearn.get_score(preconds_rec, perm_vec, self.__nd_W, self.__nd_db, self.__gg_list,
-									 self.__perm_igg_arr, self.__perm_eid_list, event_result_list,
-									 score_list, self.__templ_len, self.__scvo)
+			for one_gg in self.__gg_list[1:]:
+				one_gg.get_match_score(preconds_rec, perm_vec, event_result_list, event_result_score_list,
+									   self.__templ_len, self.__scvo, result_confirmed_list)
+			# 	one_gg.get_match_score(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
+			# return dmlearn.get_score(preconds_rec, perm_vec, self.__nd_W, self.__nd_db, self.__gg_list,
+			# 						 self.__perm_igg_arr, self.__perm_eid_list, event_result_list,
+			# 						 score_list, self.__templ_len, self.__scvo)
 		else:
 			return event_result_score_list
 
@@ -226,9 +286,16 @@ class cl_templ_grp(object):
 		if not self.__b_db_graduated:
 			return
 
-		self.__nd_W, self.__nd_db = dmlearn.do_templ_learn(sess, self.__nn_params, self.__perm_vec_list, self.__perm_igg_arr, self.__scvo)
-		for one_gg in self.__gg_list:
-			one_gg.set_match_limits(self.__nd_W, self.__nd_db, self.__perm_list, self.__perm_igg_arr, self.__olen, self.glv_len, self.glv_dict)
+		if self.__num_perm_adds_till_next_learn > 0:
+			print('Not learning yet. Still have', self.__num_perm_adds_till_next_learn, ' add_perms to go.')
+			return
+
+		print('Learning all ggs in template:', self.__scvo, 'len:', self.__templ_len)
+		for one_gg in self.__gg_list[1:]:
+			one_gg.do_learn(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
+		# for one_gg in self.__gg_list:
+		# 	one_gg.set_match_limits(self.__nd_W, self.__nd_db, self.__perm_list, self.__perm_igg_arr, self.__olen, self.glv_len, self.glv_dict)
+		self.__num_perm_adds_till_next_learn = config.c_templ_learn_every_num_perms
 		self.__db_valid = True
 
 	def printout(self, def_article_dict):
@@ -243,6 +310,7 @@ class cl_templ_grp(object):
 			print('ggs in order:')
 			for igg, gg in enumerate(self.__gg_list):
 				gg.print_gens_rec(igg, def_article_dict)
+				print('perm_match_list: ', gg.get_perm_match_list())
 		print('all perm recs:')
 		for irec, rec in enumerate(self.__perm_list):
 			out_str = str(irec) + ' '
@@ -254,31 +322,34 @@ class cl_templ_grp(object):
 				print('\t', str(irec), out_str)
 			print('\tipgg:', self.__perm_ipgg_arr[irec], 'eid:', self.__perm_eid_list[irec])
 			if self.__b_db_graduated:
-				print('assigned igg:', self.__perm_igg_arr[irec])
+				print('assigned igg:', [[igg, gg.get_perm_match_val(irec)] for igg, gg in enumerate(self.__gg_list)])
+
 
 	def assign_gg(self, perm_irec, perm_rec, perm_result_list):
 		# igg_list = []
 		# igg_arr = [0.0 for _ in self.__gg_list]
-		nd_igg = np.zeros([len(self.__gg_list)], np.float32)
-		for one_result in perm_result_list:
+		# nd_igg = np.zeros([len(self.__gg_list)], np.float32)
+		# Each gg must have its own record of whether the record matched or not
+		for igg, gg in enumerate(self.__gg_list):
+			if igg == 0:
+				continue
+			generated_result = mr.get_result_for_cvo_and_rec(perm_rec,
+															 gg.get_gens_rec())
 			b_success_found = False
-			for igg, gg in enumerate(self.__gg_list):
-				if igg == 0:
-					continue
-				generated_result = mr.get_result_for_cvo_and_rec(perm_rec,
-																 gg.get_gens_rec())
+			for one_result in perm_result_list:
 				if mr.match_rec_exact(generated_result[1:-1], one_result):
 					b_success_found = True
 					# igg_list.append(igg)
-					nd_igg[igg] = 1.0
-					gg.add_perm(perm_irec)
+					# nd_igg[igg] = 1.0
 					break
-			if not b_success_found:
-				# igg_list.append(0)
-				nd_igg[0] = 1.0
-		nd_igg = dmlearn.l2_norm_arr(nd_igg)
+			gg.mark_templ_perm_matched(b_success_found)
+			if b_success_found:
+				gg.add_perm(perm_irec)
+		# 	# igg_list.append(0)
+			# 	nd_igg[0] = 1.0
+		# nd_igg = dmlearn.l2_norm_arr(nd_igg)
 		# return igg_list
-		return nd_igg
+		# return nd_igg
 		# if b_success_found:
 		# 	self.__perm_igg_arr.append(igg)
 		# else:
@@ -290,11 +361,13 @@ class cl_templ_grp(object):
 			one_gg.clear_perms()
 
 		for irec, rec in enumerate(self.__perm_list):
-			self.__perm_igg_arr.append(self.assign_gg(irec, rec, self.__perm_result_list[irec]))
+			self.assign_gg(irec, rec, self.__perm_result_list[irec])
+			# self.__perm_igg_arr.append(self.assign_gg(irec, rec, self.__perm_result_list[irec]))
 		self.__b_db_graduated = True
 
 	def add_point(self, igg):
 		if self.__gg_list[igg].add_point():
+			print('gg confirmed in templ group with scvo, len;', self.__scvo, 'len:', self.__templ_len)
 			self.__b_confirmed = True
 
 class cl_len_grp(object):

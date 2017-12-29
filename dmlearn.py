@@ -37,7 +37,8 @@ def create_tmpl_dml_tensors(t_y, var_scope):
 	# output and errors should depend on the list of igg
 	ph_numrecs = tf.placeholder(tf.int32, shape=(), name='ph_numrecs_'+var_scope)
 	# ph_o should be shape [numrecs, num_ggs] where num_ggs is the number of graduated ggs for the template
-	ph_o = tf.placeholder(tf.float32, shape=([None, None]), name='ph_o_'+var_scope)
+	# ph_o = tf.placeholder(tf.float32, shape=([None, None]), name='ph_o_'+var_scope)
+	ph_o = tf.placeholder(tf.float32, shape=([None]), name='ph_o_'+var_scope)
 	# v_o = tf.Variable(tf.constant(ovec_norm.astype(np.float32)), dtype=tf.float32, trainable=False, name='v_o')
 	v_r1 = tf.Variable(	tf.zeros([config.c_rsize], dtype=tf.int32),
 						trainable=False, name='v_r1')
@@ -54,8 +55,8 @@ def create_tmpl_dml_tensors(t_y, var_scope):
 	t_y1 = tf.gather(t_y, v_r1, name='t_y1')
 	t_y2 = tf.gather(t_y, v_r2, name='t_y2')
 
-	# t_cdo = tf.where(tf.equal(t_o1, t_o2), tf.ones([config.c_rsize], dtype=tf.float32), tf.zeros([config.c_rsize], dtype=tf.float32), name='t_cdo')
-	t_cdo = tf.reduce_sum(tf.multiply(t_o1, t_o2), axis=1, name='t_cdo')
+	t_cdo = tf.where(tf.equal(t_o1, t_o2), tf.ones([config.c_rsize], dtype=tf.float32), tf.zeros([config.c_rsize], dtype=tf.float32), name='t_cdo')
+	# t_cdo = tf.reduce_sum(tf.multiply(t_o1, t_o2), axis=1, name='t_cdo')
 	t_cdy = tf.reduce_sum(tf.multiply(t_y1, t_y2), axis=1, name='t_cdy')
 	t_err = tf.reduce_mean((t_cdo - t_cdy) ** 2, name='t_err')
 	op_train_step = tf.train.GradientDescentOptimizer(config.FLAGS.nn_lrn_rate).minimize(t_err, name='op_train_step')
@@ -83,11 +84,11 @@ def init_templ_learn():
 	return sess\
 		# , saver
 
-def do_templ_learn(sess, learn_params, perm_arr, igg_arr, scvo):
+def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
 	ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = learn_params
 	numrecs = len(igg_arr)
-	print('numrecs:', numrecs, 'igg_arr:', igg_arr, 'scvo', scvo)
-	time.sleep(1)
+	print('numrecs:', numrecs, 'igg_arr:', igg_arr)
+	# time.sleep(1)
 	sess.run(tf.global_variables_initializer())
 	nd_perm_arr = np.stack(perm_arr, axis=0)
 
@@ -287,6 +288,57 @@ def run_learning(sess, l_batch_assigns, t_err, saver, op_train_step):
 def run_eval(sess, t_top_cds, t_top_idxs):
 	return sess.run([t_top_cds, t_top_idxs])
 
+def get_templ_cds(perm_vec, nd_W, nd_db):
+	perm_embed = np.matmul(perm_vec, nd_W)
+	en = np.linalg.norm(perm_embed)
+	perm_embed = perm_embed / en
+	nd_cd = np.matmul(nd_db, perm_embed )
+	return nd_cd
+
+# The return value indicaates a match on the gg not whether the match succeeded in matching a result
+def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_rec, event_result_list,
+				 event_result_score_list, templ_len, templ_scvo, b_gg_confirmed, result_confirmed_list,
+				 success_score):
+	perm_embed = np.matmul(perm_vec, nd_W)
+	en = np.linalg.norm(perm_embed)
+	perm_embed = perm_embed / en
+	nd_cd = np.matmul(nd_db, perm_embed )
+	print('nd_cd', nd_cd)
+
+	max_match_cd, min_match_cd = 0.0, 1.0
+	for imatch, one_match in enumerate(igg_arr):
+		# second test required because not all perms may have participated in the last learn
+		if one_match and imatch < len(nd_cd):
+			cd = nd_cd[imatch]
+			if cd  > max_match_cd:
+				max_match_cd = cd
+			if cd < min_match_cd:
+				min_match_cd = cd
+
+	print('min cd:', min_match_cd, 'max cd:', max_match_cd, 'threshold:', thresh_cd)
+
+	if max_match_cd < thresh_cd:
+		return False, False
+
+	b_one_result_matched = False
+	generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gens_rec)
+	for iresult, event_result in enumerate(event_result_list):
+		if mr.match_rec_exact(generated_result[1:-1], event_result):
+			event_result_score_list[iresult].append([success_score, templ_len, templ_scvo, igg])
+			print('Adding score for event ', event_result, 'score:', event_result_score_list[iresult][-1])
+			b_one_result_matched = True
+			if b_gg_confirmed:
+				result_confirmed_list[iresult] = True
+
+	if not b_one_result_matched:
+		print('Strange. gg matched but no corresponding event in event list')
+		if b_gg_confirmed:
+			print('Even stranger! The gg is actually confirmed')
+		return True, False
+
+	return True, True
+
+
 def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result_list, event_result_score_list, templ_len, templ_scvo):
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
@@ -344,19 +396,30 @@ def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
 	perm_embed = perm_embed / en
 	nd_cd = np.matmul(nd_db, perm_embed )
 	print('#', templ_iperm, ': nd_cd', nd_cd)
-	ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
+	# ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
+	max_match_cd, min_match_cd = 0.0, 1.0
+	for imatch, one_match in enumerate(igg_arr):
+		if one_match:
+			cd = nd_cd[imatch]
+			if cd  > max_match_cd:
+				max_match_cd = cd
+			if cd < min_match_cd:
+				min_match_cd = cd
 
-	igg_sums = np.zeros([len(igg_arr[0])], np.float32)
-	cd_sum = 0.0
-	for iind, one_ind in enumerate(ind):
-		igg_sums += igg_arr[one_ind]
-		cd_sum += nd_cd[one_ind]
+	print('min cd:', min_match_cd, 'max cd:', max_match_cd)
+	return min_match_cd
 
-	igg_sums /= float(len(ind))
-	cd_sum /= float(len(ind))
-	print('igg_sums:', igg_sums, 'cd_sum:', cd_sum)
-
-	return igg_sums, cd_sum
+	# igg_sums = np.zeros([len(igg_arr[0])], np.float32)
+	# cd_sum = 0.0
+	# for iind, one_ind in enumerate(ind):
+	# 	igg_sums += igg_arr[one_ind]
+	# 	cd_sum += nd_cd[one_ind]
+	#
+	# igg_sums /= float(len(ind))
+	# cd_sum /= float(len(ind))
+	# print('igg_sums:', igg_sums, 'cd_sum:', cd_sum)
+	#
+	# return igg_sums, cd_sum
 
 
 

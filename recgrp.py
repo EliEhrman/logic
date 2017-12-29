@@ -1,6 +1,7 @@
 from __future__ import print_function
 import sys
 import math
+import time
 import numpy as np
 import random
 import itertools
@@ -68,6 +69,8 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 		total_event_rule_prob = sum(one_rule.prob for one_rule in event_rules)
 
+		localtime = time.asctime(time.localtime(time.time()))
+		print("Local current time :", localtime)
 		event_queue = []
 		for i_story_step in range(num_story_steps):
 			event_phrase, event_queue, b_person_to_person_ask = \
@@ -84,6 +87,7 @@ def create_train_vecs(glv_dict, def_article_dict,
 															b_remove_mod_hdr=False)
 
 			event_result_score_list = []
+			result_confirmed_list = [False for _ in events_to_queue]
 
 			for event_result in events_to_queue:
 				print('Evaluating the following result:')
@@ -97,7 +101,12 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 			all_combs = cascade.get_cascade_combs(els_sets, story_db, event_phrase)
 
+			all_combs = sorted(all_combs, key=len)
+
 			for one_comb in all_combs:
+				if all(result_confirmed_list):
+					break
+
 				all_perms = list(itertools.permutations(one_comb, len(one_comb)))
 
 				rule_base = [event_phrase]
@@ -129,6 +138,8 @@ def create_train_vecs(glv_dict, def_article_dict,
 				pstr_min = min(pcvo_list)
 				plist_min = [iperm for iperm, scvo in enumerate(pcvo_list) if scvo <= pstr_min ]
 				for iperm in plist_min:
+					if all(result_confirmed_list):
+						break
 					comb_len = len(perm_preconds_list[iperm])
 					print('Evaluating the following perm:')
 					out_str = ''
@@ -158,7 +169,12 @@ def create_train_vecs(glv_dict, def_article_dict,
 									perm_templ.printout(def_article_dict)
 									event_result_score_list = perm_templ.get_match_score(perm_preconds_list[iperm],
 																						 events_to_queue,
-																						 event_result_score_list)
+																						 event_result_score_list,
+																						 result_confirmed_list)
+
+									if all(result_confirmed_list):
+										print('All results match confirmed ggs')
+										break
 									# if score >= 1.0:
 									# 	print('match perfect!')
 										# comb_len_passed = comb_len
@@ -181,10 +197,11 @@ def create_train_vecs(glv_dict, def_article_dict,
 													  perm_gens_list[iperm], events_to_queue, event_step_id))
 				# end of one perm in all_perms
 			#end of one_comb in all_combs
-			for event_result_score in event_result_score_list:
-				top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg  = -1.0, -1, 0, '', 0
+			for i_event_result, event_result_score in enumerate(event_result_score_list):
+				top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg  = -1.0, -1, 1000, '', 0
 				for iresult, one_score in enumerate(event_result_score):
 					templ_score, templ_len, templ_scvo, templ_igg = one_score
+					# if templ_len < top_score_len:
 					if templ_score > top_score or (templ_score == top_score and templ_len < top_score_len):
 						top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg = \
 							templ_score, iresult, templ_len, templ_scvo, templ_igg
@@ -192,6 +209,8 @@ def create_train_vecs(glv_dict, def_article_dict,
 				if i_top_score > -1:
 					for igrp, len_grp in enumerate(db_len_grps):
 						if len_grp.len() == top_score_len:
+							print('Successful match using templ len, scvo, igg:', top_score_len, top_score_scvo,
+								  top_score_igg, 'For event result', events_to_queue[i_event_result])
 							top_score_templ = len_grp.find_templ(top_score_scvo)
 							top_score_templ.add_point(top_score_igg)
 							break
@@ -210,9 +229,11 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 
 def do_learn(glv_dict, def_article_dict):
-	input_flds_arr, output_flds_arr, fld_def_arr, \
-	input_db, output_db, ivec_pos_list, ovec, ivec_arr_db, ivec_dim_dict_db, ivec_dim_by_rule, \
-	dict_id_list_of_lists, _, _ = \
-		create_train_vecs(glv_dict, def_article_dict,
-						  config.c_curriculum_num_stories, config.c_curriculum_story_len, b_for_query=False)
+	# input_flds_arr, output_flds_arr, fld_def_arr, \
+	# input_db, output_db, ivec_pos_list, ovec, ivec_arr_db, ivec_dim_dict_db, ivec_dim_by_rule, \
+	# dict_id_list_of_lists, _, _ = \
+	create_train_vecs(glv_dict, def_article_dict,
+					  config.c_curriculum_num_stories, config.c_curriculum_story_len, b_for_query=False)
+	print('Done!')
+	exit(1)
 

@@ -539,3 +539,36 @@ on the specific gg.
 First I will check in current code with the following comment:
 
 Code running but unsatisfactory results. Check in beore change to per-gg NN
+
+Friday 29th December
+
+Implemented:
+
+learn
+
+for each graduated gg, learn a NN for all the per list with outcome 1/0 were 1 means that one of the results
+belongs to the gg
+
+each gg has an arr 1-to-1 correspondence with templ per_list. 1 means has a matching result. learn closeness
+
+score
+
+for each gg
+	if the closest matches indicate 1
+		gen output
+		if learning and matches one of the outputs
+			add a record to score_result_list for that result
+				members of the gg create a minimum cd for acceptance
+			if confirmed gg
+				mark result confirmed
+
+So NN is per gg. Once all the results are confirmed, the processing for that event step stops.
+There is some scoring based on event results not happening
+
+I found that without this scoring, one rule was getting confirmed despite providing unecessary data. However,
+its own cds were creating a threshold of 0.2+. Rather than use that fact, I added a scoring mechanism so that
+it should be overridden by a correct rule, even if longer.
+
+Checking in with message:
+
+Sort of working. NN is gg based. Score based on successes after match. Stop when all results has been matched by confirmed rules.

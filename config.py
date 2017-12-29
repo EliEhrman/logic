@@ -38,8 +38,8 @@ c_max_phrases_per_rule = 25
 c_story_len = 350
 c_ovec_len = 500
 c_story_only = False
-c_curriculum_story_len = 15
-c_curriculum_num_stories = 9
+c_curriculum_story_len = 25
+c_curriculum_num_stories = 19
 c_query_story_len = 15
 c_query_num_stories = 3
 c_eval_story_len = 15
@@ -55,8 +55,9 @@ c_set_compress_cd_factor = 0.8
 c_cascade_level = 3 # should be at least 3
 c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
 c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
-c_gg_graduate_len = 5
+c_gg_graduate_len = 10
 c_gg_confirm_thresh = 5
+c_templ_learn_every_num_perms = 10
 
 
 
