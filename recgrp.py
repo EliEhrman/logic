@@ -26,7 +26,8 @@ def create_train_vecs(glv_dict, def_article_dict,
 					  num_stories, num_story_steps, b_for_query, ivec_dim_dict_fixed = None):
 	start_rule_names = ['objects_start', 'people_start']
 	event_rule_names = ['pickup_rule', 'went_rule']
-	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went']
+	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went',
+							  'gen_rule_knows_dynamic_action']
 
 	cl_templ_grp.glv_dict = glv_dict
 	cl_templ_grp.glv_len = len(glv_dict[config.sample_el])
@@ -88,6 +89,7 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 			event_result_score_list = []
 			result_confirmed_list = [False for _ in events_to_queue]
+			gg_confirmed_list = [[] for _ in events_to_queue]
 
 			for event_result in events_to_queue:
 				print('Evaluating the following result:')
@@ -170,10 +172,13 @@ def create_train_vecs(glv_dict, def_article_dict,
 									event_result_score_list = perm_templ.get_match_score(perm_preconds_list[iperm],
 																						 events_to_queue,
 																						 event_result_score_list,
-																						 result_confirmed_list)
+																						 result_confirmed_list,
+																						 gg_confirmed_list)
 
 									if all(result_confirmed_list):
 										print('All results match confirmed ggs')
+										mr.report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr,
+															 def_article_dict, glv_dict)
 										break
 									# if score >= 1.0:
 									# 	print('match perfect!')
@@ -186,7 +191,7 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 								print('Doing learning.')
 								perm_templ.printout(def_article_dict)
-								perm_templ.do_learn(sess)
+								perm_templ.do_learn(sess, el_set_arr)
 								# score = perm_templ.get_match_score(perm_preconds_list[iperm], events_to_queue, event_result_score_list, b_real_score=False)
 
 							break

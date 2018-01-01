@@ -211,4 +211,26 @@ def make_vec(glv_dict, perm_rec, olen, glv_len):
 
 	return vec
 
+def find_gg_by_sig(db_len_grps, sig):
+	_, templ_len, templ_scvo, igg = sig
+	for igrp, len_grp in enumerate(db_len_grps):
+		if len_grp.len() == templ_len:
+			found_templ = len_grp.find_templ(templ_scvo)
+			return True, found_templ, igg
 
+	return False, None, None
+
+
+def report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr, def_article_dict, glv_dict):
+	print('Rules found for confirmation:')
+	for gg_confirm in gg_confirmed_list:
+		b_found, found_templ, igg = find_gg_by_sig(db_len_grps, gg_confirm)
+		if b_found:
+			gg = found_templ.get_gg(igg)
+			rule_grp = gg.get_rule_grp()
+			out_str = ''
+			out_str = els.print_phrase(rule_grp, rule_grp, out_str, def_article_dict, el_set_arr, glv_dict)
+			gens_rec = gg.get_gens_rec()
+			gens_str = ''
+			gens_str = els.print_phrase(gens_rec, gens_rec, gens_str, def_article_dict, el_set_arr, glv_dict)
+			print('PRECONDS:', out_str, '\nGENS:', gens_str)

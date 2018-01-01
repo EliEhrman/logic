@@ -85,6 +85,7 @@ def init_templ_learn():
 		# , saver
 
 def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
+	b_success = True
 	ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = learn_params
 	numrecs = len(igg_arr)
 	print('numrecs:', numrecs, 'igg_arr:', igg_arr)
@@ -92,20 +93,30 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
 	sess.run(tf.global_variables_initializer())
 	nd_perm_arr = np.stack(perm_arr, axis=0)
 
+
 	sess.run(t_for_stop)
-	for i in range(50000):
+	sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
+	losses = [[sess.run(t_err, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})]]
+	for step in range(config.c_gg_num_learn_steps):
 		sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
-		if i % 10000 == 0:
-			err = sess.run(t_err, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
-			print('lrn step ', i, err)
-			if err < 0.01:
+		if step % config.c_gg_learn_test_every == 0:
+			# err =
+			err = np.mean(losses)
+			losses = []
+			print('lrn step ', step, err)
+			if err < config.c_gg_learn_good_thresh:
 				break
-		sess.run(op_train_step, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
+			if err > config.c_gg_learn_give_up_thresh and step > config.c_gg_learn_give_up_at:
+				print('do_templ_learn: Giving up on learning!')
+				b_success = False
+				break
+		nn_outputs = sess.run([t_err, op_train_step], feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
+		losses.append(nn_outputs[0])
 
 	nd_W, nd_y =  sess.run([v_W, t_y], feed_dict={ph_input:nd_perm_arr, ph_o:igg_arr})
 	nd_norms = np.linalg.norm(nd_y, axis=1)
 	nd_db = nd_y / nd_norms[:, None]
-	return nd_W, nd_db
+	return nd_W, nd_db, b_success
 
 
 def build_nn(var_scope, input_dim, b_reuse):
@@ -298,7 +309,7 @@ def get_templ_cds(perm_vec, nd_W, nd_db):
 # The return value indicaates a match on the gg not whether the match succeeded in matching a result
 def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_rec, event_result_list,
 				 event_result_score_list, templ_len, templ_scvo, b_gg_confirmed, result_confirmed_list,
-				 success_score):
+				 gg_confirmed_list, success_score):
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
@@ -324,11 +335,14 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 	generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gens_rec)
 	for iresult, event_result in enumerate(event_result_list):
 		if mr.match_rec_exact(generated_result[1:-1], event_result):
-			event_result_score_list[iresult].append([success_score, templ_len, templ_scvo, igg])
+			gg_sig = [success_score, templ_len, templ_scvo, igg]
+			event_result_score_list[iresult].append(gg_sig)
 			print('Adding score for event ', event_result, 'score:', event_result_score_list[iresult][-1])
 			b_one_result_matched = True
 			if b_gg_confirmed:
 				result_confirmed_list[iresult] = True
+				if gg_confirmed_list[iresult] == []:
+					gg_confirmed_list[iresult] = gg_sig
 
 	if not b_one_result_matched:
 		print('Strange. gg matched but no corresponding event in event list')

@@ -50,12 +50,14 @@ class cl_gens_grp(object):
 		self.__igg = igg # index number of gg or pgg in template container
 		self.__num_tests = 0.0
 		self.__num_successes = 0.0
+		self.__num_perm_adds_till_next_learn = 0
 
 	def gens_matches(self, gens_rec):
 		return mr.match_gens_phrase(self.__gens_rec, gens_rec)
 
 	def add_perm(self, templ_iperm):
 		self.__iperm_list.append(templ_iperm)
+		self.__num_perm_adds_till_next_learn -= 1
 
 	def mark_templ_perm_matched(self, b_match):
 		self.__perm_match_list.append(b_match)
@@ -80,9 +82,11 @@ class cl_gens_grp(object):
 
 	def clear_perms(self):
 		self.__perm_list = []
+		self.__iperm_list = []
 		self.__perm_match_list = []
 
 	def set_match_limits(self, templ_perm_list, templ_perm_igg_arr, templ_len, glv_len, glv_dict):
+		print('Testing for match limits for templ_olen, gg: ', templ_len, self.__igg)
 		self.__thresh_cd = 1.0
 		for one_iperm in self.__iperm_list:
 			perm_vec = mr.make_vec(glv_dict, templ_perm_list[one_iperm], templ_len, glv_len)
@@ -96,13 +100,23 @@ class cl_gens_grp(object):
 		self.__nn_params += dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
 		self.__nn_params += dmlearn.create_tmpl_dml_tensors(self.__nn_params[2], var_scope)
 
-	def do_learn(self, sess, templ_perm_vec_list, templ_perm_list, templ_olen, glv_len, glv_dict):
+	def do_learn(self, sess, templ_perm_vec_list, templ_perm_list, templ_olen, glv_len, glv_dict, el_set_arr):
+		if self.__num_perm_adds_till_next_learn > 0:
+			print('gg cant learn yet. Still have', self.__num_perm_adds_till_next_learn, ' add_perms to go.')
+
 		print('Learning for gg:', self.__igg)
-		self.__nd_W, self.__nd_db = dmlearn.do_templ_learn(sess, self.__nn_params, templ_perm_vec_list, self.__perm_match_list)
-		self.set_match_limits(templ_perm_list, self.__perm_match_list, templ_olen, glv_len, glv_dict)
+		self.__nd_W, self.__nd_db, self.__b_lrn_success = \
+			dmlearn.do_templ_learn(sess, self.__nn_params, templ_perm_vec_list, self.__perm_match_list)
+		if self.__b_lrn_success:
+			self.set_match_limits(templ_perm_list, self.__perm_match_list, templ_olen, glv_len, glv_dict)
+			self.__rule_grp = self.make_rule_grp(glv_dict, templ_perm_list, el_set_arr)
+		self.__num_perm_adds_till_next_learn = config.c_gg_learn_every_num_perms
 		# for one_gg in self.__gg_list:
 		# 	one_gg.set_match_limits(self.__nd_W, self.__nd_db, self.__perm_list, self.__perm_igg_arr, self.__olen, self.glv_len, self.glv_dict)
 		# self.__db_valid = True
+
+	def make_rule_grp(self, glv_dict, templ_perm_list, el_set_arr):
+		return mr.make_rule_grp(glv_dict, [templ_perm_list[iperm] for iperm in self.__iperm_list], el_set_arr)
 
 	def get_perm_match_list(self):
 		return self.__perm_match_list
@@ -116,19 +130,26 @@ class cl_gens_grp(object):
 		return self.__igg
 
 	def get_match_score(self, preconds_rec, perm_vec, event_result_list, event_result_score_list,
-						templ_len, templ_scvo, result_confirmed_list):
+						templ_len, templ_scvo, result_confirmed_list, gg_confirmed_list):
+		if not self.__b_lrn_success:
+			print('Cannot provide score for for failed learning igg:', self.__igg, 'match list:', self.__perm_match_list)
+			return event_result_score_list
+
 		print('Calculating score for igg:', self.__igg, 'match list:', self.__perm_match_list)
 		b_hit, b_success = dmlearn.get_gg_score(	preconds_rec, perm_vec, self.__nd_W, self.__nd_db ,
 													self.__igg, self.__perm_match_list,
 													self.__thresh_cd, self.get_gens_rec(), event_result_list,
 													event_result_score_list, templ_len, templ_scvo,
-													self.__b_confirmed, result_confirmed_list,
+													self.__b_confirmed, result_confirmed_list, gg_confirmed_list,
 													self.__num_successes / self.__num_tests if self.__num_tests else 0.0)
 		if b_hit:
 			self.__num_tests += 1.0
 			if b_success:
 				self.__num_successes += 1.0
 		return event_result_score_list
+
+	def get_rule_grp(self):
+		return self.__rule_grp
 
 
 	# def test_mrg_list(self, preconds_rec, event_result):
@@ -259,7 +280,8 @@ class cl_templ_grp(object):
 	def get_num_perms(self):
 		return len(self.__perm_pigg_arr)
 
-	def get_match_score(self, preconds_rec, event_result_list, event_result_score_list, result_confirmed_list, b_real_score=True):
+	def get_match_score(self, preconds_rec, event_result_list, event_result_score_list, result_confirmed_list,
+						gg_confirmed_list, b_real_score=True):
 		# rewrite for result list and gg list
 		if self.__db_valid:
 			if b_real_score:
@@ -271,7 +293,7 @@ class cl_templ_grp(object):
 			perm_vec = mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len)
 			for one_gg in self.__gg_list[1:]:
 				one_gg.get_match_score(preconds_rec, perm_vec, event_result_list, event_result_score_list,
-									   self.__templ_len, self.__scvo, result_confirmed_list)
+									   self.__templ_len, self.__scvo, result_confirmed_list, gg_confirmed_list)
 			# 	one_gg.get_match_score(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
 			# return dmlearn.get_score(preconds_rec, perm_vec, self.__nd_W, self.__nd_db, self.__gg_list,
 			# 						 self.__perm_igg_arr, self.__perm_eid_list, event_result_list,
@@ -281,7 +303,7 @@ class cl_templ_grp(object):
 
 		return event_result_score_list
 
-	def do_learn(self, sess):
+	def do_learn(self, sess, el_set_arr):
 		# if len(self.__gg_list) > 1 and len(self.__perm_igg_arr) > 5:
 		if not self.__b_db_graduated:
 			return
@@ -292,7 +314,7 @@ class cl_templ_grp(object):
 
 		print('Learning all ggs in template:', self.__scvo, 'len:', self.__templ_len)
 		for one_gg in self.__gg_list[1:]:
-			one_gg.do_learn(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
+			one_gg.do_learn(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict, el_set_arr)
 		# for one_gg in self.__gg_list:
 		# 	one_gg.set_match_limits(self.__nd_W, self.__nd_db, self.__perm_list, self.__perm_igg_arr, self.__olen, self.glv_len, self.glv_dict)
 		self.__num_perm_adds_till_next_learn = config.c_templ_learn_every_num_perms
@@ -369,6 +391,11 @@ class cl_templ_grp(object):
 		if self.__gg_list[igg].add_point():
 			print('gg confirmed in templ group with scvo, len;', self.__scvo, 'len:', self.__templ_len)
 			self.__b_confirmed = True
+
+	def get_gg(self, igg):
+		if igg >= len((self.__gg_list)):
+			return None
+		return self.__gg_list[igg]
 
 class cl_len_grp(object):
 	# __slots__='__len', '__templ_grp_list'

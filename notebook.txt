@@ -572,3 +572,17 @@ it should be overridden by a correct rule, even if longer.
 Checking in with message:
 
 Sort of working. NN is gg based. Score based on successes after match. Stop when all results has been matched by confirmed rules.
+
+After reviwing log of output of version just checked in. Adding the new scoring mechanism removed a rule that
+was confirmed but generating matches for perms that did not have an event result
+
+Monday 1st January
+
+Checking in with the following comment:
+
+Working fairly well. Cascade can crawl to a stop.
+
+The next step is to solve the cascade issues. I think the right approach is to sinply find all place names and
+people names that are mentioned and keep expanding the list of phrases as follows: Take all objects mentioned,
+find all phrases mentioning them. Find all objects this new list mentions find all phrases mentioning this
+new list.

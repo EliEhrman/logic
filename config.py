@@ -57,7 +57,13 @@ c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the o
 c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
 c_gg_graduate_len = 10
 c_gg_confirm_thresh = 5
-c_templ_learn_every_num_perms = 10
+c_templ_learn_every_num_perms = 12
+c_gg_learn_every_num_perms = 10
+c_gg_num_learn_steps = 50000
+c_gg_learn_test_every = 1000
+c_gg_learn_good_thresh = 0.01
+c_gg_learn_give_up_at = 10000
+c_gg_learn_give_up_thresh = 0.1
 
 
 
