@@ -101,7 +101,8 @@ def create_train_vecs(glv_dict, def_article_dict,
 
 			event_step_id += 1
 
-			all_combs = cascade.get_cascade_combs(els_sets, story_db, event_phrase)
+			# all_combs = cascade.get_cascade_combs(els_sets, story_db, event_phrase)
+			all_combs = cascade.get_phrase_cascade(els_sets, story_db, event_phrase)
 
 			all_combs = sorted(all_combs, key=len)
 

@@ -9,9 +9,11 @@ from rules import conn_type
 import els
 import utils
 
-def all_combinations(src_set):
+def all_combinations(src_set, max_len=None):
 	results = []
-	for i in range(len(src_set)):
+	if max_len == None:
+		max_len = len(src_set)
+	for i in range(max_len):
 		results += itertools.combinations(src_set, i+1)
 	return results
 
@@ -92,3 +94,41 @@ def level_cascade(story_els, story_db, cascade_db, phrase_idx_set):
 			new_phrase_idx_set.add(iphrase)
 
 	return new_phrase_idx_set
+
+def recurse_phrase_combos(story_els, story_db, cascade_db, phrase_idx_used, recursions_left):
+	recursions_left -= 1
+	if recursions_left <= 0:
+		return phrase_idx_used
+
+	new_phrase_idx_set = level_cascade(story_els, story_db, cascade_db, phrase_idx_used)
+	if not new_phrase_idx_set:
+		return phrase_idx_used
+
+	new_cascade_db = list(cascade_db + [story_db[iphrase].phrase() for iphrase in new_phrase_idx_set])
+	total_phrase_idx_set = set(new_phrase_idx_set).union(phrase_idx_used)
+	total_phrase_idx_set = recurse_phrase_combos(	story_els, story_db, new_cascade_db, total_phrase_idx_set,
+							recursions_left)
+	return total_phrase_idx_set
+
+	# all_combos = all_combinations(new_phrase_idx_set)
+	# new_phrase_idx_used = set(phrase_idx_used).union(new_phrase_idx_set)
+	# for one_perm in all_combos:
+	# 	new_phrase_idx_set = []
+	# 	new_cascade_db = list(cascade_db + [story_db[iphrase].phrase() for iphrase in one_perm])
+	# 	perm_phrase_idx_set = set(phrase_idx_set).union(one_perm)
+	# 	recurse_combos(story_els, story_db, new_cascade_db, perm_phrase_idx_set, new_phrase_idx_used, all_perms, recursions_left)
+	# 	all_perms += [list(perm_phrase_idx_set)]
+
+def get_phrase_cascade(els_sets, story_db, event_phrase):
+	story_els_set = utils.combine_sets([els_sets.objects, els_sets.places, els_sets.names])
+	story_els = story_els_set[2]
+	cascade_db = [event_phrase]
+	phrase_idx_set = set()
+	all_perms = []
+
+	phrase_idx_set = recurse_phrase_combos(	story_els, story_db, cascade_db, phrase_idx_set,
+											recursions_left = config.c_cascade_level)
+
+	all_perms = all_combinations(phrase_idx_set, config.c_cascade_max_phrases)
+
+	return [[]] + all_perms

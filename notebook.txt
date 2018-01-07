@@ -586,3 +586,213 @@ The next step is to solve the cascade issues. I think the right approach is to s
 people names that are mentioned and keep expanding the list of phrases as follows: Take all objects mentioned,
 find all phrases mentioning them. Find all objects this new list mentions find all phrases mentioning this
 new list.
+
+Sunday January 7th
+
+Thoughts at the sea:
+
+What i want to do next is apply the same process to blocking rules
+
+
+
+If a result was predicted best by a low-scoring rule, suggest a blocking rule
+
+
+
+Just realized that I'm totally not ready to do blocking event till I have event production
+
+
+
+However, just to record the thought. The idea is that an event block
+
+would be proposed just like an event result. A separate list of pggs
+
+would be kept by templates that graduate, learn rules, confirm and print
+
+just like event results.
+
+
+
+The question is, how do we create the proposed event block. We need to
+
+look for a failure to predict.
+
+
+
+Event generation
+
+
+
+Options:
+
+
+
+1. Cascade from the actual event, make the gens the event
+
+
+
+Problem. We want to use this to predict. So we can't generate the preconds
+
+and look for a mtching rule, unless the preconds are the whole story db
+
+
+
+Solution. Make events inherently person based. For a story this would translate to all people in the story taking turns in participating in
+
+an event. The name of the person can be used to seed the cascade.
+
+
+
+Learn rules fo events_from_none the way we learnt state_from_event
+
+
+
+Add the empty list to all_perms because some events require no preconditions
+
+
+
+Success will not be close to 100%. Perhaps there should be a record of all ggs that
+
+match (and succeed) for an event. For a specific event the winner is highest-scoring
+
+(where score is % success) and for ties, the shortest wins. However with a records
+
+across many eids we might be able to use set of eids, an event that is longer and is a subset
+
+of a shorter gg is a definite loser. Even if it has a small % if eids not in the smaller
+
+
+
+Returning to blocking events.
+
+
+
+If a confirmed gg fails to predict an event, we look at what it did predict.
+
+
+
+This could include a simple John gives John. There the gg itself could add conditions to block.
+
+However, that is not good for  block that depends on the some extra phrase in the perm
+
+So once a block phrase is created we add it to a list of block event results.
+
+We now repeat the procedure for predicting block event results the way we did for event_from_none
+
+
+
+We will need mltiple lists of pggs and ggs for each template for each kind of event and block
+
+Once we predict a block we see if it mathes a fail to predict phrase from the last round.
+
+If it matches but fails, that is serious (if not immedately) fatal for the block gg.
+
+
+
+However, for now it may be best to switch to working on the story generator. i want to
+
+separate people decisions from the rules that enable an event.
+
+
+
+Options.
+
+
+
+1. Add a requirement for event that a person "decided to do" X. All rule genrators have this as a clause.
+
+
+
+Create a class called decide_event. They are generated like from state (so event->state->state->decide->event)
+
+
+
+event_from_decide can be learned from trial-and-error
+
+decide_from_state can be learned from the event result implying, once I know event_from_decide, that the decide happened
+
+For an AI creating rules for decide_from_state, first of all it must take into account the conditions for decide->event success
+
+A player-engine is a set of policies that generate decisions from state
+
+Simple AI Strategy;
+
+Create a tree. The top node is having the desired object.
+
+To have you must pick up, to pick up you must go, you need to know
+knowing requires asking and being told etc.
+
+Another path down the tree. To get something someone has, it must be given.
+He'll give if he likes you. He'll like you if you give him. So you must get that
+Again, to give you, you need to be where he is. To do that you have to know...
+
+The search can be done using symbolic rules. You want X. you look for a rule whose gens could be X
+if Vars A and B are instantiated such that the gens fits X. Then you look for what could make the
+preconds of the found rule true. There could be more than one way to fit the rule or more that one
+rule, so you got a tree. That is a symbolc strategy and fit for the oracle and could be used by the AI
+too.
+
+The AI wants to do better. It wants to find positions that are high-value w.r.t. winning the game. It wants
+to create small trees that get to high value positions. We can search for a new type of gg that represents
+the relation between the current state and the goal
+
+We can also create relations between the current state and high-value positions. However, this could generate
+a lot of options and we may want to narrow the search for these with a similarity search. Again this could be
+done by iterating many perms from the current state where the cascade is seeded by the target. The "gens" in this
+case is the target or potential target (high value position). (gens is in quotes because it is not really what is
+generated by the preconds. However, it does use the var table creation which captures the relations between els)
+
+1. So the first step is to create a classic search tree and try to get better than random results
+
+2. Next, we look at games that we won. We look the state a few steps before success. Generate a cascade of perms
+from that state with a gens as the result
+
+3. Do learning to reduce dimensions and find connections between states and targets
+
+4. If, during play a target is signaled, generate classic search tree to try and get there
+
+5. Hopefully, we're getting better and so we look to improve the high-value precursors to winning
+
+6 Repeat from step 2, but now we look for states that preceeded the high value states. We now aim at these
+
+7. Keep playing more games.
+
+
+The order of search in finding heuristic rules is different. This time I'm looking for a specific goal
+which is like an event result. There will be lots of cascaded phrase perms. This will result in a number of
+templates and a limited number of gens recs (different choices of who is var and who an obj as well as different
+var nums). Perhaps a second NN layer can take the confirmed ggs which now all have an equal representation regardless
+of template. This second layer learns distance to target based on % success. The result is a representation which
+can be compared to many other to determine one or more sub-goals towards the goal.
+
+This (heuristic) search for sub-goals (not the classic g p solver) could use the original perm records but i suspect
+that it would be better to use the rules themselves. This would create a neat tree but not a means of scoring how
+close I am to any node of the tree
+
+So we need a function that can score my current position relative to a specific node. This, again, looks like many of
+the sorts of matching. We need a set of perms on the current db, created by a caascade seeded by an event result, we
+add the end result to create a number of gens recs. We learn how to match - perhaps separately from success. We then
+create another layer that learns success of the gg relative to the target event (i.e. how likely given a match on
+the gg, that the event will occur within a few moves.
+
+Once learned, I have a way to say what the chances that the current state will get to a specific node in the tree:
+We just cascade, create the perms and from a siilarity search extract the score. We do this for all nodes on the
+heuristic search sub-goals tree. The tree has probs to get from one node to the other. I should probavbly multiply (or some such)
+the probs along te tree to get a discount factor for nodes that the current state is really close to but the node
+itself is not so close to the target state.
+
+We can pick a sorted list of the best candidates. (Maybe just one). Then plan a path from the current state to that
+node.
+
+How do we handle multiple criteria? For exampl a high value state might be that I am A's friend AND A has an X. Just
+being A's friend has little inherent value. (Not none).
+
+The best solution I can think of righht now is to use the tree for AND. So I might find a preconds consisting of two
+phrases: be A's fried AND A has X. The score to achieve that node is the LESSER of the two score for achieving
+each phrase as an event result. If that node is chosen, paths must be found (classic gps) to achieve BOTH phrases.
+However, note, the score for the closeness of current state to a given phrase (or single-phrase gens rec) is, as before,
+just a single phrase gens.
+
+Before I start implementing, checking in with:
+
+Improved cascading drastically
