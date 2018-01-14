@@ -329,12 +329,20 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 	print('min cd:', min_match_cd, 'max cd:', max_match_cd, 'threshold:', thresh_cd)
 
 	if max_match_cd < thresh_cd:
-		return False, False
+		return False, False, []
+
+	# if event_result_list is empty, every gg match means a problem, so find a way to report
+	# under all circumstances, the list of unsuccessful matches needs to be created to learn blocking
+	generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gens_rec)
+	expected_result = generated_result[1:-1]
+
+	if event_result_list == []:
+		print('gg_score for null results expected some result.')
+		return True, False, expected_result
 
 	b_one_result_matched = False
-	generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gens_rec)
 	for iresult, event_result in enumerate(event_result_list):
-		if mr.match_rec_exact(generated_result[1:-1], event_result):
+		if mr.match_rec_exact(expected_result, event_result):
 			gg_sig = [success_score, templ_len, templ_scvo, igg]
 			event_result_score_list[iresult].append(gg_sig)
 			print('Adding score for event ', event_result, 'score:', event_result_score_list[iresult][-1])
@@ -348,9 +356,9 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 		print('Strange. gg matched but no corresponding event in event list')
 		if b_gg_confirmed:
 			print('Even stranger! The gg is actually confirmed')
-		return True, False
+		return True, False, expected_result
 
-	return True, True
+	return True, True, expected_result
 
 
 def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result_list, event_result_score_list, templ_len, templ_scvo):

@@ -180,6 +180,10 @@ def do_init():
 	# utils.init_logging()
 	# logger = utils.ulogger
 
+	# els.create_actions_file()
+	# exit()
+
+
 	glv_dict, def_article_dict = els.init_glv()
 	# els_arr, els_dict, glv_dict, def_article, num_els, els_sets = els.init_objects()
 	# # els.quality_of_els_sets(glv_dict, els_sets)

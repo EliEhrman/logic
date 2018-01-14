@@ -17,14 +17,14 @@ def all_combinations(src_set, max_len=None):
 		results += itertools.combinations(src_set, i+1)
 	return results
 
-def get_cascade_combs(els_sets, story_db, event_phrase):
+def get_cascade_combs(els_sets, story_db, event_phrase, seed):
 	story_els_set = utils.combine_sets([els_sets.objects, els_sets.places, els_sets.names])
 	story_els = story_els_set[2]
 	cascade_db = [event_phrase]
 	phrase_idx_set = set()
 	all_perms = []
 
-	recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_set, all_perms,
+	recurse_combos(story_els, story_db, cascade_db, seed, phrase_idx_set, phrase_idx_set, all_perms,
 				   recursions_left = config.c_cascade_level)
 
 	limited_all_perms = []
@@ -60,12 +60,12 @@ def get_obj_cascade(els_sets, target_phrase, story_db, event_phrase, b_for_query
 
 	return [[]] + all_perms
 
-def recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_used, all_perms, recursions_left):
+def recurse_combos(story_els, story_db, cascade_db, seed, phrase_idx_set, phrase_idx_used, all_perms, recursions_left):
 	recursions_left -= 1
 	if recursions_left <= 0:
 		return
 
-	new_phrase_idx_set = level_cascade(story_els, story_db, cascade_db, phrase_idx_used)
+	new_phrase_idx_set = level_cascade(story_els, story_db, cascade_db, phrase_idx_used, seed)
 	if not new_phrase_idx_set:
 		return
 	all_combos = all_combinations(new_phrase_idx_set)
@@ -74,11 +74,12 @@ def recurse_combos(story_els, story_db, cascade_db, phrase_idx_set, phrase_idx_u
 		new_phrase_idx_set = []
 		new_cascade_db = list(cascade_db + [story_db[iphrase].phrase() for iphrase in one_perm])
 		perm_phrase_idx_set = set(phrase_idx_set).union(one_perm)
-		recurse_combos(story_els, story_db, new_cascade_db, perm_phrase_idx_set, new_phrase_idx_used, all_perms, recursions_left)
+		recurse_combos(story_els, story_db, new_cascade_db, seed, perm_phrase_idx_set, new_phrase_idx_used, all_perms,
+					   recursions_left)
 		all_perms += [list(perm_phrase_idx_set)]
 
-def level_cascade(story_els, story_db, cascade_db, phrase_idx_set):
-	targets = set()
+def level_cascade(story_els, story_db, cascade_db, phrase_idx_set, seed):
+	targets = set([seed])
 	new_phrase_idx_set = set()
 	# new_cascade_db = cascade_db
 	for phrase in cascade_db:
@@ -95,19 +96,19 @@ def level_cascade(story_els, story_db, cascade_db, phrase_idx_set):
 
 	return new_phrase_idx_set
 
-def recurse_phrase_combos(story_els, story_db, cascade_db, phrase_idx_used, recursions_left):
+def recurse_phrase_combos(story_els, story_db, cascade_db, seed, phrase_idx_used, recursions_left):
 	recursions_left -= 1
 	if recursions_left <= 0:
 		return phrase_idx_used
 
-	new_phrase_idx_set = level_cascade(story_els, story_db, cascade_db, phrase_idx_used)
+	new_phrase_idx_set = level_cascade(story_els, story_db, cascade_db, phrase_idx_used, seed)
 	if not new_phrase_idx_set:
 		return phrase_idx_used
 
 	new_cascade_db = list(cascade_db + [story_db[iphrase].phrase() for iphrase in new_phrase_idx_set])
 	total_phrase_idx_set = set(new_phrase_idx_set).union(phrase_idx_used)
-	total_phrase_idx_set = recurse_phrase_combos(	story_els, story_db, new_cascade_db, total_phrase_idx_set,
-							recursions_left)
+	total_phrase_idx_set = recurse_phrase_combos(	story_els, story_db, new_cascade_db, seed,
+													total_phrase_idx_set, recursions_left)
 	return total_phrase_idx_set
 
 	# all_combos = all_combinations(new_phrase_idx_set)
@@ -119,14 +120,14 @@ def recurse_phrase_combos(story_els, story_db, cascade_db, phrase_idx_used, recu
 	# 	recurse_combos(story_els, story_db, new_cascade_db, perm_phrase_idx_set, new_phrase_idx_used, all_perms, recursions_left)
 	# 	all_perms += [list(perm_phrase_idx_set)]
 
-def get_phrase_cascade(els_sets, story_db, event_phrase):
+def get_phrase_cascade(els_sets, story_db, event_phrase, seed):
 	story_els_set = utils.combine_sets([els_sets.objects, els_sets.places, els_sets.names])
 	story_els = story_els_set[2]
 	cascade_db = [event_phrase]
 	phrase_idx_set = set()
 	all_perms = []
 
-	phrase_idx_set = recurse_phrase_combos(	story_els, story_db, cascade_db, phrase_idx_set,
+	phrase_idx_set = recurse_phrase_combos(	story_els, story_db, cascade_db, seed, phrase_idx_set,
 											recursions_left = config.c_cascade_level)
 
 	all_perms = all_combinations(phrase_idx_set, config.c_cascade_max_phrases)

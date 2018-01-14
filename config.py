@@ -71,19 +71,20 @@ c_gg_learn_give_up_thresh = 0.1
 
 sample_el = 'has' # used as an example that must be in el db or glv dict
 query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that', 'asked', 'for']
-person_place_action = ['is located in', 'went to']
+person_place_action = ['is located in', 'went to', 'go to']
 object_place_action = ['is located in', 'is free in' ]
-person_object_dynamic_action = ['picked up', 'put down']
+person_object_dynamic_action = ['picked up', 'put down', 'pick up']
 person_object_static_action = ['has', 'wants']
 person_person_static_action = ['likes']
 person_object_dynamic_3_action = ['gave to']
 knowledge_action = ['knows that']
+decision_action = ['decided to']
 
 uniquify = lambda llist: list(set(llist))
 
 person_object_action = uniquify(person_object_dynamic_action + person_object_static_action)
 actions = uniquify(query_action + person_place_action + object_place_action
 				   + person_object_action + person_person_static_action + person_object_dynamic_3_action
-				   + knowledge_action)
+				   + knowledge_action + decision_action)
 # actions = ['picked up', 'put down', 'has', 'went to', 'is located in', 'is free in', 'who']
 

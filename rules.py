@@ -4,9 +4,7 @@ from enum import Enum
 import collections
 import config
 import utils
-# import els
 from utils import ulogger as logger
-# import els
 
 # varmod is a var whose object was in the input and is the only value to be modified
 # mod is a field, normally seen in output, that tells you how to modify the database
@@ -21,7 +19,8 @@ dm_type = Enum('dm_type', 'Insert Remove Modify')
 conn_type = Enum('conn_type', 'single AND OR start end Insert Remove Modify')
 rec_def_type = Enum('rec_def_type', 'obj conn var error set')
 # see notebook on 2nd Nov
-rule_type = Enum('rule_type', 'story_start event_from_none state_from_state state_from_event event_from_event block_event knowledge_query query')
+rule_type = Enum('rule_type', 'story_start event_from_decide state_from_state state_from_event '
+							  'event_from_event block_event knowledge_query query event_from_none')
 
 # nt_rule_fld is the rule for one field (normally a word in the phrase). Consists of:
 # els_set. A definition of a elements set. Itself consisting of a set of el_ids, a size and a set of the els
@@ -60,6 +59,36 @@ class C_phrase_rec(object):
 		return self.__phrase
 
 person_to_person_ask_rule_names = []
+
+def init_decide_rules(els_sets, els_dict, name):
+	name_set, object_set, place_set, action_set = utils.unpack_els_sets(els_sets)
+	all_rules = []
+
+	pickup_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='pick up'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='pickup_decide_rule'
+	)
+	all_rules.append(pickup_decide_rule)
+
+	goto_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='go to'),
+			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='goto_decide_rule'
+	)
+	all_rules.append(goto_decide_rule)
+
+	return all_rules
 
 # rec_def = collections.namedtuple('rec_def', 'obj, conn')
 def init_knowledge_query_rules(els_sets, els_dict, name):
@@ -500,22 +529,39 @@ def init_all_rules(els_sets, els_dict):
 	)
 	all_rules.append(gave_rule)
 
+	pickup_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='pick up'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='pickup_decide_rule'
+	)
+	all_rules.append(pickup_decide_rule)
+
 	pickup_rule = nt_rule(
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='pick up'),
+				nt_rule_fld(els_set=object_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
 				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
-			nt_rule_fld(els_set=object_set, df_type=df_type.obj),
-			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=2)])]),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is free in'),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=6)])]),
 		gens = nt_tree_junct(single=[
 			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='picked up'),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
-		story_based=True, type=rule_type.event_from_none, name='pickup_rule'
+		story_based=True, type=rule_type.event_from_decide, name='pickup_rule'
 								)
 	all_rules.append(pickup_rule)
 
@@ -523,32 +569,39 @@ def init_all_rules(els_sets, els_dict):
 		preconds = nt_tree_junct(logic=conn_type.AND, branches = [
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=name_set, df_type=df_type.obj),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
+				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
+			nt_tree_junct(single=[
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
 				nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 			nt_tree_junct(single=[
 				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 				nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='has'),
-				nt_rule_fld(els_set=object_set, df_type=df_type.obj)])]),
+				nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)
+			])]),
 		gens = nt_tree_junct(single=[
 			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='put down'),
-			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=5)]),
-		story_based=True, type=rule_type.event_from_none, name='putdown_rule', prob=0.05
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
+		story_based=True, type=rule_type.event_from_decide, name='putdown_rule', prob=0.05
 								 )
 	all_rules.append(putdown_rule)
 
 	went_rule = nt_rule(
 		preconds=nt_tree_junct(single=[
 			nt_rule_fld(els_set=name_set, df_type=df_type.obj),
-			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='is located in'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='go to'),
 			nt_rule_fld(els_set=place_set, df_type=df_type.obj)]),
 		gens = nt_tree_junct(single = [
 			nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
 			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=0),
 			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='went to'),
-			nt_rule_fld(els_set=place_set, df_type=df_type.obj, rand_sel=True)]),
-		story_based=True, type=rule_type.event_from_none, name='went_rule'
+			nt_rule_fld(els_set=[], df_type=df_type.var, var_id=3)]),
+		story_based=True, type=rule_type.event_from_decide, name='went_rule'
 	)
 	all_rules.append(went_rule)
 
@@ -1027,7 +1080,12 @@ def gen_for_rule(b_gen_for_learn, rule, time_stamp=0):
 		numrecs = len(recs)
 		# field_id = 0
 		# obj_num = 0
-		if tree.logic == conn_type.single:
+		if rule_part_name == 'gens' and tree == []:
+			recs = None
+		elif tree == []:
+			print('build_recs() can never be called for a null preconds. Deal with this before you get here!')
+			exit(1)
+		elif tree.logic == conn_type.single:
 			for irec in range(numrecs):
 				# recs[irec].append(rec_def_type.conn.value - 1)
 				# recs[irec].append(conn_type.start.value - 1)

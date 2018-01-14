@@ -130,23 +130,27 @@ class cl_gens_grp(object):
 		return self.__igg
 
 	def get_match_score(self, preconds_rec, perm_vec, event_result_list, event_result_score_list,
-						templ_len, templ_scvo, result_confirmed_list, gg_confirmed_list):
+						templ_len, templ_scvo, result_confirmed_list, gg_confirmed_list,
+						expected_but_not_found_list):
 		if not self.__b_lrn_success:
 			print('Cannot provide score for for failed learning igg:', self.__igg, 'match list:', self.__perm_match_list)
 			return event_result_score_list
 
 		print('Calculating score for igg:', self.__igg, 'match list:', self.__perm_match_list)
-		b_hit, b_success = dmlearn.get_gg_score(	preconds_rec, perm_vec, self.__nd_W, self.__nd_db ,
-													self.__igg, self.__perm_match_list,
-													self.__thresh_cd, self.get_gens_rec(), event_result_list,
-													event_result_score_list, templ_len, templ_scvo,
-													self.__b_confirmed, result_confirmed_list, gg_confirmed_list,
-													self.__num_successes / self.__num_tests if self.__num_tests else 0.0)
+		b_hit, b_success, expected_but_not_found = \
+			dmlearn.get_gg_score(	preconds_rec, perm_vec, self.__nd_W, self.__nd_db ,
+									self.__igg, self.__perm_match_list,
+									self.__thresh_cd, self.get_gens_rec(), event_result_list,
+									event_result_score_list, templ_len, templ_scvo,
+									self.__b_confirmed, result_confirmed_list, gg_confirmed_list,
+									self.__num_successes / self.__num_tests if self.__num_tests else 0.0)
 		if b_hit:
 			self.__num_tests += 1.0
 			if b_success:
 				self.__num_successes += 1.0
-		return event_result_score_list
+			else:
+				expected_but_not_found_list.append(expected_but_not_found)
+		return event_result_score_list, expected_but_not_found_list
 
 	def get_rule_grp(self):
 		return self.__rule_grp
@@ -238,6 +242,11 @@ class cl_templ_grp(object):
 		self.__perm_result_list.append(perm_result_list)
 		self.__perm_vec_list.append(mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len))
 		self.__perm_eid_list.append(eid)
+		self.__perm_ipgg_arr.append([])
+
+		if gens_rec_list == []:
+			# skipping reducing count of adds till next learn
+			return
 
 		b_needs_recalib = False
 
@@ -250,10 +259,12 @@ class cl_templ_grp(object):
 			else:
 				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid)
 				# perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm], gens_rec=perm_gens_list[iperm], igg=perm_igg)
-			if igens == 0:
-				self.__perm_ipgg_arr.append([perm_ipgg])
-			else:
-				self.__perm_ipgg_arr[-1].append(perm_ipgg)
+
+			# if igens == 0:
+			# 	self.__perm_ipgg_arr.append([perm_ipgg])
+			# else:
+			# 	self.__perm_ipgg_arr[-1].append(perm_ipgg)
+			self.__perm_ipgg_arr[-1].append(perm_ipgg)
 
 			if b_pgg_needs_graduating:
 				print('gg graduated in template:', self.__scvo, 'len:', self.__templ_len)
@@ -261,7 +272,7 @@ class cl_templ_grp(object):
 					gg_null = cl_gens_grp([], 0)
 					self.__gg_list = [gg_null]
 				gg = cl_gens_grp(perm_pgg.get_gens_rec(), len(self.__gg_list))
-				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
+ 				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
 				self.__gg_list.append(gg)
 				b_needs_recalib = True
 				self.__num_perm_adds_till_next_learn = 0
@@ -290,18 +301,20 @@ class cl_templ_grp(object):
 			else:
 				score_list = [[] for _ in event_result_score_list]
 
+			expected_but_not_found_list = []
 			perm_vec = mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len)
 			for one_gg in self.__gg_list[1:]:
 				one_gg.get_match_score(preconds_rec, perm_vec, event_result_list, event_result_score_list,
-									   self.__templ_len, self.__scvo, result_confirmed_list, gg_confirmed_list)
+									   self.__templ_len, self.__scvo, result_confirmed_list, gg_confirmed_list,
+									   expected_but_not_found_list)
 			# 	one_gg.get_match_score(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
 			# return dmlearn.get_score(preconds_rec, perm_vec, self.__nd_W, self.__nd_db, self.__gg_list,
 			# 						 self.__perm_igg_arr, self.__perm_eid_list, event_result_list,
 			# 						 score_list, self.__templ_len, self.__scvo)
 		else:
-			return event_result_score_list
+			return event_result_score_list, []
 
-		return event_result_score_list
+		return event_result_score_list, expected_but_not_found_list
 
 	def do_learn(self, sess, el_set_arr):
 		# if len(self.__gg_list) > 1 and len(self.__perm_igg_arr) > 5:

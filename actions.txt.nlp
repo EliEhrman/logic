@@ -1,23 +1,26 @@
+decided to,2,root,0,decided,nmod,1,to
 went to,2,root,0,went,nmod,1,to
 what has,2,root,0,has,nsubj,2,what
-likes,1,root,0,likes
+is free in,3,root,0,free,cop,2,is,nmod,2,in
 have,1,root,0,have
 what,1,root,0,what
 for,1,root,0,for
 knows that,2,root,0,knows,advmod,1,that
+pick up,2,root,0,pick,compound:prt,1,up
 has,1,root,0,has
 told,1,root,0,told
 wants,1,root,0,wants
-is located in,3,root,0,located,cop,2,is,nmod,2,in
+picked up,2,root,0,picked,compound:prt,1,up
 that,1,root,0,that
 who,1,root,0,who
+go to,2,root,0,go,nmod,1,to
 know,1,root,0,know
 put down,2,root,0,put,compound:prt,1,down
 where is,2,root,0,is,advmod,2,where
 is in,2,root,0,in,cop,2,is
-asked,1,root,0,asked
-what does,2,root,0,does,nsubj,2,what
-picked up,2,root,0,picked,compound:prt,1,up
-where,1,root,0,where
 gave to,2,root,0,gave,nmod,1,to
-is free in,3,root,0,free,cop,2,is,nmod,2,in
+what does,2,root,0,does,nsubj,2,what
+is located in,3,root,0,located,cop,2,is,nmod,2,in
+where,1,root,0,where
+asked,1,root,0,asked
+likes,1,root,0,likes

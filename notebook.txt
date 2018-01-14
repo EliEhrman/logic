@@ -5,12 +5,7 @@ and timestamp events and most consequences with current time. The exception is k
 of the earliest phrase in the phrase list.
 
 In practice, whenever we add consequences, whether for events or static knowledge, we give the timestamp of the record, the current
-record.
-
-As of now, there is no inferring from the knowledge base of a specific person. So even if John knows that Daryl went to Fiji,
-he does not directly infer that Daryl is in Fiji. Instead we use inference from the static db (objective knowledge) to do that
-
-Probably would make more sense to have a centralized step creation mechanism that includes events, inter-person questions, responses etc.
+record. a centralized step creation mechanism that includes events, inter-person questions, responses etc.
 Attach a gens-type, such as stroy-step, knowledge insertion, etc.
 
 Tuesday 31st October
@@ -23,7 +18,12 @@ Wednesday 1st November
 
 Finished adding the answer to an inter-person query into the story database.
 
-Will commit a version with above string
+Will commit a version wi
+
+As of now, there is no inferring from the knowledge base of a specific person. So even if John knows that Daryl went to Fiji,
+he does not directly infer that Daryl is in Fiji. Instead we use inference from the static db (objective knowledge) to do that
+
+Probably would make more sense to haveth above string
 
 I intend to remove the generation of phrases for rules just for the purpose of learning because (1) that is about to change
 and (2) some rules such as the knowledge resulting from telling rule generated millions of records.
@@ -796,3 +796,141 @@ just a single phrase gens.
 Before I start implementing, checking in with:
 
 Improved cascading drastically
+
+Isses:
+
+What to do with event_from_event.
+
+I know about:
+event_from_decide
+state_from_event
+state_from_state
+decide_from_state
+
+Also, how do we handle numbers and lists
+
+event_from_event should be dealt with by knows_that.
+
+For example, John asked Mike to give him the ball, so Mike knows that John asked Mike.. and acts accordingly
+
+We need time-based processing.
+
+One suggestion. Just as we create vars, we create realtive times. Find the earliest time, and adjust all
+other times of the phrases relative to that.
+
+Question. How do put the time into the rule. AND time(phrase1) < time(phrase2)... ?
+
+Monday 8th January
+
+Additions to instructions on embed.py and parse.py explained above
+
+First of all run the function els.create_actions_file() (Take it out of comment and run it first thing)
+
+Both stand-alones are run without parameters. parse.py produces actions.txt.nlp and objects.txt.nlp
+embed.py produces four .glv files. Run them in the logic directory which I think should already have some
+.txt files hand-created in the directory.
+
+Don't worry about the message they both produce No module named...
+
+Thoughts on learing decision_from_state and event_from_decision_:
+
+Create decide from state rules
+
+Create a round robin of decisions
+
+Add the results to a list
+
+Loop through list
+
+    With each added to the end of the story db, create event
+
+How to create trial and error examples?
+
+Ultimately we want to observe events and then make "decide to" results which get tested to form rules.
+
+For now we make a special rule that generates either inserts or null results. We need to learn from these what the 'event from decide' rule is.
+
+The special rule for learning is simply
+'decided to' the action with no other pre condition. Put this with the story db and generate results. For invalid results the generator makes an empty list.
+
+Need a generator for decisions for the NPC s. Start off with random go to and pick up objects in my location.
+
+The player character uses the 'event from decide' rules he learnt. These become without modification the 'decide from state' rules.
+
+JUst in case you're wondering what rand_sel does. If it is false (the default), the records are created in order; one per element in the set.
+If there are a number of fields, the number of records will be increased so that each el in the set gets a record. If there
+are multiple fields, gen_for_rule() makes sure that there as many records as all possible combinations.
+If rand_sel is True, that rule field does NOT increase the number of recs generated. Instead only one of the set is selected.
+
+Wednesday 10th January
+
+Create a central loop where each iteration is a phase of a step but there will be multiple steps.
+
+Each phase consists of one of:
+Decide
+Event
+State 1 (state from event)
+State 2 (state from state)
+
+So if there are 400 iterations of the main loop there are 100 actual events.
+
+This means that we maintain a variable for deciding which phase we're in rather than having a loop of it's own.
+
+First we create a list of players. Each name is set in a single word phase.
+
+The decide phase consists of generating many decisions for each of the players. Again, this is not done as a loop but with a turn variable.
+
+The list of decisions is shuffled
+
+Each decision is tried and only when one decision succeeds in generating an event in the next phase will the turn switch to the next player.
+
+A decision is generated by a function that takes the name as a parameter. The decision has no pre conditions. It is just a gens of the decision phrase.
+
+Sunday 14th January
+
+I'm pretty excited about an idea of how to implement:
+
+    necessary but not sufficient (nbns)
+
+Every successful vector is going to be modified as follows. Multiply each value of the vector by the absolute of itself,
+so we basically get a signed square function. We then re-normalize
+
+Any unsuccesful value is imput as is. When testing a new example (where
+we don't know or pretend not to know the answer) we enter both the modified and the unmodified version of the vector.
+
+We are doing something pretty radical here. I'm putting the expected output into the input. So why do I expect it to work?
+Because there may be another condition I don't know about. So what I have are the necessay conditions but these may or may not
+be sufficient. Even if not sufficient, there may be an extra condition which is actually fulfilled but the data is not
+available. It could be a random value that doesn't actually figure in the logic or it could be something that this template
+group doesn't deal with or it could be some blocking condition.
+
+I hope the learning function doesn't just learn the atrifact of the vector modification. That is why I'm not just adding
+an extra input value of success or not. The learning would ignore all other parameters and learn just that. Ideally totally
+different records will not match even with the modification, even though there is no way to learn from a non-fitting
+example whether its unknown condition is just not fulfilled and if it was, it would succeed or whether it would make no difference.
+
+So the learning function is jsut learning to distinguish modified from not because all the positive examples are modified.
+
+The testing, which inputs both modified and unmodified, should find the closest to be true values only if the phrase would be
+a true statement of the necessary conditions whether the sufficient is fulfilled or not. Others should fail even when
+modified.
+
+So I have three changes I'm juggling:
+
+1. Handling decide-to events (not technically events) that have no result
+2. Learning blocking conditions
+3. nbns
+
+I've got 1 working in a somewhat tested environment. The testing as such did not fail but did not get very far because
+it is hard to learn the preconds when so many preconds are identical but fail. However, the code seems to work.
+
+I have done some preparation for 2. Each match without success generates expected_but_fail phrase
+
+I have not started nbns. I will be doing it entirely with additions saying "if c_b_nbns" so that I can roll back
+if this whole idea fails. It may. However, I should still pursue the direction in that case because nbns must
+be solved.
+
+So before starting nbns, I am checking in with the comment
+
+Working with minimal testing. About to start nbns.
+
