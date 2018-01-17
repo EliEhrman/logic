@@ -91,7 +91,17 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
 	print('numrecs:', numrecs, 'igg_arr:', igg_arr)
 	# time.sleep(1)
 	sess.run(tf.global_variables_initializer())
-	nd_perm_arr = np.stack(perm_arr, axis=0)
+	# new_arr = []
+	# for irec in range(numrecs):
+	# 	if igg_arr[irec]:
+	# 		new_arr.append(modify_vec_for_success(perm_arr[irec]))
+	# 	else:
+	# 		new_arr.append(perm_arr[irec])
+	if config.c_b_nbns:
+		new_arr = [modify_vec_for_success(perm_arr[irec]) if igg_arr[irec] else perm_arr[irec] for irec in range(numrecs)]
+		nd_perm_arr = np.stack(new_arr, axis=0)
+	else:
+		nd_perm_arr = np.stack(perm_arr, axis=0)
 
 
 	sess.run(t_for_stop)
@@ -310,6 +320,7 @@ def get_templ_cds(perm_vec, nd_W, nd_db):
 def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_rec, event_result_list,
 				 event_result_score_list, templ_len, templ_scvo, b_gg_confirmed, result_confirmed_list,
 				 gg_confirmed_list, success_score):
+	perm_vec = modify_vec_for_success(perm_vec)
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
@@ -328,7 +339,7 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 
 	print('min cd:', min_match_cd, 'max cd:', max_match_cd, 'threshold:', thresh_cd)
 
-	if max_match_cd < thresh_cd:
+	if min_match_cd < thresh_cd:
 		return False, False, []
 
 	# if event_result_list is empty, every gg match means a problem, so find a way to report
@@ -443,5 +454,10 @@ def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
 	#
 	# return igg_sums, cd_sum
 
+def modify_vec_for_success(vec):
+	vec = np.multiply(vec, np.absolute(vec))
+	en = np.linalg.norm(vec)
+	vec = vec / en
+	return vec
 
 

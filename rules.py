@@ -86,7 +86,7 @@ def init_decide_rules(els_sets, els_dict, name):
 		]),
 		story_based=False, type=rule_type.story_start, name='goto_decide_rule'
 	)
-	all_rules.append(goto_decide_rule)
+	# all_rules.append(goto_decide_rule)
 
 	return all_rules
 

@@ -64,6 +64,7 @@ c_gg_learn_test_every = 1000
 c_gg_learn_good_thresh = 0.01
 c_gg_learn_give_up_at = 10000
 c_gg_learn_give_up_thresh = 0.1
+c_b_nbns = True # Necessary but not sufficient
 
 
 

@@ -90,9 +90,19 @@ class cl_gens_grp(object):
 		self.__thresh_cd = 1.0
 		for one_iperm in self.__iperm_list:
 			perm_vec = mr.make_vec(glv_dict, templ_perm_list[one_iperm], templ_len, glv_len)
+			if config.c_b_nbns:
+				perm_vec = dmlearn.modify_vec_for_success(perm_vec)
 			min_cd = dmlearn.get_score_stats(one_iperm, perm_vec, self.__nd_W, self.__nd_db, templ_perm_igg_arr)
 			if min_cd < self.__thresh_cd:
 				self.__thresh_cd = min_cd
+		print('Thresh set at:', self.__thresh_cd)
+		print('Comparing to the unsorted:')
+		for one_iperm in range(len(templ_perm_list)):
+			print(one_iperm, ': is', (one_iperm in self.__iperm_list), '.', templ_perm_list[one_iperm])
+			perm_vec = mr.make_vec(glv_dict, templ_perm_list[one_iperm], templ_len, glv_len)
+			if config.c_b_nbns:
+				perm_vec = dmlearn.modify_vec_for_success(perm_vec)
+			dmlearn.get_score_stats(one_iperm, perm_vec, self.__nd_W, self.__nd_db, templ_perm_igg_arr)
 
 	def init_for_learn(self, vec_len, templ_scvo, igg):
 		var_scope = 'gg_'+str(vec_len).rjust(5, '0')+str(igg).rjust(3, '0')+templ_scvo
@@ -291,12 +301,13 @@ class cl_templ_grp(object):
 	def get_num_perms(self):
 		return len(self.__perm_pigg_arr)
 
-	def get_match_score(self, preconds_rec, event_result_list, event_result_score_list, result_confirmed_list,
-						gg_confirmed_list, b_real_score=True):
+	def get_match_score(self, def_article_dict, preconds_rec, event_result_list, event_result_score_list,
+						result_confirmed_list, gg_confirmed_list, b_real_score=True):
 		# rewrite for result list and gg list
 		if self.__db_valid:
 			if b_real_score:
 				print('Calculating score for all ggs in template:', self.__scvo, 'len:', self.__templ_len)
+				self.printout(def_article_dict)
 				score_list = event_result_score_list
 			else:
 				score_list = [[] for _ in event_result_score_list]
@@ -316,16 +327,18 @@ class cl_templ_grp(object):
 
 		return event_result_score_list, expected_but_not_found_list
 
-	def do_learn(self, sess, el_set_arr):
+	def do_learn(self, def_article_dict, sess, el_set_arr):
 		# if len(self.__gg_list) > 1 and len(self.__perm_igg_arr) > 5:
 		if not self.__b_db_graduated:
 			return
 
 		if self.__num_perm_adds_till_next_learn > 0:
-			print('Not learning yet. Still have', self.__num_perm_adds_till_next_learn, ' add_perms to go.')
+			print('Not learning yet. Still have', self.__num_perm_adds_till_next_learn, ' add_perms to go for ', self.__scvo)
 			return
 
+
 		print('Learning all ggs in template:', self.__scvo, 'len:', self.__templ_len)
+		self.printout(def_article_dict)
 		for one_gg in self.__gg_list[1:]:
 			one_gg.do_learn(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict, el_set_arr)
 		# for one_gg in self.__gg_list:

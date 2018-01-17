@@ -934,3 +934,8 @@ So before starting nbns, I am checking in with the comment
 
 Working with minimal testing. About to start nbns.
 
+Wednesday, 17th January
+
+Well, for now the idea look like it works but may need some fine-tuning. Checking with:
+
+nbns seems to be working.

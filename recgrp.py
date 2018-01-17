@@ -112,34 +112,29 @@ def do_learn_rule_from_step(events_to_queue, event_step_id, story_db, event_phra
 													   event_result_list=events_to_queue,
 													   eid=event_step_id))
 					else:
-						num_pggs = perm_templ.get_num_pggs()
-						if num_pggs >= 2:
-							print('Getting score for multi-gg templ.')
-							perm_templ.printout(def_article_dict)
-							event_result_score_list, expected_but_not_found_list = \
-								perm_templ.get_match_score(	perm_preconds_list[iperm],
-															events_to_queue,
-															event_result_score_list,
-															result_confirmed_list,
-															gg_confirmed_list)
+						# num_pggs = perm_templ.get_num_pggs()
+						# if num_pggs >= 2:
+						# print('Getting score for multi-gg templ.')
+						event_result_score_list, expected_but_not_found_list = \
+							perm_templ.get_match_score(	def_article_dict, perm_preconds_list[iperm],
+														events_to_queue, event_result_score_list,
+														result_confirmed_list, gg_confirmed_list)
 
-							if not b_null_results and all(result_confirmed_list):
-								print('All results match confirmed ggs')
-								mr.report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr,
-													 def_article_dict, glv_dict)
-								break
-							# if score >= 1.0:
-							# 	print('match perfect!')
-							# comb_len_passed = comb_len
+						if not b_null_results and all(result_confirmed_list):
+							print('All results match confirmed ggs')
+							mr.report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr,
+												 def_article_dict, glv_dict)
+							break
+						# if score >= 1.0:
+						# 	print('match perfect!')
+						# comb_len_passed = comb_len
 
 						perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm],
 											gens_rec_list=perm_gens_list[iperm],
 											perm_result_list=events_to_queue,
 											eid=event_step_id)
 
-						print('Doing learning.')
-						perm_templ.printout(def_article_dict)
-						perm_templ.do_learn(sess, el_set_arr)
+						perm_templ.do_learn(def_article_dict, sess, el_set_arr)
 					# score = perm_templ.get_match_score(perm_preconds_list[iperm], events_to_queue, event_result_score_list, b_real_score=False)
 
 					break
@@ -239,16 +234,21 @@ def create_train_vecs(glv_dict, def_article_dict,
 		player_event = None
 		event_result_list = []
 		i_story_player = -1
-		# story_player_name = story_names[i_story_player]
+		story_player_name = story_names[i_story_player]
 
 		i_story_step = 0
-		c_close_to_inf = 1000
+		c_close_to_inf = 100
 		i_story_loop_stage = -1
+		if i_one_story == 0:
+			player_decide_rules = rules.init_decide_rules(els_sets, els_dict, story_player_name)
+			rule_stats = [[0.0, 0.0] for _ in player_decide_rules]
+
 		while i_story_loop_stage < c_close_to_inf:
 			i_story_loop_stage += 1
 			if i_story_loop_stage >= c_close_to_inf - 1:
-				print('Story loop stage seems stuck in an infinite loop. Bad code. Exiting!')
-				exit(1)
+				print('Story loop stage seems stuck in an infinite loop. Next story!')
+				i_story_loop_stage = -1
+				break
 			event_step_id += 1
 			if story_loop_stage == e_story_loop_stage.decision_init:
 				decide_options = []
@@ -258,7 +258,9 @@ def create_train_vecs(glv_dict, def_article_dict,
 					i_story_player = 0
 				story_player_name = story_names[i_story_player]
 				player_decide_rules = rules.init_decide_rules(els_sets, els_dict, story_player_name)
-				rule = random.choice(player_decide_rules)
+				ruleid = random.randint(0, len(player_decide_rules)-1)
+				# rule = random.choice(player_decide_rules)
+				rule = player_decide_rules[ruleid]
 				_, gens_recs = rules.gen_for_rule(b_gen_for_learn=False, rule=rule)
 				decide_options += gens_recs
 				random.shuffle(decide_options)
@@ -301,8 +303,15 @@ def create_train_vecs(glv_dict, def_article_dict,
 						story_loop_stage = e_story_loop_stage.decision
 				else:
 					story_loop_stage = e_story_loop_stage.decision
-				do_learn_rule_from_step(event_as_decided, event_step_id, story_db, one_decide, '',
-										def_article_dict, db_len_grps, sess, el_set_arr, glv_dict, els_sets)
+
+				if event_as_decided == []:
+					rule_stats[ruleid][0] += 1.0
+				else:
+					rule_stats[ruleid][1] += 1.0
+				print('rule stats:',  rule_stats, 'ruleid:', ruleid, 'rand thresh:', (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1])))
+				if event_as_decided != [] or (random.random() > (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1]))):
+					do_learn_rule_from_step(event_as_decided, event_step_id, story_db, one_decide, '',
+											def_article_dict, db_len_grps, sess, el_set_arr, glv_dict, els_sets)
 
 			elif story_loop_stage == e_story_loop_stage.state1:
 				_, events_to_queue = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,

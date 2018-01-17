@@ -172,9 +172,10 @@ def match_instance_to_rule(glv_dict, el_set_arr, set_rec, q_rec):
 
 	return b_matched, var_dict
 
+c_tolerance = 1e-3
 def find_quant_thresh(cd):
 	for thresh in config.c_rule_cluster_thresh_levels:
-		if cd >= thresh:
+		if cd >= (thresh-c_tolerance):
 			return thresh
 	return -1.0
 
@@ -208,6 +209,10 @@ def make_vec(glv_dict, perm_rec, olen, glv_len):
 		if el[0] == rules.rec_def_type.obj:
 			io += 1
 			vec[io*glv_len:(io+1)*glv_len] = glv_dict[el[1]]
+
+	if config.c_b_nbns:
+		en = np.linalg.norm(vec)
+		vec = vec / en
 
 	return vec
 
