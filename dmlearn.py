@@ -356,7 +356,7 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 		if mr.match_rec_exact(expected_result, event_result):
 			gg_sig = [success_score, templ_len, templ_scvo, igg]
 			event_result_score_list[iresult].append(gg_sig)
-			print('Adding score for event ', event_result, 'score:', event_result_score_list[iresult][-1])
+			print('Adding score ', event_result_score_list[iresult][-1], 'for event ', event_result)
 			b_one_result_matched = True
 			if b_gg_confirmed:
 				result_confirmed_list[iresult] = True

@@ -939,3 +939,15 @@ Wednesday, 17th January
 Well, for now the idea look like it works but may need some fine-tuning. Checking with:
 
 nbns seems to be working.
+
+Friday 26th January
+
+Made wd1, a python module for running against the wibdiplomacy php, mysql and javascript server.
+
+Runs games with all players moving randomly including builds and null retreats.
+
+It is being put in a sub-directory in order to start converting logic to a program or library that
+can support different modules.
+
+Checking in with the comment:
+Added webdiplomacy module. Working but with no integration to logic.
