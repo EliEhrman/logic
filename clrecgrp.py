@@ -51,6 +51,8 @@ class cl_gens_grp(object):
 		self.__num_tests = 0.0
 		self.__num_successes = 0.0
 		self.__num_perm_adds_till_next_learn = 0
+		self.__scoring_eid_set = set()
+		self.__b_lrn_success = False
 
 	def gens_matches(self, gens_rec):
 		return mr.match_gens_phrase(self.__gens_rec, gens_rec)
@@ -70,6 +72,16 @@ class cl_gens_grp(object):
 		if self.__gens_rec != None:
 			out_str = els.print_phrase(self.__gens_rec, self.__gens_rec, out_str, def_article_dict)
 		print(str(igg), ':',out_str)
+
+	def print_stats(self):
+		print('Learn status:', self.__b_lrn_success, '. Scoring eid set:', self.__scoring_eid_set,
+			  '\n Num perms till next learn:', self.__num_perm_adds_till_next_learn,
+			  '\n Confirmed:', self.__b_confirmed,
+			  '\n Num successes:', self.__num_successes,
+			  '\n Num Tests:', self.__num_tests,
+			  '\n Num Points:', self.__num_points,
+			  '\n CD Thresh:', self.self.__thresh_cd,
+			  )
 
 	def add_point(self):
 		self.__num_points += 1
@@ -112,7 +124,8 @@ class cl_gens_grp(object):
 
 	def do_learn(self, sess, templ_perm_vec_list, templ_perm_list, templ_olen, glv_len, glv_dict, el_set_arr):
 		if self.__num_perm_adds_till_next_learn > 0:
-			print('gg cant learn yet. Still have', self.__num_perm_adds_till_next_learn, ' add_perms to go.')
+			print('gg', self.__igg, 'cant learn yet. Still have', self.__num_perm_adds_till_next_learn, ' add_perms to go.')
+			return
 
 		print('Learning for gg:', self.__igg)
 		self.__nd_W, self.__nd_db, self.__b_lrn_success = \
@@ -139,7 +152,10 @@ class cl_gens_grp(object):
 	def get_igg(self):
 		return self.__igg
 
-	def get_match_score(self, preconds_rec, perm_vec, event_result_list, event_result_score_list,
+	def get_b_learn_success(self):
+		return self.__b_lrn_success
+
+	def get_match_score(self, preconds_rec, perm_vec, event_step_id, event_result_list, event_result_score_list,
 						templ_len, templ_scvo, result_confirmed_list, gg_confirmed_list,
 						expected_but_not_found_list):
 		if not self.__b_lrn_success:
@@ -153,8 +169,10 @@ class cl_gens_grp(object):
 									self.__thresh_cd, self.get_gens_rec(), event_result_list,
 									event_result_score_list, templ_len, templ_scvo,
 									self.__b_confirmed, result_confirmed_list, gg_confirmed_list,
-									self.__num_successes / self.__num_tests if self.__num_tests else 0.0)
+									self.__num_successes / self.__num_tests if self.__num_tests else 0.0,
+									len(self.__scoring_eid_set) > config.c_gg_scoring_eid_thresh)
 		if b_hit:
+			self.__scoring_eid_set.add(event_step_id)
 			self.__num_tests += 1.0
 			if b_success:
 				self.__num_successes += 1.0
@@ -179,10 +197,20 @@ class cl_prov_gens_grp(cl_gens_grp):
 		self.__eid_set = set([eid])
 		self.__b_graduated = False
 
-	def add_perm(self, templ_iperm, eid):
+	def add_perm(self, templ_iperm, eid, db_len_grps=None, templ_len=None):
 		super(cl_prov_gens_grp, self).add_perm(templ_iperm)
 		self.__eid_set.add(eid)
 		if not self.__b_graduated and len(self.__eid_set) > config.c_gg_graduate_len:
+			# if db_len_grps == None or templ_len == None:
+			# 	print('Cannot graduate without a valid db_len_grps')
+			# 	return False
+			#
+			# for len_grp in db_len_grps:
+			# 	if len_grp.len() >= templ_len:
+			# 		continue
+			# 	if len_grp.test_for_better_set(self.__eid_set):
+			# 		return False
+			#
 			self.__b_graduated = True
 			print('gg graduated. igg:', self.get_igg())
 			return True
@@ -192,6 +220,11 @@ class cl_prov_gens_grp(cl_gens_grp):
 	def print_gens_rec(self, igg, def_article_dict):
 		super(cl_prov_gens_grp, self).print_gens_rec(igg, def_article_dict)
 		print('eid set:', self.__eid_set)
+
+	def test_for_better_set(self, eid_set):
+		if self.__eid_set >= eid_set:
+			return True
+		return False
 
 class cl_templ_grp(object):
 	# __slots__='__len', '__templ_grp_list'
@@ -246,7 +279,7 @@ class cl_templ_grp(object):
 		# self.__perm_ipgg_arr.append(ipgg)
 		return ipgg
 
-	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, eid):
+	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, eid, db_len_grps=None):
 		iperm = len(self.__perm_list)
 		self.__perm_list.append(preconds_rec)
 		self.__perm_result_list.append(perm_result_list)
@@ -267,7 +300,7 @@ class cl_templ_grp(object):
 				perm_pgg = cl_prov_gens_grp(gens_rec=one_gens, igg=len(self.__pgg_list), templ_iperm=iperm, eid=eid)
 				perm_ipgg = self.add_pgg(perm_pgg)
 			else:
-				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid)
+				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid, db_len_grps=db_len_grps, templ_len=self.__templ_len)
 				# perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm], gens_rec=perm_gens_list[iperm], igg=perm_igg)
 
 			# if igens == 0:
@@ -301,21 +334,27 @@ class cl_templ_grp(object):
 	def get_num_perms(self):
 		return len(self.__perm_pigg_arr)
 
-	def get_match_score(self, def_article_dict, preconds_rec, event_result_list, event_result_score_list,
+	def get_match_score(self, def_article_dict, preconds_rec, event_result_list, event_step_id, event_result_score_list,
 						result_confirmed_list, gg_confirmed_list, b_real_score=True):
 		# rewrite for result list and gg list
+		b_score_valid = False
 		if self.__db_valid:
 			if b_real_score:
-				print('Calculating score for all ggs in template:', self.__scvo, 'len:', self.__templ_len)
-				self.printout(def_article_dict)
-				score_list = event_result_score_list
+				for one_gg in self.__gg_list[1:]:
+					if one_gg.get_b_learn_success():
+						b_score_valid = True
+				if b_score_valid:
+					print('Calculating score for all ggs in template:', self.__scvo, 'len:', self.__templ_len)
+					self.printout(def_article_dict)
+					score_list = event_result_score_list
 			else:
 				score_list = [[] for _ in event_result_score_list]
 
+		if b_score_valid:
 			expected_but_not_found_list = []
 			perm_vec = mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len)
 			for one_gg in self.__gg_list[1:]:
-				one_gg.get_match_score(preconds_rec, perm_vec, event_result_list, event_result_score_list,
+				one_gg.get_match_score(preconds_rec, perm_vec, event_step_id, event_result_list, event_result_score_list,
 									   self.__templ_len, self.__scvo, result_confirmed_list, gg_confirmed_list,
 									   expected_but_not_found_list)
 			# 	one_gg.get_match_score(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
@@ -423,6 +462,12 @@ class cl_templ_grp(object):
 			return None
 		return self.__gg_list[igg]
 
+	def test_for_better_set(self, eid_set):
+		for pgg in self.__pgg_list:
+			if pgg.test_for_better_set(eid_set):
+				return True
+		return False
+
 class cl_len_grp(object):
 	# __slots__='__len', '__templ_grp_list'
 
@@ -449,5 +494,11 @@ class cl_len_grp(object):
 
 	def add_templ(self, templ_grp):
 		self.__templ_grp_list.append(templ_grp)
+
+	def test_for_better_set(self, eid_set):
+		for templ_grp in self.__templ_grp_list:
+			if templ_grp.test_for_better_set(eid_set):
+				return True
+		return False
 
 

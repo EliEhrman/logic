@@ -319,7 +319,7 @@ def get_templ_cds(perm_vec, nd_W, nd_db):
 # The return value indicaates a match on the gg not whether the match succeeded in matching a result
 def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_rec, event_result_list,
 				 event_result_score_list, templ_len, templ_scvo, b_gg_confirmed, result_confirmed_list,
-				 gg_confirmed_list, success_score):
+				 gg_confirmed_list, success_score, b_score_valid):
 	perm_vec = modify_vec_for_success(perm_vec)
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
@@ -354,9 +354,12 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 	b_one_result_matched = False
 	for iresult, event_result in enumerate(event_result_list):
 		if mr.match_rec_exact(expected_result, event_result):
-			gg_sig = [success_score, templ_len, templ_scvo, igg]
-			event_result_score_list[iresult].append(gg_sig)
-			print('Adding score ', event_result_score_list[iresult][-1], 'for event ', event_result)
+			if b_score_valid:
+				gg_sig = [success_score, templ_len, templ_scvo, igg]
+				event_result_score_list[iresult].append(gg_sig)
+				print('Adding score ', event_result_score_list[iresult][-1], 'for event ', event_result)
+			else:
+				print('Will not add score yet, until we get results for enough eids')
 			b_one_result_matched = True
 			if b_gg_confirmed:
 				result_confirmed_list[iresult] = True

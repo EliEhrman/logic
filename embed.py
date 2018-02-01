@@ -22,12 +22,13 @@ This may be good and is left in. Consider chnaging
 """
 from __future__ import print_function
 import csv
-import sys
-import os
+# import sys
+# import os
 import math
+import random
 from sklearn.preprocessing import LabelBinarizer
 
-c_num_gloves = 400000
+c_num_gloves = 400000 # 400000
 c_max_deps = 4
 c_dep_vec_factor = 0.1
 
@@ -70,7 +71,10 @@ def create_simple_glv(el_name, word_dict):
 	
 	els_glv_fh = open(el_name+els_glv_fn, 'wb')
 	els_glv_csvr = csv.writer(els_glv_fh, delimiter=',')
-	
+
+	maxvec = minvec = vec_norm(word_dict['the'])
+
+	words_not_found = []
 	for row in els_csvr:
 		if len(row) == 0:
 			continue
@@ -79,7 +83,16 @@ def create_simple_glv(el_name, word_dict):
 		if el_vec:
 			el_vec = vec_norm(el_vec)
 			els_glv_csvr.writerow([el_string] + el_vec)
+			maxvec = [maxvec[ival] if maxvec[ival] > val else val for ival, val in enumerate(el_vec)]
+			minvec = [minvec[ival] if minvec[ival] < val else val for ival, val in enumerate(el_vec)]
 			print (row[0], el_vec)
+		else:
+			words_not_found.append(el_string)
+
+	for not_found in words_not_found:
+		print('Creating random vector for:', not_found)
+		rand_vec = vec_norm([random.uniform(minvec[ival], val) for ival, val in enumerate(maxvec)])
+		els_glv_csvr.writerow([not_found] + rand_vec)
 
 	els_fh.close()
 	els_glv_fh.close()
@@ -177,20 +190,28 @@ def create_parsed_glv(el_name, word_dict, dep_enc, idx_enc):
 	els_fh.close()
 	els_glv_fh.close()
 
+def create_ext(simple_ext_names):
+	word_dict = load_word_dict()
+	for el_name in simple_ext_names:
+		create_simple_glv(el_name, word_dict)
 
-word_dict = load_word_dict()
-for el_name in simple_els:
-	create_simple_glv(el_name, word_dict)
+def main():
+	word_dict = load_word_dict()
+	for el_name in simple_els:
+		create_simple_glv(el_name, word_dict)
 
-dep_names_fh = open(dep_names_fn, 'rb')
-dep_names_csvr = csv.reader(dep_names_fh, delimiter=' ', quoting=csv.QUOTE_NONE)
-dep_enc = LabelBinarizer()
-list_dep_names = [' '.join(dep_name) for dep_name in dep_names_csvr] + ['invalid']
-dep_enc.fit(list_dep_names)
-idx_enc = LabelBinarizer()
-idx_enc.fit(range(c_max_deps+2))
+	dep_names_fh = open(dep_names_fn, 'rb')
+	dep_names_csvr = csv.reader(dep_names_fh, delimiter=' ', quoting=csv.QUOTE_NONE)
+	dep_enc = LabelBinarizer()
+	list_dep_names = [' '.join(dep_name) for dep_name in dep_names_csvr] + ['invalid']
+	dep_enc.fit(list_dep_names)
+	idx_enc = LabelBinarizer()
+	idx_enc.fit(range(c_max_deps+2))
 
-for el_name in parsed_els:
-	create_parsed_glv(el_name, word_dict, dep_enc, idx_enc)
+	for el_name in parsed_els:
+		create_parsed_glv(el_name, word_dict, dep_enc, idx_enc)
 
-print('done')
+	print('done')
+
+if __name__ == "__main__":
+    main()

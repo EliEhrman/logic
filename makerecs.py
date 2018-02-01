@@ -208,6 +208,11 @@ def make_vec(glv_dict, perm_rec, olen, glv_len):
 	for el in perm_rec:
 		if el[0] == rules.rec_def_type.obj:
 			io += 1
+			# vec = glv_dict.get(el[1], None)
+			# if vec == None:
+			# 	print('Error!', el[1], 'does not appear in the glv dict for this logic module. Exiting!')
+			# 	exit(1)
+			# vec[io*glv_len:(io+1)*glv_len] = vec
 			vec[io*glv_len:(io+1)*glv_len] = glv_dict[el[1]]
 
 	if config.c_b_nbns:

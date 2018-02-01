@@ -8,9 +8,13 @@ import time
 import csv
 import sys
 import os
-sys.path.append('..')
+import collections
 import embed
 import els
+import dmlearn
+import clrecgrp
+import wdlearn
+
 
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
@@ -75,8 +79,8 @@ def CreateGame(db, cursor, gname):
 	db.commit()
 
 
-def OwnsUnitsTbl(cursor, gameID, country_names_tbl):
-	sqlUnitsOwned = string.Template('SELECT u.countryID, u.type, t.name '
+def OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_status_list):
+	sqlUnitsOwned = string.Template('SELECT u.countryID, LOWER(u.type), LOWER(t.name), u.id, u.terrID '
 									'FROM webdiplomacy.wD_Units AS u '
 									'INNER JOIN webdiplomacy.wD_Territories AS t ON ('
 									'u.terrID = t.id AND t.mapID = 1 '
@@ -86,6 +90,7 @@ def OwnsUnitsTbl(cursor, gameID, country_names_tbl):
 	sql = sqlUnitsOwned.substitute(gameID=str(gameID))
 	cursor.execute(sql)
 	results = cursor.fetchall()
+	unit_dict = dict()
 	for row in results:
 		db_str = country_names_tbl[row[0]] + ' owns ' + row[1]
 		country = country_names_tbl[row[0]]
@@ -94,12 +99,26 @@ def OwnsUnitsTbl(cursor, gameID, country_names_tbl):
 			owns_tbl[country] = []
 		owns_tbl[country].append([row[1], row[2]])
 		db_str += ' at ' + row[2]
-
+		statement_list.append([country, 'owns', row[1], 'in', row[2]])
+		unit_dict[row[3]] = row[4]
 		# print(db_str)
-	return owns_tbl
 
-def OwnsTerrTbl(cursor, gameID, country_names_tbl):
-	sqlTerrOwned = string.Template('SELECT ts.countryID, t.name, ts.occupyingUnitID '
+	new_orders_status_list = []
+	for order_status in orders_status_list:
+		uID, expected_terrID, status = order_status.unitID, order_status.toTerrID, order_status.status
+		if expected_terrID == None or not status:
+			new_orders_status_list.append(order_status)
+			continue
+		terrID = unit_dict.get(uID, None)
+		if terrID == None or terrID != expected_terrID:
+			new_orders_status_list.append(order_status._replace(status=False))
+			continue
+		new_orders_status_list.append(order_status)
+
+	return owns_tbl, new_orders_status_list
+
+def OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list):
+	sqlTerrOwned = string.Template('SELECT ts.countryID, LOWER(t.name), ts.occupyingUnitID '
 								   'FROM webdiplomacy.wD_TerrStatus AS ts '
 								   'INNER JOIN webdiplomacy.wD_Territories AS t ON ('
 								   'ts.terrID = t.id AND mapID = 1 '
@@ -116,13 +135,18 @@ def OwnsTerrTbl(cursor, gameID, country_names_tbl):
 		if owns_list == None:
 			owns_tbl[country] = []
 		owns_tbl[country].append([row[1], row[2]])
+		statement_list.append([country, 'owns', row[1]])
+		if row[2] == None:
+			statement_list.append([row[1], 'is', 'unoccupied'])
+		else:
+			statement_list.append([row[1], 'is', 'occupied'])
 
 		# print(db_str)
 	return owns_tbl
 
 
 def PassInsert(cursor, spass, type, can_pass_tbl):
-	sqlPass = string.Template('SELECT tf.name, tt.name '
+	sqlPass = string.Template('SELECT LOWER(tf.name), LOWER(tt.name) '
 							  'FROM webdiplomacy.wD_Borders AS b '
 							  'INNER JOIN webdiplomacy.wD_Territories AS tf ON ('
 							  'b.fromTerrID = tf.id AND b.mapID = tf.mapID'
@@ -148,16 +172,18 @@ def PassInsert(cursor, spass, type, can_pass_tbl):
 		# print(len(results), 'results returned.')
 
 
-def create_terr_id_tbl(cursor, terr_id_tbl):
-	sqlGetTerrID = 'SELECT id, name FROM webdiplomacy.wD_Territories WHERE mapID = 1;'
+def create_terr_id_tbl(cursor, terr_id_tbl, country_names_tbl, statement_list):
+	sqlGetTerrID = 'SELECT id, LOWER(name), LOWER(type), countryID FROM webdiplomacy.wD_Territories WHERE mapID = 1;'
 	cursor.execute(sqlGetTerrID)
 	results = cursor.fetchall()
 	for row in results:
 		terr_id_tbl[row[1]] = row[0]
+		statement_list.append([row[1], 'is', 'a', row[2]])
+		statement_list.append([row[1], 'is', 'a', 'native', 'of', country_names_tbl[row[3]]])
 
 
-def create_supply_tbl(cursor, country_names_tbl):
-	sqlForSupplyTbl = ('SELECT countryID, type, name FROM webdiplomacy.wD_Territories '
+def create_supply_tbl(cursor, country_names_tbl, statement_list):
+	sqlForSupplyTbl = ('SELECT countryID, LOWER(type), LOWER(name) FROM webdiplomacy.wD_Territories '
 					   'WHERE mapID = 1 AND supply = \'Yes\';')
 
 	supply_tbl = dict()
@@ -171,12 +197,13 @@ def create_supply_tbl(cursor, country_names_tbl):
 		supply_tbl[scountry].append([row[1], row[2]])
 
 		db_str = scountry + ' has a ' + row[1] + ' supply at ' + row[2]
+		statement_list.append([row[2], 'is', 'a', 'supply'])
 		# print(db_str)
 	return supply_tbl
 
 
 def create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl, unit_owns_tbl, sqlOrderComplete):
-	sqlGetBuildOrders = string.Template('SELECT countryID, type, id from webdiplomacy.wD_Orders where gameID = ${gameID};')
+	sqlGetBuildOrders = string.Template('SELECT countryID, LOWER(type), id from webdiplomacy.wD_Orders where gameID = ${gameID};')
 	sqlBuildOrder = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'${scmd}\', '
 										 'toTerrID = ${toTerrID} WHERE id = ${id} ;')
 
@@ -217,7 +244,7 @@ def create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, su
 
 def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
 						unit_owns_tbl, terr_owns_tbl, sqlOrderComplete):
-	sqlGetBuildOrders = string.Template('SELECT countryID, type, id from webdiplomacy.wD_Orders where gameID = ${gameID};')
+	sqlGetBuildOrders = string.Template('SELECT countryID, LOWER(type), id from webdiplomacy.wD_Orders where gameID = ${gameID};')
 	sqlBuildOrder = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'${scmd}\', '
 										 'toTerrID = ${toTerrID} WHERE id = ${id} ;')
 
@@ -245,14 +272,14 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 	for row in results:
 		scountry = country_names_tbl[row[0]]
 		country_order_ids.add(row[0])
-		if row[1] == 'Build Army':
+		if row[1] == 'build army':
 			build_opts_list = build_opts.get(scountry, None)
 			if build_opts_list == None:
 				continue
 			build_loc = random.choice(build_opts_list)
 			build_opts_list.remove(build_loc)
-			scmd = row[1]
-			if build_loc[0] == 'Coast' and random.random() > 0.5:
+			scmd = 'Build Army'
+			if build_loc[0] == 'coast' and random.random() > 0.5:
 				scmd = 'Build Fleet'
 			dest_id = terr_id_tbl[build_loc[1]]
 			sql = sqlBuildOrder.substitute(scmd=scmd, toTerrID=dest_id, id=row[2] )
@@ -261,7 +288,7 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 			owns_list = unit_owns_tbl[scountry]
 			destroy_data = random.choice(owns_list)
 			dest_id = terr_id_tbl[destroy_data[1]]
-			sql = sqlBuildOrder.substitute(scmd=row[1], toTerrID=dest_id, id=row[2] )
+			sql = sqlBuildOrder.substitute(scmd='Destroy', toTerrID=dest_id, id=row[2] )
 			dstr = scountry + ' destroy in ' + destroy_data[1]
 		print(dstr)
 		print(sql)
@@ -278,7 +305,8 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 
 def create_move_orders(db, cursor, gameID, sql_complete_order,
 					   unit_owns_tbl, terr_id_tbl,
-					   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl):
+					   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+					   orders_list, orders_status_list):
 	sql_get_unit_id = string.Template(
 		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
 	sql_make_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
@@ -296,29 +324,46 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 			sql_get = sql_get_unit_id.substitute(gameID=str(gameID), terrID=str(unit_terr_id))
 			cursor.execute(sql_get)
 			unit_id = cursor.fetchone()
-			if unit_data[0] == 'Army':
-				pass_list = army_can_pass_tbl.get(unit_data[1], None)
-				if pass_list == None:
-					print('Army stuck where it is not supposed to be.')
-					continue
-				dest_name = random.choice(pass_list)
-				dest_id = terr_id_tbl[dest_name]
-				dstr = scountry + ' move army from ' + unit_data[1] + ' to ' + dest_name
-			# sqlMoveOrderUpdate = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
-				# 									 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
-			else:
-				pass_list = fleet_can_pass_tbl.get(unit_data[1], None)
-				if pass_list == None:
-					print('Fleet stuck where it is not supposed to be.')
-					continue
-				dest_name = random.choice(pass_list)
-				dest_id = terr_id_tbl[dest_name]
-				dstr = scountry + ' move fleet from ' + unit_data[1] + ' to ' + dest_name
 
-			sql_order = sql_make_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
-			print(dstr)
-			print (sql_order)
-			cursor.execute(sql_order)
+			nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
+
+			def create_move(sutype, this_can_pass_table, other_can_pass_table):
+				order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
+											   fromTerrID=unit_terr_id, toTerrID=None)
+				pass_list = this_can_pass_table.get(unit_data[1], None)
+				if pass_list == None:
+					print(sutype, 'stuck where it is not supposed to be.')
+					return False, None
+				if random.random() > 0.2:
+					dest_name = random.choice(pass_list)
+				else:
+					if random.random() > 0.4:
+						dest_name = random.choice(terr_id_tbl.keys())
+					else:
+						other_pass_list = other_can_pass_table.get(unit_data[1], None)
+						if other_pass_list == None:
+							return False, None
+						dest_name = random.choice(other_pass_list)
+				dest_id = terr_id_tbl[dest_name]
+				dstr = scountry + ' move ' + sutype + ' from ' + unit_data[1] + ' to ' + dest_name
+				orders_list.append([sutype, 'in', unit_data[1], 'move', 'to', dest_name])
+				order_status = order_status._replace(toTerrID=dest_id)
+				print(dstr)
+				# The webdip engine does not guarantee that the order is valid, so we have to do this
+				if dest_name not in pass_list:
+					order_status = order_status._replace(status=False)
+				orders_status_list.append(order_status)
+				return order_status.status, dest_id
+
+			if unit_data[0] == 'army':
+				b_order_created, dest_id = create_move('army', army_can_pass_tbl, fleet_can_pass_tbl)
+			else:
+				b_order_created, dest_id = create_move('fleet', fleet_can_pass_tbl, army_can_pass_tbl)
+
+			if b_order_created:
+				sql_order = sql_make_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
+				print (sql_order)
+				cursor.execute(sql_order)
 
 		sql_order = sql_complete_order.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
 		print(sql_order)
@@ -326,8 +371,23 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 
 	db.commit()
 
+def create_results_db(orders_db, orders_status_list):
+	if not orders_db:
+		return []
 
-def play_turn(db, cursor, gname, country_names_tbl, terr_id_tbl, supply_tbl, army_can_pass_tbl, fleet_can_pass_tbl):
+	results_db = []
+
+	for iorder, order in enumerate(orders_db):
+		if orders_status_list[iorder].status:
+			results_db.append(order+[els.make_obj_el_from_str('succeeded')])
+		else:
+			results_db.append(order+[els.make_obj_el_from_str('failed')])
+
+	return results_db
+
+def play_turn(	all_dicts, db_len_grps, el_set_arr, sess, learn_vars, db, cursor, gname, country_names_tbl,
+				terr_id_tbl, supply_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+				init_db, orders_status_list, old_status_db, old_orders_db):
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
@@ -340,7 +400,7 @@ def play_turn(db, cursor, gname, country_names_tbl, terr_id_tbl, supply_tbl, arm
 			print('Failed to create game. Exiting!')
 			exit(1)
 		AddPlayers(db, cursor, gameID)
-		return gameID, False
+		return gameID, False, None, None
 
 	# gameID = 28
 
@@ -351,10 +411,19 @@ def play_turn(db, cursor, gname, country_names_tbl, terr_id_tbl, supply_tbl, arm
 	# CreateGame()
 	# AddPlayers(gameID)
 
-	terr_owns_tbl = OwnsTerrTbl(cursor, gameID, country_names_tbl)
-	unit_owns_tbl = OwnsUnitsTbl(cursor, gameID, country_names_tbl)
+	statement_list = []
 
-	# elif get_phase(gameID) == 'Builds':
+	terr_owns_tbl = OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list)
+	unit_owns_tbl, new_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_status_list)
+	results_db = create_results_db(old_orders_db, new_orders_status_list)
+	if results_db != None and len(results_db) > 0:
+		wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
+									 all_dicts, db_len_grps, el_set_arr, sess, learn_vars)
+
+	status_db = els.convert_list_to_phrases(statement_list)
+
+	orders_list = []
+	orders_status_list[:] = [] # a hack so that the reference itself has the contents removed
 	if game_phase == 'Builds':
 		print('Creating build orders.')
 		create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
@@ -366,49 +435,68 @@ def play_turn(db, cursor, gname, country_names_tbl, terr_id_tbl, supply_tbl, arm
 	elif game_phase == 'Diplomacy':
 		create_move_orders(db, cursor, gameID, sqlOrderComplete,
 						   unit_owns_tbl, terr_id_tbl,
-						   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl)
+						   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+						   orders_list, orders_status_list)
 	elif game_phase == 'Finished':
-		return gameID, True
+		return gameID, True, None, None
 	else:
-		return gameID, False
+		return gameID, False, None, None
+
+	orders_db = els.convert_list_to_phrases(orders_list)
+
 
 	time.sleep(0.2)
 
-	return gameID, False
+	return gameID, False, status_db, orders_db
 
 def init(cursor, country_names_tbl):
 	terr_id_tbl = dict()
 	army_can_pass_tbl = dict()
 	fleet_can_pass_tbl = dict()
 
-	PassInsert(cursor, 'armysPass', 'Army', army_can_pass_tbl)
-	PassInsert(cursor, 'fleetsPass', 'Fleet', fleet_can_pass_tbl)
+	PassInsert(cursor, 'armysPass', 'army', army_can_pass_tbl)
+	PassInsert(cursor, 'fleetsPass', 'fleet', fleet_can_pass_tbl)
 
-	supply_tbl = create_supply_tbl(cursor, country_names_tbl)
+	statement_list = []
+	def add_pass_statements(stype, tbl):
+		for src_name, pass_list in tbl.iteritems():
+			for dst_name in pass_list:
+				statement_list.append([stype, 'can', 'pass', 'from', src_name, 'to', dst_name])
 
-	create_terr_id_tbl(cursor, terr_id_tbl)
+	add_pass_statements('army', army_can_pass_tbl)
+	add_pass_statements('fleet', fleet_can_pass_tbl)
 
-	return terr_id_tbl, army_can_pass_tbl, fleet_can_pass_tbl, supply_tbl
+	supply_tbl = create_supply_tbl(cursor, country_names_tbl, statement_list)
 
-def create_dict_files(db, cursor):
-	terr_names_fn = 'terrnames.txt'
+	create_terr_id_tbl(cursor, terr_id_tbl, country_names_tbl, statement_list)
+
+
+
+	return terr_id_tbl, army_can_pass_tbl, fleet_can_pass_tbl, supply_tbl, statement_list
+
+def create_dict_files(terr_names_fn):
+	# terr_names_fn = 'terrnames.txt'
 	terr_names_fh = open(terr_names_fn, 'wb')
 	# terr_names_csvr = csv.writer(terr_names_fh, delimiter='', quoting=csv.QUOTE_NONE, quotechar='',escapechar='\\')
 
-	sqlTerrNames = 'SELECT name FROM webdiplomacy.wD_Territories where mapID = 1;'
-	cursor.execute(sqlTerrNames)
-	results = cursor.fetchall()
-	for row in results:
-		# terr_names_csvr.writerow(row[0])
-		terr_names_fh.write(row[0]+'\n')
-	return
+	with closing(MySQLdb.connect("localhost","webdiplomacy","mypassword123","webdiplomacy" )) as db:
+		# prepare a cursor object using cursor() method
+		with closing(db.cursor()) as cursor:
 
-def play(gameID, b_create_dict_file=False):
+			sqlTerrNames = 'SELECT LOWER(name) FROM webdiplomacy.wD_Territories where mapID = 1;'
+			cursor.execute(sqlTerrNames)
+			results = cursor.fetchall()
+			for row in results:
+				# terr_names_csvr.writerow(row[0])
+				terr_names_fh.write(row[0]+'\n')
+			return
+
+def play(gameID, all_dicts, db_len_grps, el_set_arr, sess, learn_vars, b_create_dict_file=False):
 
 	if gameID == -1:
 		gname = 't' + str(int(time.time()))[-6:]
 
-	country_names_tbl = ['Neutral', 'England', 'France', 'Italy', 'Germany', 'Austria', 'Turkey', 'Russia']
+	country_names_tbl = ['neutral', 'england', 'france', 'italy', 'germany', 'austria', 'turkey', 'russia']
 
 
 	# Open database connection
@@ -416,52 +504,76 @@ def play(gameID, b_create_dict_file=False):
 		# prepare a cursor object using cursor() method
 		with closing(db.cursor()) as cursor:
 
-			if b_create_dict_file:
-				create_dict_files(db, cursor)
-				return
-
-			terr_id_tbl, army_can_pass_tbl, fleet_can_pass_tbl, supply_tbl = init(cursor, country_names_tbl)
+			terr_id_tbl, army_can_pass_tbl, fleet_can_pass_tbl, supply_tbl, statement_list = \
+				init(cursor, country_names_tbl)
+			init_db = els.convert_list_to_phrases(statement_list)
 
 			if gameID != -1:
 				gname = get_game_name(cursor, gameID)
 
-			for _ in range(300):
-				gameID, b_finished = play_turn(	db, cursor, gname, country_names_tbl,
-												terr_id_tbl, supply_tbl, army_can_pass_tbl,
-												fleet_can_pass_tbl)
-				print('Next turn for game id:', gameID)
-				process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
-				try:
-					response = urllib2.urlopen(process_url.substitute(gameID=gameID))
-				except urllib2.HTTPError as err:
-					print('HTTP Exception: ', err)
-				time.sleep(0.2)
-				if b_finished:
-					print('Game Over!')
-					return
+			orders_status_list = []
+			status_db, orders_db = [], []
+			for iturn in range(300):
+				if iturn > 0:
+					gameID, b_finished, status_db, orders_db = \
+						play_turn(	all_dicts, db_len_grps, el_set_arr, sess, learn_vars,
+									db, cursor, gname, country_names_tbl,
+									terr_id_tbl, supply_tbl, army_can_pass_tbl,
+									fleet_can_pass_tbl, init_db, orders_status_list,
+									old_status_db=status_db, old_orders_db=orders_db)
+					if b_finished:
+						print('Game Over!')
+						return
+					print('Next turn for game id:', gameID)
+				if gameID != -1:
+					process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
+					try:
+						response = urllib2.urlopen(process_url.substitute(gameID=gameID))
+					except urllib2.HTTPError as err:
+						print('HTTP Exception: ', err)
+					time.sleep(0.2)
 
-glv_file_list = ['webdip/terrname', 'webdip/order']
-cap_first_arr = [True, False, True, False]
-def_article_arr = [False, True, False, False]
+glv_file_list = ['wd_terrname', 'wd_order']
+cap_first_arr = [False, False]
+def_article_arr = [False, False]
+cascade_els_arr = [True, False]
 
+# def load_el_vecs():
+# 	cwd = os.getcwd()
+# 	os.chdir('..')
+# 	os.chdir(cwd)
+# 	cwdtest = os.getcwd()
+# 	return
 
-
-def load_el_vecs():
-	cwd = os.getcwd()
-	os.chdir('..')
-	embed.create_ext(glv_file_list)
-	os.chdir(cwd)
-	cwdtest = os.getcwd()
-	return
+# load_el_vecs()
 
 def logic_init():
-	glv_dict, def_article_dict = els.init_glv(glv_file_list, cap_first_arr, def_article_arr)
+	full_glv_list = [fname+'s.glv' for fname in glv_file_list]
+	# cwd = os.getcwd()
+	# os.chdir('..')
+	glv_dict, def_article_dict, cascade_dict = \
+		els.init_glv(full_glv_list, cap_first_arr, def_article_arr, cascade_els_arr)
+	# os.chdir(cwd)
+	# cwdtest = os.getcwd()
+	return [glv_dict, def_article_dict, cascade_dict]
 
 def main():
-	# load_el_vecs()
+	# create_dict_files(glv_file_list[0] + 's.txt')
 	# return
-	gameID = -1 # Set to -1 to restart
-	play(gameID, b_create_dict_file=False)
+	# embed.create_ext(glv_file_list)
+	# return
+
+	gameID = 33 # Set to -1 to restart
+	all_dicts = logic_init()
+	db_len_grps = []
+	el_set_arr = []
+	event_step_id = -1
+	learn_vars = [event_step_id]
+	clrecgrp.cl_templ_grp.glv_dict = all_dicts[0]
+	clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0]['army'])
+	sess = dmlearn.init_templ_learn()
+	play(gameID, all_dicts, db_len_grps, el_set_arr, sess, learn_vars)
+	sess.close()
 
 if __name__ == "__main__":
     main()

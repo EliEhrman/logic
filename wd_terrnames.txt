@@ -1,0 +1,81 @@
+clyde
+edinburgh
+liverpool
+yorkshire
+wales
+london
+portugal
+spain
+north africa
+tunis
+naples
+rome
+tuscany
+piedmont
+venice
+apulia
+greece
+albania
+serbia
+bulgaria
+rumania
+constantinople
+smyrna
+ankara
+armenia
+syria
+sevastopol
+ukraine
+warsaw
+livonia
+moscow
+st. petersburg
+finland
+sweden
+norway
+denmark
+kiel
+berlin
+prussia
+silesia
+munich
+ruhr
+holland
+belgium
+picardy
+brest
+paris
+burgundy
+marseilles
+gascony
+barents sea
+norwegian sea
+north sea
+skagerrack
+heligoland bight
+baltic sea
+gulf of bothnia
+north atlantic ocean
+irish sea
+english channel
+mid-atlantic ocean
+western mediterranean
+gulf of lyons
+tyrrhenian sea
+ionian sea
+adriatic sea
+aegean sea
+eastern mediterranean
+black sea
+tyrolia
+bohemia
+vienna
+trieste
+budapest
+galicia
+spain (north coast)
+spain (south coast)
+st. petersburg (north coast)
+st. petersburg (south coast)
+bulgaria (north coast)
+bulgaria (south coast)

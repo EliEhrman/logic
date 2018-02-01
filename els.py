@@ -94,14 +94,15 @@ def init_els(els_dict, els_arr, def_article, fname=None, alist=None, new_def_art
 	num_els += num_new_els
 	return [new_els_range, num_new_els, new_els], num_els
 
-def init_glv():
-	fnames = ['names.glv', 'objects.glv', 'countries.glv', 'actions.glv']
-	cap_first_arr = [True, False, True, False]
-	def_article_arr = [False, True, False, False]
+def init_glv(fnames, cap_first_arr, def_article_arr, cascade_els_arr):
+	# fnames = ['names.glv', 'objects.glv', 'countries.glv', 'actions.glv']
+	# cap_first_arr = [True, False, True, False]
+	# def_article_arr = [False, True, False, False]
 	glv_dict = {}
 	new_el_vecs = []
 	new_els = []
 	def_article_dict = {}
+	cascade_dict = {}
 	for ifname, fname in enumerate(fnames):
 		fh_names = open(fname, 'rb')
 		fr_names = csv.reader(fh_names, delimiter=',')
@@ -113,6 +114,7 @@ def init_glv():
 		new_els += all_names
 		for name in all_names:
 			def_article_dict[name] = def_article_arr[ifname]
+			cascade_dict[name] = cascade_els_arr[ifname]
 
 		fh_names.seek(0)
 		new_el_vecs += [[float(fs) for fs in glv_row[1:]] for glv_row in fr_names]
@@ -121,7 +123,7 @@ def init_glv():
 	for iitem, item in enumerate(new_el_vecs):
 		glv_dict[new_els[iitem]] = item
 
-	return glv_dict, def_article_dict
+	return glv_dict, def_article_dict, cascade_dict
 
 
 def init_objects():
@@ -151,6 +153,43 @@ def init_objects():
 	# return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
 	return els_arr, els_dict, def_article, num_els, els_sets
 
+def init_ext_objects():
+	els_arr = []
+	els_dict = {}
+	def_article = []
+	glv_dict = {}
+	# name_ids, num_els, num_names, names = \
+	name_set, num_els = \
+		init_els(	fname='names.glv', cap_first=True, max_new=config.max_names,
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+	# object_ids, num_els, num_objects, objects = \
+	object_set, num_els = \
+		init_els(	fname='objects.glv', new_def_article=True, max_new=config.max_objects,
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+	place_set, num_els =\
+		init_els(	fname='countries.glv', cap_first=True, max_new=config.max_countries,
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+
+	action_set, num_els =\
+		init_els(	fname='actions.glv', max_new=-1,
+					els_dict=els_dict, els_arr=els_arr, def_article=def_article)
+
+	# utils.get_avg_min_cd(gels1+gels2, len(gels1[0]))
+
+	els_sets = utils.nt_el_sets(names=name_set, objects=object_set, places=place_set, actions=action_set)
+	# return els_arr, els_dict, def_article, num_els, name_set, object_set, place_set, action_set
+	return els_arr, els_dict, def_article, num_els, els_sets
+
+def convert_list_to_phrases(statement_list):
+	return [[[rec_def_type.obj, item] for item in statement] for statement in statement_list]
+
+def make_obj_el_from_str(sobj):
+	return [rec_def_type.obj, sobj]
+
+def make_rec_list(phrase_list):
+	return [rules.C_phrase_rec(phrase) for phrase in phrase_list]
+
+
 def output_phrase(def_article_dict, out_str, phrase):
 	b_first = True
 	for iel, el in enumerate(phrase):
@@ -160,7 +199,7 @@ def output_phrase(def_article_dict, out_str, phrase):
 		else:
 			if len(el) > 2 and el[2]:
 				out_str += '{search for: '
-			if el[0] == rec_def_type.obj and def_article_dict[el[1]]:
+			if el[0] == rec_def_type.obj and def_article_dict.get(el[1], False):
 				if b_first:
 					out_str += 'The '
 					b_first = False

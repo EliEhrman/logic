@@ -65,12 +65,13 @@ c_gg_learn_good_thresh = 0.01
 c_gg_learn_give_up_at = 10000
 c_gg_learn_give_up_thresh = 0.1
 c_b_nbns = True # Necessary but not sufficient
+c_gg_scoring_eid_thresh = 5 # length of eid set after learn for score to be valid
 
 
 
 # logger = None
 
-sample_el = 'has' # used as an example that must be in el db or glv dict
+sample_el = 'to' # used as an example that must be in el db or glv dict
 query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that', 'asked', 'for']
 person_place_action = ['is located in', 'went to', 'go to']
 object_place_action = ['is located in', 'is free in' ]

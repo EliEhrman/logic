@@ -951,3 +951,19 @@ can support different modules.
 
 Checking in with the comment:
 Added webdiplomacy module. Working but with no integration to logic.
+
+Monday 29th January
+
+Checking in with the comment:
+Added the infrustructure to begin learning which moves succeed and which dont
+
+Thursday 1st February
+
+I've got one level of perms working. That means only one level of cascade and only one phrase
+is added to the event phrase. Since there are so many phrases in Diplomacy, that
+stil leaves me with a lot of perms and a very slow process.
+
+I have to winnow the poorly performing pggs more aggressively. Checking in before I do that with the following
+comment:
+
+webdiplomacy working in one dir with wd prefix. Working fairlly well but slowly.

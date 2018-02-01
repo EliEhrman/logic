@@ -184,7 +184,11 @@ def do_init():
 	# exit()
 
 
-	glv_dict, def_article_dict = els.init_glv()
+	fnames = ['names.glv', 'objects.glv', 'countries.glv', 'actions.glv']
+	cap_first_arr = [True, False, True, False]
+	def_article_arr = [False, True, False, False]
+	cascade_els_arr = [True, True, True, False]
+	glv_dict, def_article_dict, cascade_dict = els.init_glv(fnames, cap_first_arr, def_article_arr, cascade_els_arr)
 	# els_arr, els_dict, glv_dict, def_article, num_els, els_sets = els.init_objects()
 	# # els.quality_of_els_sets(glv_dict, els_sets)
 	# all_rules = rules.init_all_rules(els_sets, els_dict)

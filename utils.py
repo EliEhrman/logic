@@ -73,3 +73,10 @@ def vec_norm(vec):
 	sq = math.sqrt(sum([el * el for el in vec]))
 	return [el/sq for el in vec]
 
+def test_for_better_eid_set(db_len_grps, len, eid_set):
+	for len_grp in db_len_grps:
+		if len_grp.len() >= len:
+			continue
+		if len_grp.test_for_better_set(eid_set):
+			return True
+	return False
