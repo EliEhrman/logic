@@ -106,7 +106,7 @@ def do_learn_rule_from_step(events_to_queue, event_step_id, story_db, event_phra
 						if b_null_results:
 							continue
 						# gg = cl_gens_grp(gens_rec=perm_gens_list[iperm], preconds_rec=perm_preconds_list[iperm])
-						len_grp.add_templ(cl_templ_grp(comb_len, pcvo_list[iperm],
+						len_grp.add_templ(cl_templ_grp(b_from_load=False, templ_len=comb_len, scvo=pcvo_list[iperm],
 													   preconds_rec=perm_preconds_list[iperm],
 													   gens_rec_list=perm_gens_list[iperm],
 													   event_result_list=events_to_queue,
@@ -142,9 +142,11 @@ def do_learn_rule_from_step(events_to_queue, event_step_id, story_db, event_phra
 			# end loop over len groups
 			if i_len_grp == -1:
 				if not b_null_results:
-					db_len_grps.append(cl_len_grp(comb_len, pcvo_list[iperm], perm_preconds_list[iperm],
-												  perm_gens_list[iperm], events_to_queue, event_step_id))
-			# end of one perm in all_perms
+					db_len_grps.append(cl_len_grp(comb_len, b_from_load=False, first_scvo=pcvo_list[iperm],
+												  preconds_rec=perm_preconds_list[iperm],
+												  gens_rec_list=perm_gens_list[iperm], event_result_list=events_to_queue,
+												  eid=event_step_id))
+		# end of one perm in all_perms
 	# end of one_comb in all_combs
 
 	if b_null_results:

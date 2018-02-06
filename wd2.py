@@ -16,6 +16,8 @@ import clrecgrp
 import wdlearn
 
 
+c_rnd_bad_move = 0.6
+c_rnd_fleet_army_wrong = 0.4
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 
@@ -334,10 +336,10 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 				if pass_list == None:
 					print(sutype, 'stuck where it is not supposed to be.')
 					return False, None
-				if random.random() > 0.2:
+				if random.random() > c_rnd_bad_move:
 					dest_name = random.choice(pass_list)
 				else:
-					if random.random() > 0.4:
+					if random.random() > c_rnd_fleet_army_wrong:
 						dest_name = random.choice(terr_id_tbl.keys())
 					else:
 						other_pass_list = other_can_pass_table.get(unit_data[1], None)
@@ -563,14 +565,16 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 33 # Set to -1 to restart
+	gameID = 34 # Set to -1 to restart
 	all_dicts = logic_init()
-	db_len_grps = []
+	# db_len_grps = []
 	el_set_arr = []
 	event_step_id = -1
 	learn_vars = [event_step_id]
 	clrecgrp.cl_templ_grp.glv_dict = all_dicts[0]
 	clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0]['army'])
+	# sess, saver_dict, saver = dmlearn.init_templ_learn()
+	db_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
 	play(gameID, all_dicts, db_len_grps, el_set_arr, sess, learn_vars)
 	sess.close()

@@ -3,6 +3,7 @@ import itertools
 import cascade
 import rules
 import els
+import random
 
 import makerecs as mr
 from clrecgrp import cl_templ_grp
@@ -33,7 +34,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list,
 					if b_null_results:
 						continue
 					# gg = cl_gens_grp(gens_rec=perm_gens_list[iperm], preconds_rec=perm_preconds_list[iperm])
-					len_grp.add_templ(cl_templ_grp(comb_len, pcvo_list[iperm],
+					len_grp.add_templ(cl_templ_grp(b_from_load=False, templ_len=comb_len, scvo=pcvo_list[iperm],
 												   preconds_rec=perm_preconds_list[iperm],
 												   gens_rec_list=perm_gens_list[iperm],
 												   event_result_list=step_results,
@@ -70,8 +71,10 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list,
 		# end loop over len groups
 		if i_len_grp == -1:
 			if not b_null_results:
-				db_len_grps.append(cl_len_grp(comb_len, pcvo_list[iperm], perm_preconds_list[iperm],
-											  perm_gens_list[iperm], step_results, event_step_id))
+				db_len_grps.append(cl_len_grp(b_from_load=False, init_len=comb_len, first_scvo=pcvo_list[iperm],
+											  preconds_rec=perm_preconds_list[iperm],
+											  gens_rec_list=perm_gens_list[iperm], event_result_list=step_results,
+											  eid=event_step_id))
 			# end of one perm in all_perms
 
 def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_article_dict,
@@ -137,8 +140,12 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 		return
 	for i_event_result, event_result_score in enumerate(event_result_score_list):
 		top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg = -1.0, -1, 1000, '', 0
+		participants = set()
+		random.shuffle(event_result_score)
 		for iresult, one_score in enumerate(event_result_score):
+			print('event result:', one_score)
 			templ_score, templ_len, templ_scvo, templ_igg = one_score
+			participants.add((templ_len, templ_scvo, templ_igg))
 			# if templ_len < top_score_len:
 			if templ_score > top_score or (templ_score == top_score and templ_len < top_score_len):
 				top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg = \
@@ -146,13 +153,20 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 
 		if i_top_score > -1:
 			for igrp, len_grp in enumerate(db_len_grps):
-				print('event results:', event_result_score)
 				if len_grp.len() == top_score_len:
 					print('Successful match using templ len, scvo, igg, score:', top_score_len, top_score_scvo,
 						  top_score_igg, top_score, 'For event result', step_results[i_event_result])
 					top_score_templ = len_grp.find_templ(top_score_scvo)
 					top_score_templ.add_point(top_score_igg)
 					break
+
+			winner = (top_score_len, top_score_scvo, top_score_igg)
+			for one_particp in participants:
+				for igrp, len_grp in enumerate(db_len_grps):
+					if len_grp.len() == one_particp[0]:
+						particp_templ = len_grp.find_templ(one_particp[1])
+						particp_templ.apply_penalty(one_particp[2], -5 if one_particp == winner else 1)
+						break
 
 	return
 

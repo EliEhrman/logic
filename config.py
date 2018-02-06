@@ -56,7 +56,7 @@ c_cascade_level = 3 # should be at least 3
 c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
 c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
 c_gg_graduate_len = 10
-c_gg_confirm_thresh = 5
+c_gg_confirm_thresh = 25
 c_templ_learn_every_num_perms = 12
 c_gg_learn_every_num_perms = 10
 c_gg_num_learn_steps = 50000
@@ -66,6 +66,9 @@ c_gg_learn_give_up_at = 10000
 c_gg_learn_give_up_thresh = 0.1
 c_b_nbns = True # Necessary but not sufficient
 c_gg_scoring_eid_thresh = 5 # length of eid set after learn for score to be valid
+c_gg_max_perms = 30
+c_negative_penalty = 5 # applied when an igg wins the score/len contest
+c_points_penalty_value = 2
 
 
 

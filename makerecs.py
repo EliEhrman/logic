@@ -1,18 +1,20 @@
 from __future__ import print_function
-import sys
-import math
+# import sys
+# import math
 import numpy as np
-import random
-import itertools
+# import random
+# import itertools
+import csv
+from StringIO import StringIO
 
 import config
 import rules
-import story
-import cascade
+# import story
+# import cascade
 from rules import conn_type
 import els
-import dmlearn
-import ykmeans
+# import dmlearn
+# import ykmeans
 import utils
 
 def make_preconds_rule_from_phrases(rule_base, one_perm, story_db):
@@ -83,6 +85,77 @@ def gen_cvo_str(rec):
 			cvo_str += 'o'
 
 	return cvo_str
+
+def gen_rec_str(rec):
+	if rec == None:
+		return ''
+	lel = []
+	for el in rec:
+		if el[0] == rules.rec_def_type.conn:
+			lcvo = ['c']
+			if el[1] == rules.conn_type.AND:
+				lcvo += ['a']
+			elif el[1] == rules.conn_type.OR:
+				lcvo += ['r']
+			if el[1] == rules.conn_type.start:
+				lcvo += ['s']
+			if el[1] == rules.conn_type.end:
+				lcvo += ['e']
+		elif el[0] == rules.rec_def_type.var:
+			lcvo = ['v']
+			# lcvo += [str(el[1]).rjust(2, '0')]
+			lcvo += [el[1]]
+		elif el[0] == rules.rec_def_type.obj:
+			lcvo = ['o']
+			lcvo += [el[1]]
+		elif el[0] == rules.rec_def_type.like:
+			lcvo = ['l']
+			lcvo += [el[1], el[2]]
+		else:
+			lcvo = ['e', '-1']
+		lel += [':'.join(map(str, lcvo))]
+
+	cvo_str =  ','.join(map(str, lel))
+	return cvo_str
+
+def extract_rec_from_str(srec):
+	if srec == '':
+		return None
+
+	f = StringIO(srec)
+	# csvw = csv.writer(l)
+	rec = []
+	lelr = csv.reader(f, delimiter=',')
+	row = next(lelr)
+	for lcvo in row:
+		fcvo = StringIO(lcvo)
+		lelf = next(csv.reader(fcvo, delimiter=':'))
+		if lelf[0] == 'c':
+			el = [rules.rec_def_type.conn]
+			if lelf[1] == 'a':
+				el += [rules.conn_type.AND]
+			elif lelf[1] == 'r':
+				el += [rules.conn_type.OR]
+			elif lelf[1] == 's':
+				el += [rules.conn_type.start]
+			elif lelf[1] == 'e':
+				el += [rules.conn_type.end]
+		elif lelf[0] == 'v':
+			el = [rules.rec_def_type.var]
+			el += [int(lelf[1])]
+		elif lelf[0] == 'o':
+			el = [rules.rec_def_type.obj]
+			el += [lelf[1]]
+		elif lelf[0] == 'l':
+			el = [rules.rec_def_type.like]
+			el += [lelf[1], float(lelf[2])]
+		else:
+			el = [rules.rec_def_type.error]
+			el += [lelf[1]]
+
+		rec += [el]
+
+	return rec
 
 
 def match_gens_phrase(rec0, rec1):
@@ -179,7 +252,7 @@ def find_quant_thresh(cd):
 			return thresh
 	return -1.0
 
-def make_rule_grp(glv_dict, rule_cluster, el_set_arr):
+def make_rule_grp_old(glv_dict, rule_cluster, el_set_arr):
 	veclen = len(glv_dict[config.sample_el])
 	rule_phrase = []
 	for iel, el in enumerate(rule_cluster[0]):
@@ -198,6 +271,33 @@ def make_rule_grp(glv_dict, rule_cluster, el_set_arr):
 		el_set_arr.append([vec_avg, min_cd, vec_list])
 
 	return rule_phrase
+
+def make_rule_grp(glv_dict, rule_cluster):
+	veclen = len(glv_dict[config.sample_el])
+	rule_phrase = []
+	for iel, el in enumerate(rule_cluster[0]):
+		if el[0] != rules.rec_def_type.obj:
+			rule_phrase.append([el[0], el[1]])
+			continue
+		vec_list = []
+		for phrase in rule_cluster:
+			# phrase = rule.phrase[0]
+			vec = glv_dict[phrase[iel][1]]
+			vec_list.append(vec)
+
+		vec_avg, min_cd = utils.get_avg_min_cd(vec_list, veclen)
+		min_cd = find_quant_thresh(min_cd)
+		best_cd = -1.0
+		best_name = 'not found!'
+		for sym, one_vec in glv_dict.iteritems():
+			cd = sum([one_vec[i] * set_val for i, set_val in enumerate(vec_avg)])
+			if cd > best_cd:
+				best_name, best_cd = sym, cd
+		rule_phrase.append([rules.rec_def_type.like, best_name, min_cd])
+		# el_set_arr.append([vec_avg, min_cd, vec_list])
+
+	return rule_phrase
+
 
 def get_olen(scvo):
 	return scvo.count('o')

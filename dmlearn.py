@@ -2,7 +2,8 @@
 
 import math
 import os
-import time
+# import time
+import random
 import numpy as np
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
@@ -67,6 +68,10 @@ def init_templ_learn():
 	sess = tf.Session()
 	sess.run(tf.global_variables_initializer())
 
+	# new proposed saver:
+	# saver_dict = dict()
+	# saver = tf.train.Saver(saver_dict, max_to_keep=3)
+
 	# saver_dict = {'W_'+str(i): W for i, W in enumerate(l_W_all)}
 
 	# # saver = tf.train.Saver(saver_dict, max_to_keep=3)
@@ -81,10 +86,9 @@ def init_templ_learn():
 		sess = tf_debug.LocalCLIDebugWrapperSession(sess, ui_type="curses")
 		sess.add_tensor_filter("stop_reached", stop_reached)
 
-	return sess\
-		# , saver
+	return sess #, saver_dict, saver
 
-def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
+def do_templ_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
 	b_success = True
 	ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = learn_params
 	numrecs = len(igg_arr)
@@ -107,6 +111,8 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
 	sess.run(t_for_stop)
 	sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
 	losses = [[sess.run(t_err, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})]]
+	# if must learn don't give up till almost the end
+	give_up_count =  (config.c_gg_num_learn_steps - (2 * config.c_gg_learn_test_every)) if b_must_learn else config.c_gg_learn_give_up_at
 	for step in range(config.c_gg_num_learn_steps):
 		sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
 		if step % config.c_gg_learn_test_every == 0:
@@ -116,7 +122,7 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr):
 			print('lrn step ', step, err)
 			if err < config.c_gg_learn_good_thresh:
 				break
-			if err > config.c_gg_learn_give_up_thresh and step > config.c_gg_learn_give_up_at:
+			if err > config.c_gg_learn_good_thresh and step > give_up_count:
 				print('do_templ_learn: Giving up on learning!')
 				b_success = False
 				break
@@ -427,11 +433,13 @@ def l2_norm_arr(nd_arr):
 
 
 def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
+	rnd_for_print = random.random()
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
 	nd_cd = np.matmul(nd_db, perm_embed )
-	print('#', templ_iperm, ': nd_cd', nd_cd)
+	if rnd_for_print < 0.2:
+		print('#', templ_iperm, ': nd_cd', nd_cd)
 	# ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
 	max_match_cd, min_match_cd = 0.0, 1.0
 	for imatch, one_match in enumerate(igg_arr):
@@ -442,7 +450,8 @@ def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
 			if cd < min_match_cd:
 				min_match_cd = cd
 
-	print('min cd:', min_match_cd, 'max cd:', max_match_cd)
+	if rnd_for_print < 0.2:
+		print('min cd:', min_match_cd, 'max cd:', max_match_cd)
 	return min_match_cd
 
 	# igg_sums = np.zeros([len(igg_arr[0])], np.float32)

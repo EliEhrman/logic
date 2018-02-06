@@ -80,3 +80,9 @@ def test_for_better_eid_set(db_len_grps, len, eid_set):
 		if len_grp.test_for_better_set(eid_set):
 			return True
 	return False
+
+def prob_for_penalty(penalty):
+	if penalty <= 1:
+		return True
+	thresh = 1.0 - (1.0 / float(penalty))
+	return random.random() > thresh

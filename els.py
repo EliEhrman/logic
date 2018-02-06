@@ -255,6 +255,8 @@ def complete_phrase(src_phrase,
 				if cd > best_cd:
 					best_name, best_cd = sym, cd
 			filled_phrase.append([el[0], '{set#' + str(len(filled_phrase)) + ':' + best_name + '-like (' + str(set_cd) + ')}'])
+		elif el[0] == rec_def_type.like:
+			filled_phrase.append([el[0], '{like#' + str(len(filled_phrase)) + ':' + el[1] + ' (' + str(el[2]) + ')}'])
 
 	return filled_phrase, out_str
 

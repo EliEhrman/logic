@@ -967,3 +967,32 @@ I have to winnow the poorly performing pggs more aggressively. Checking in befor
 comment:
 
 webdiplomacy working in one dir with wd prefix. Working fairlly well but slowly.
+
+Sat 3rd February
+
+Suggested corrections.
+
+Remove num_add_perms on the templ level
+ggs with points get more time before giving up learning
+print when you don't do learning and scoring to explain why
+add some leeway to thresh
+figure out a way to remove perms at the template level while:
+    1. Making sure the ggs with points don't lose all their perms
+    2. Don't make all the perms belong to one of the ggs only
+points exchange with penalties
+
+Sunday 4th February
+
+Save and reload templ and ggs with their models but not their data.
+
+points exchange with penalties
+    done. not test
+
+ggs with points get more time before giving up learning
+    done.not tested
+
+Tuesday 6th February
+
+Checking in with the comment:
+
+Rule learning works for webdip. About to start blocking.

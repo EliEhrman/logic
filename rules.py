@@ -17,7 +17,7 @@ from utils import ulogger as logger
 df_type = Enum('df_type', 'bool var obj varobj varmod mod conn')
 dm_type = Enum('dm_type', 'Insert Remove Modify')
 conn_type = Enum('conn_type', 'single AND OR start end Insert Remove Modify')
-rec_def_type = Enum('rec_def_type', 'obj conn var error set')
+rec_def_type = Enum('rec_def_type', 'obj conn var error set like')
 # see notebook on 2nd Nov
 rule_type = Enum('rule_type', 'story_start event_from_decide state_from_state state_from_event '
 							  'event_from_event block_event knowledge_query query event_from_none')
