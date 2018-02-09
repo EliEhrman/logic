@@ -125,8 +125,8 @@ def get_phrase_cascade(els_sets, story_db, event_phrase, seed):
 	story_els = story_els_set[2]
 	return get_ext_phrase_cascade(story_els, story_db, event_phrase, seed)
 
-def get_ext_phrase_cascade(cascase_els, story_db, event_phrase, seed, num_recurse_levels=-1, max_num_phrases = -1):
-	cascade_db = [event_phrase]
+def get_ext_phrase_cascade(cascase_els, story_db, event_phrases, seed, num_recurse_levels=-1, max_num_phrases = -1):
+	cascade_db = event_phrases
 	phrase_idx_set = set()
 	all_perms = []
 	if num_recurse_levels == -1:

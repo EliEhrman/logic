@@ -996,3 +996,26 @@ Tuesday 6th February
 Checking in with the comment:
 
 Rule learning works for webdip. About to start blocking.
+
+I am being too harsh in giving out penalties.
+Suggestion: You get a point if you win but you get a penalty only if:
+1. Your score is below some fraction of that of the winner
+2. If your eid set is no better than the winner
+After all we have to accout for OR. Something will happen if A or B is True or will be blocked by either of two circumstances
+
+Friday 9th Feb
+
+Blocking ran but was too much a mess to see what was going on.
+
+Also, the rule discovery did not get the benefit of both positive and negative examples.
+The way forward is to focus on one potentially powerful rule at a time. Remove all
+other distraction and provide pos and neg so eid's. If we significantly increase the
+prediction success we add that to our beilef system.
+
+For now, since I will spend some time on laptop only, I will return to the adventure story
+but will now try to use the central modules in the same way that webdip does. Unfortunately,
+the modules systemin python is not allowing me to use separate dirs, so I will use previx adv_
+
+Will check in the current state with the comment:
+
+Blocking code running but no sig results.

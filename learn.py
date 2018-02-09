@@ -9,14 +9,14 @@ import makerecs as mr
 from clrecgrp import cl_templ_grp
 from clrecgrp import cl_len_grp
 
-def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list,
-						step_results, pcvo_list, gg_confirmed_list,
+def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, perm_phrases_list,
+						step_results, pcvo_list, expected_but_not_found_list, b_blocking, gg_confirmed_list,
 						b_null_results, result_confirmed_list, event_result_score_list,
 						db_len_grps, sess, el_set_arr, glv_dict, def_article_dict):
 	if not b_null_results and all(result_confirmed_list):
 		return
 	comb_len = len(perm_preconds_list[iperm])
-	print('Evaluating the following perm:')
+	print('Evaluating the following perm', ('for block' if b_blocking else ''), ':')
 	out_str = ''
 	out_str = els.print_phrase(perm_preconds_list[iperm], perm_preconds_list[iperm], out_str, def_article_dict)
 	print(out_str)
@@ -38,15 +38,15 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list,
 												   preconds_rec=perm_preconds_list[iperm],
 												   gens_rec_list=perm_gens_list[iperm],
 												   event_result_list=step_results,
-												   eid=event_step_id))
+												   eid=event_step_id, b_blocking=b_blocking))
 				else:
 					# num_pggs = perm_templ.get_num_pggs()
 					# if num_pggs >= 2:
 					# print('Getting score for multi-gg templ.')
-					event_result_score_list, expected_but_not_found_list = \
-						perm_templ.get_match_score(	def_article_dict, perm_preconds_list[iperm],
+					event_result_score_list = \
+						perm_templ.get_match_score(	def_article_dict, perm_preconds_list[iperm], perm_phrases_list[iperm],
 													   step_results, event_step_id, event_result_score_list,
-													result_confirmed_list, gg_confirmed_list)
+													result_confirmed_list, expected_but_not_found_list, gg_confirmed_list)
 
 					if not b_null_results and all(result_confirmed_list):
 						print('All results match confirmed ggs')
@@ -77,8 +77,9 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list,
 											  eid=event_step_id))
 			# end of one perm in all_perms
 
-def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_article_dict,
-						 db_len_grps, el_set_arr, glv_dict, sess, event_step_id):
+def learn_one_story_step(the_rest_db, orders, cascade_els, step_results, def_article_dict,
+						 db_len_grps, el_set_arr, glv_dict, sess, event_step_id, expected_but_not_found_list,
+						 b_blocking):
 	event_result_score_list = [[] for _ in step_results]
 	result_confirmed_list = [False for _ in step_results]
 	gg_confirmed_list = [[] for _ in step_results]
@@ -86,7 +87,7 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 	b_null_results = (result_confirmed_list == [])
 
 	all_combs = []
-	all_combs = cascade.get_ext_phrase_cascade(cascade_els, the_rest_db, order, '', 2, 1)
+	all_combs = cascade.get_ext_phrase_cascade(cascade_els, the_rest_db, orders, '', 2, 1)
 	all_combs = sorted(all_combs, key=len)
 
 	for one_comb in all_combs:
@@ -95,13 +96,14 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 
 		all_perms = list(itertools.permutations(one_comb, len(one_comb)))
 
-		rule_base = [order]
+		rule_base = orders
 		pcvo_list = []
 		# gcvo_list = []
 		perm_preconds_list = []
+		perm_phrases_list = []
 		perm_gens_list = []
 		for one_perm in all_perms:
-			new_conds, vars_dict = mr.make_preconds_rule_from_phrases(rule_base, one_perm, the_rest_db)
+			new_conds, vars_dict, rule_phrases = mr.make_preconds_rule_from_phrases(rule_base, one_perm, the_rest_db)
 			gens_recs_arr = []
 			if b_null_results:
 				new_rule = rules.nt_rule(preconds=new_conds, gens=[])
@@ -119,6 +121,7 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 				perm_gens_list.append(gens_recs_arr)
 			# take first el because the result is put into a list
 			perm_preconds_list.append(preconds_recs[0].phrase())
+			perm_phrases_list.append(rule_phrases)
 			# perm_gens_list.append(gens_recs[0].phrase())
 			pcvo_list.append(mr.gen_cvo_str(preconds_recs[0].phrase()))
 
@@ -130,8 +133,8 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 		pstr_min = min(pcvo_list)
 		plist_min = [iperm for iperm, scvo in enumerate(pcvo_list) if scvo <= pstr_min]
 		for iperm in plist_min:
-			process_one_perm(perm_gens_list, iperm, event_step_id, perm_preconds_list,
-							 step_results, pcvo_list, gg_confirmed_list,
+			process_one_perm(perm_gens_list, iperm, event_step_id, perm_preconds_list, perm_phrases_list,
+							 step_results, pcvo_list, expected_but_not_found_list, b_blocking, gg_confirmed_list,
 							 b_null_results, result_confirmed_list, event_result_score_list,
 							 db_len_grps, sess, el_set_arr, glv_dict, def_article_dict)
 
@@ -143,7 +146,7 @@ def learn_one_story_step(the_rest_db, order, cascade_els, step_results, def_arti
 		participants = set()
 		random.shuffle(event_result_score)
 		for iresult, one_score in enumerate(event_result_score):
-			print('event result:', one_score)
+			print(('Blocking' if b_blocking else 'Normal'), 'event result:', one_score)
 			templ_score, templ_len, templ_scvo, templ_igg = one_score
 			participants.add((templ_len, templ_scvo, templ_igg))
 			# if templ_len < top_score_len:

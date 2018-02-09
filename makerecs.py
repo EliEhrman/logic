@@ -42,7 +42,7 @@ def make_preconds_rule_from_phrases(rule_base, one_perm, story_db):
 	else:
 		new_conds = rules.nt_tree_junct(branches=branches, logic=conn_type.AND)
 
-	return new_conds, vars_dict
+	return new_conds, vars_dict, rule_cand
 
 def make_gens_rule_from_phrases(vars_dict, event_result):
 

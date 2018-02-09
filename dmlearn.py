@@ -122,7 +122,7 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
 			print('lrn step ', step, err)
 			if err < config.c_gg_learn_good_thresh:
 				break
-			if err > config.c_gg_learn_good_thresh and step > give_up_count:
+			if err > config.c_gg_learn_give_up_thresh and step > give_up_count:
 				print('do_templ_learn: Giving up on learning!')
 				b_success = False
 				break
@@ -323,7 +323,7 @@ def get_templ_cds(perm_vec, nd_W, nd_db):
 	return nd_cd
 
 # The return value indicaates a match on the gg not whether the match succeeded in matching a result
-def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_rec, event_result_list,
+def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_rec, event_result_list,
 				 event_result_score_list, templ_len, templ_scvo, b_gg_confirmed, result_confirmed_list,
 				 gg_confirmed_list, success_score, b_score_valid):
 	perm_vec = modify_vec_for_success(perm_vec)
@@ -355,7 +355,7 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 
 	if event_result_list == []:
 		print('gg_score for null results expected some result.')
-		return True, False, expected_result
+		return True, False, [perm_phrases, expected_result]
 
 	b_one_result_matched = False
 	for iresult, event_result in enumerate(event_result_list):
@@ -367,7 +367,7 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 			else:
 				print('Will not add score yet, until we get results for enough eids')
 			b_one_result_matched = True
-			if b_gg_confirmed:
+			if b_gg_confirmed and b_score_valid:
 				result_confirmed_list[iresult] = True
 				if gg_confirmed_list[iresult] == []:
 					gg_confirmed_list[iresult] = gg_sig
@@ -376,9 +376,9 @@ def get_gg_score(perm_rec, perm_vec, nd_W, nd_db, igg, igg_arr, thresh_cd, gens_
 		print('Strange. gg matched but no corresponding event in event list')
 		if b_gg_confirmed:
 			print('Even stranger! The gg is actually confirmed')
-		return True, False, expected_result
+		return True, False, [perm_phrases, expected_result]
 
-	return True, True, expected_result
+	return True, True, [perm_phrases, expected_result]
 
 
 def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result_list, event_result_score_list, templ_len, templ_scvo):
