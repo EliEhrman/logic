@@ -138,7 +138,7 @@ def do_queries(els_dict, els_arr, def_article_dict, ask_who, specific_db, story_
 	# end for query_rule over query_rules that gen queries (ie where's the hat, where's the tie ...)
 
 def create_story_event(els_dict, els_arr, def_article_dict, story_db, total_event_rule_prob,
-					   event_queue, i_story_step, event_rules, block_event_rules):
+					   event_queue, i_story_step, event_rules, block_event_rules, is_a2a_fn):
 
 	b_person_to_person_ask = False
 	if not event_queue:
@@ -155,8 +155,9 @@ def create_story_event(els_dict, els_arr, def_article_dict, story_db, total_even
 
 		# i_story_rule = random.randint(0, len(event_from_none_rules)-1)
 		story_rule = event_rules[i_story_rule]
-		if story_rule.name in rules.person_to_person_ask_rule_names:
-			b_person_to_person_ask = True
+		b_person_to_person_ask = is_a2a_fn(story_rule.name)
+		# if story_rule.name in rules.person_to_person_ask_rule_names:
+		# 	b_person_to_person_ask = True
 
 		_, recs = rules.gen_from_story(els_dict, els_arr, story_rule, story_db)
 		if not recs:

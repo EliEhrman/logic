@@ -1019,3 +1019,20 @@ the modules systemin python is not allowing me to use separate dirs, so I will u
 Will check in the current state with the comment:
 
 Blocking code running but no sig results.
+
+Monday 19th Feb
+
+while on vaccation, I've implemented a first shot at step by step learning of the rules.
+For now it has a poor name of a "gg cont". This cont can store the important parts of
+learning a rule and can be used to extend it. At first you learn a one phrase rule. This
+should increase the probability in one direction or another with necessary conditions
+but still not know about other criteria for sufficient. So once you have that, you look for
+more associated phrases to extend the rule. This is more like searching through a tree than
+the older way which was more like looking at all permutations all together.
+
+The adventure module files are prefixed with adv just like the web diplomacy is wd. The data
+files can be places in a sub dir. The new code is growing in addlearn.py
+
+Checking in with the comment:
+First version of step by step working.
+

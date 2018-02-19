@@ -97,10 +97,19 @@ def gen_rec_str(rec):
 				lcvo += ['a']
 			elif el[1] == rules.conn_type.OR:
 				lcvo += ['r']
-			if el[1] == rules.conn_type.start:
+			elif el[1] == rules.conn_type.start:
 				lcvo += ['s']
-			if el[1] == rules.conn_type.end:
+			elif el[1] == rules.conn_type.end:
 				lcvo += ['e']
+			elif el[1] == rules.conn_type.Insert:
+				lcvo += ['i']
+			elif el[1] == rules.conn_type.Remove:
+				lcvo += ['d']
+			elif el[1] == rules.conn_type.Modify:
+				lcvo += ['m']
+			else:
+				print('Coding error in gen_rec_str. Unknown rec_def_type. Exiting!')
+				exit()
 		elif el[0] == rules.rec_def_type.var:
 			lcvo = ['v']
 			# lcvo += [str(el[1]).rjust(2, '0')]
@@ -140,6 +149,15 @@ def extract_rec_from_str(srec):
 				el += [rules.conn_type.start]
 			elif lelf[1] == 'e':
 				el += [rules.conn_type.end]
+			elif lelf[1] == 'i':
+				el += [rules.conn_type.Insert]
+			elif lelf[1] == 'm':
+				el += [rules.conn_type.Modify]
+			elif lelf[1] == 'd':
+				el += [rules.conn_type.Remove]
+			else:
+				print('Unknown rec def. Exiting.')
+				exit()
 		elif lelf[0] == 'v':
 			el = [rules.rec_def_type.var]
 			el += [int(lelf[1])]
@@ -272,8 +290,8 @@ def make_rule_grp_old(glv_dict, rule_cluster, el_set_arr):
 
 	return rule_phrase
 
-def make_rule_grp(glv_dict, rule_cluster):
-	veclen = len(glv_dict[config.sample_el])
+def make_rule_grp(glv_dict, rule_cluster, veclen):
+	# veclen = len(glv_dict[config.sample_el])
 	rule_phrase = []
 	for iel, el in enumerate(rule_cluster[0]):
 		if el[0] != rules.rec_def_type.obj:

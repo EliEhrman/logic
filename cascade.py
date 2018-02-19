@@ -140,3 +140,19 @@ def get_ext_phrase_cascade(cascase_els, story_db, event_phrases, seed, num_recur
 	all_perms = all_combinations(phrase_idx_set, max_num_phrases)
 
 	return [[]] + all_perms
+
+def get_ext_phrase_cascade2(cascase_els, story_db, event_phrases, seed, num_recurse_levels=-1, max_num_phrases = -1):
+	cascade_db = event_phrases
+	phrase_idx_set = set()
+	all_perms = []
+	if num_recurse_levels == -1:
+		num_recurse_levels = config.c_cascade_level
+	if max_num_phrases == -1:
+		max_num_phrases = config.c_cascade_max_phrases
+
+	phrase_idx_set = recurse_phrase_combos(	cascase_els, story_db, cascade_db, seed, phrase_idx_set,
+											recursions_left = num_recurse_levels)
+
+	all_perms = all_combinations(phrase_idx_set, max_num_phrases)
+
+	return all_perms

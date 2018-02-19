@@ -18,6 +18,9 @@ def stop_reached(datum, tensor):
 
 t_for_stop = tf.constant(5.0, name='t_for_stop')
 
+def learn_reset():
+	tf.reset_default_graph()
+
 def build_templ_nn(var_scope, input_dim, b_reuse):
 	weight_factor = 1.0 / (input_dim * config.c_key_dim)
 	# weight_factor = 1.0 / 150 * 15
@@ -108,7 +111,7 @@ def do_templ_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
 		nd_perm_arr = np.stack(perm_arr, axis=0)
 
 
-	sess.run(t_for_stop)
+	# sess.run(t_for_stop)
 	sess.run([op_r1, op_r2], feed_dict={ph_numrecs: numrecs})
 	losses = [[sess.run(t_err, feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})]]
 	# if must learn don't give up till almost the end

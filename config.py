@@ -38,8 +38,6 @@ c_max_phrases_per_rule = 25
 c_story_len = 350
 c_ovec_len = 500
 c_story_only = False
-c_curriculum_story_len = 25
-c_curriculum_num_stories = 19
 c_query_story_len = 15
 c_query_num_stories = 3
 c_eval_story_len = 15
@@ -75,7 +73,7 @@ c_points_penalty_value = 2
 
 # logger = None
 
-sample_el = 'to' # used as an example that must be in el db or glv dict
+# sample_el = 'to' # used as an example that must be in el db or glv dict
 query_action = ['who', 'what', 'where', 'what has', 'what does', 'have', 'where is', 'is in', 'know', 'asked', 'told', 'that', 'asked', 'for']
 person_place_action = ['is located in', 'went to', 'go to']
 object_place_action = ['is located in', 'is free in' ]

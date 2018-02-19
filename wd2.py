@@ -553,7 +553,7 @@ def logic_init():
 	full_glv_list = [fname+'s.glv' for fname in glv_file_list]
 	# cwd = os.getcwd()
 	# os.chdir('..')
-	glv_dict, def_article_dict, cascade_dict = \
+	glv_dict, def_article_dict, cascade_dict, _ = \
 		els.init_glv(full_glv_list, cap_first_arr, def_article_arr, cascade_els_arr)
 	# os.chdir(cwd)
 	# cwdtest = os.getcwd()
@@ -572,7 +572,7 @@ def main():
 	event_step_id = -1
 	learn_vars = [event_step_id]
 	clrecgrp.cl_templ_grp.glv_dict = all_dicts[0]
-	clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0]['army'])
+	clrecgrp.cl_gens_grp.glv_len = clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0]['army'])
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()

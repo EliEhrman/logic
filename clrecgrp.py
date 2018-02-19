@@ -19,6 +19,8 @@ import utils
 import makerecs as mr
 
 class cl_gens_grp(object):
+	glv_len = -1
+
 	def __init__(self, b_from_load, igg, gens_rec=None, templ_iperm=None):
 		if templ_iperm == None:
 			self.__iperm_list = []
@@ -135,6 +137,15 @@ class cl_gens_grp(object):
 		self.__nn_params += dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
 		self.__nn_params += dmlearn.create_tmpl_dml_tensors(self.__nn_params[2], var_scope)
 
+	def get_will_learn(self):
+		if self.__igg == 0:
+			return False
+
+		if self.__num_perm_adds_till_next_learn > 0:
+			return False
+
+		return True
+
 	def do_learn(self, b_do_learn, sess, templ_perm_vec_list, templ_perm_list,
 				 templ_olen, glv_len, glv_dict, el_set_arr):
 		if self.__igg == 0:
@@ -158,7 +169,7 @@ class cl_gens_grp(object):
 		# self.__db_valid = True
 
 	def make_rule_grp(self, glv_dict, templ_perm_list):
-		return mr.make_rule_grp(glv_dict, [templ_perm_list[iperm] for iperm in self.__iperm_list])
+		return mr.make_rule_grp(glv_dict, [templ_perm_list[iperm] for iperm in self.__iperm_list], self.glv_len)
 
 	def get_perm_match_list(self):
 		return self.__perm_match_list
@@ -213,6 +224,14 @@ class cl_gens_grp(object):
 
 	def get_rule_grp(self):
 		return self.__rule_grp
+
+	def get_b_valid(self):
+		return self.__b_validated
+
+	def get_cont_stats(self, templ_len, templ_scvo, igg):
+		rule_str = mr.gen_rec_str(self.__rule_grp)
+		return [templ_len, templ_scvo, igg, self.__num_successes, self.__num_tests,
+				rule_str, self]
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['tgg', self.__b_confirmed, self.__igg, self.__num_points,
@@ -464,7 +483,7 @@ class cl_templ_grp(object):
 		gg_use_list = [False]
 		for one_gg in self.__gg_list[1:]:
 			gg_use_list.append(False)
-			if utils.prob_for_penalty(one_gg.get_penalty()):
+			if one_gg.get_will_learn() and utils.prob_for_penalty(one_gg.get_penalty()):
 				gg_use_list[-1] = True
 				b_learn_valid = True
 		if not b_learn_valid:
@@ -571,6 +590,14 @@ class cl_templ_grp(object):
 				return True
 		return False
 
+	def get_valid_ggs(self, templ_len):
+		valid_gg_list = []
+		for igg, gg in enumerate(self.__gg_list):
+			if gg.get_b_valid():
+				valid_gg_list.append(gg.get_cont_stats(templ_len, self.__scvo, igg))
+
+		return valid_gg_list
+
 	def save(self, db_csvr):
 		db_csvr.writerow(['templ grp', self.__b_confirmed, self.__b_db_graduated, self.__db_valid, self.__olen,
 						  self.__templ_len, len(self.__pgg_list), len(self.__gg_list), self.__scvo])
@@ -636,6 +663,13 @@ class cl_len_grp(object):
 				return True
 		return False
 
+	def get_valid_ggs(self):
+		valid_gg_list = []
+		for templ_grp in self.__templ_grp_list:
+			valid_gg_list += templ_grp.get_valid_ggs(self.__len)
+
+		return valid_gg_list
+
 	def save(self, db_csvr):
 		db_csvr.writerow(['len grp', self.__len, len(self.__templ_grp_list)])
 		for templ_grp in self.__templ_grp_list:
@@ -648,5 +682,7 @@ class cl_len_grp(object):
 			templ_grp = cl_templ_grp(b_from_load=True)
 			templ_grp.load(db_csvr, b_blocking)
 			self.__templ_grp_list.append(templ_grp)
+
+
 
 

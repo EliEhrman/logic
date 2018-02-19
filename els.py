@@ -103,6 +103,11 @@ def init_glv(fnames, cap_first_arr, def_article_arr, cascade_els_arr):
 	new_els = []
 	def_article_dict = {}
 	cascade_dict = {}
+
+	# return [new_els_range, num_new_els, new_els], num_els
+	num_els = 0
+	els_sets = []
+
 	for ifname, fname in enumerate(fnames):
 		fh_names = open(fname, 'rb')
 		fr_names = csv.reader(fh_names, delimiter=',')
@@ -110,6 +115,11 @@ def init_glv(fnames, cap_first_arr, def_article_arr, cascade_els_arr):
 			all_names = [lname[0].lower().title() for lname in fr_names]
 		else:
 			all_names = [lname[0].lower() for lname in fr_names]
+		num_new_els = len(all_names)
+		# new_els_range = range(num_els, num_els + num_new_els)
+		# num_els += num_new_els
+		# els_sets.append([new_els_range, num_new_els, new_els])
+		els_sets.append(all_names)
 
 		new_els += all_names
 		for name in all_names:
@@ -123,7 +133,8 @@ def init_glv(fnames, cap_first_arr, def_article_arr, cascade_els_arr):
 	for iitem, item in enumerate(new_el_vecs):
 		glv_dict[new_els[iitem]] = item
 
-	return glv_dict, def_article_dict, cascade_dict
+
+	return glv_dict, def_article_dict, cascade_dict, els_sets
 
 
 def init_objects():
