@@ -358,7 +358,7 @@ def find_gg_by_sig(db_len_grps, sig):
 	_, templ_len, templ_scvo, igg, b_blocking = sig
 	for igrp, len_grp in enumerate(db_len_grps):
 		if len_grp.len() == templ_len:
-			found_templ = len_grp.find_templ(templ_scvo, b_blocking)
+			found_templ = len_grp.find_templ(templ_scvo)
 			return True, found_templ, igg
 
 	return False, None, None

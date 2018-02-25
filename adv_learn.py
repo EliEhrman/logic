@@ -34,6 +34,7 @@ def load_len_grps():
 	i_gg_cont = -1
 	db_len_grps, blocked_len_grps, gg_cont_list = [], [], []
 	try:
+	# if True:
 		db_fh = open(db_fn, 'rb')
 		db_csvr = csv.reader(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
 		_, gg_cont_list_size, _, version_str = next(db_csvr)

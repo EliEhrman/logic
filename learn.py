@@ -78,7 +78,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 	for igrp, len_grp in enumerate(db_len_grps):
 		if len_grp.len() == comb_len:
 			i_len_grp = igrp
-			perm_templ = len_grp.find_templ(pcvo_list[iperm], b_blocking=b_blocking)
+			perm_templ = len_grp.find_templ(pcvo_list[iperm])
 			if not perm_templ:
 				if b_null_results:
 					continue
@@ -111,6 +111,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 				perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm],
 									gens_rec_list=perm_gens_list[iperm],
 									perm_result_list=step_results,
+									perm_result_blocked=perm_results_blocked_list[iperm],
 									eid=event_step_id,
 									db_len_grps=db_len_grps)
 
@@ -378,7 +379,7 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 			if len_grp.len() == top_score_len:
 				print('Successful match using templ len, scvo, igg, score:', top_score_len, top_score_scvo,
 					  top_score_igg, top_score, b_top_blocking, 'For event result', step_results[i_event_result])
-				top_score_templ = len_grp.find_templ(top_score_scvo, b_top_blocking)
+				top_score_templ = len_grp.find_templ(top_score_scvo)
 				top_score_templ.add_point(top_score_igg)
 				break
 
@@ -386,7 +387,7 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 		for one_particp in participants:
 			for igrp, len_grp in enumerate(db_len_grps):
 				if len_grp.len() == one_particp[0]:
-					particp_templ = len_grp.find_templ(one_particp[1], one_particp[3])
+					particp_templ = len_grp.find_templ(one_particp[1])
 					particp_templ.apply_penalty(one_particp[2], -5 if one_particp == winner else 1)
 					break
 

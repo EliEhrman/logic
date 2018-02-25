@@ -8,7 +8,10 @@ class cl_add_gg(object):
 		self.__gens_rec = gens_rec
 		self.__initial_score = score
 		self.__rule_str = rule_str
-		self.__rule = mr.extract_rec_from_str(rule_str)
+		if b_from_load:
+			self.__rule = None
+		else:
+			self.__rule = mr.extract_rec_from_str(rule_str)
 		self.__level = level
 		self.__b_blocking = b_blocking
 

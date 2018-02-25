@@ -6,13 +6,11 @@
       <change beforePath="$PROJECT_DIR$/addlearn.py" afterPath="$PROJECT_DIR$/addlearn.py" />
       <change beforePath="$PROJECT_DIR$/adv_learn.py" afterPath="$PROJECT_DIR$/adv_learn.py" />
       <change beforePath="$PROJECT_DIR$/clrecgrp.py" afterPath="$PROJECT_DIR$/clrecgrp.py" />
-      <change beforePath="$PROJECT_DIR$/config.py" afterPath="$PROJECT_DIR$/config.py" />
       <change beforePath="$PROJECT_DIR$/dmlearn.py" afterPath="$PROJECT_DIR$/dmlearn.py" />
       <change beforePath="$PROJECT_DIR$/learn.py" afterPath="$PROJECT_DIR$/learn.py" />
       <change beforePath="$PROJECT_DIR$/makerecs.py" afterPath="$PROJECT_DIR$/makerecs.py" />
       <change beforePath="$PROJECT_DIR$/nlp_deps.txt" afterPath="$PROJECT_DIR$/nlp_deps.txt" />
       <change beforePath="$PROJECT_DIR$/notebook.txt" afterPath="$PROJECT_DIR$/notebook.txt" />
-      <change beforePath="$PROJECT_DIR$/recgrp.py" afterPath="$PROJECT_DIR$/recgrp.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -32,8 +30,8 @@
       <file leaf-file-name="adv_main1.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/adv_main1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="167">
-              <caret line="64" column="0" lean-forward="false" selection-start-line="64" selection-start-column="0" selection-end-line="64" selection-end-column="0" />
+            <state relative-caret-position="201">
+              <caret line="254" column="0" lean-forward="false" selection-start-line="254" selection-start-column="0" selection-end-line="254" selection-end-column="0" />
               <folding>
                 <element signature="e#321#358#0" expanded="true" />
               </folding>
@@ -44,8 +42,8 @@
       <file leaf-file-name="addlearn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/addlearn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="93">
-              <caret line="54" column="49" lean-forward="true" selection-start-line="54" selection-start-column="49" selection-end-line="54" selection-end-column="49" />
+            <state relative-caret-position="167">
+              <caret line="36" column="0" lean-forward="false" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -55,7 +53,7 @@
         <entry file="file://$PROJECT_DIR$/adv_learn.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="167">
-              <caret line="59" column="0" lean-forward="false" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
+              <caret line="60" column="0" lean-forward="false" selection-start-line="60" selection-start-column="0" selection-end-line="60" selection-end-column="0" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -63,11 +61,21 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="pydev_monkey_qt.py" pinned="false" current-in-tab="false">
+        <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="167">
+              <caret line="101" column="0" lean-forward="false" selection-start-line="101" selection-start-column="0" selection-end-line="101" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="clrecgrp.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/clrecgrp.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="291">
-              <caret line="661" column="41" lean-forward="false" selection-start-line="661" selection-start-column="29" selection-end-line="661" selection-end-column="41" />
+            <state relative-caret-position="155">
+              <caret line="264" column="37" lean-forward="false" selection-start-line="264" selection-start-column="24" selection-end-line="264" selection-end-column="37" />
               <folding />
             </state>
           </provider>
@@ -76,8 +84,8 @@
       <file leaf-file-name="notebook.txt" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/notebook.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="558">
-              <caret line="1056" column="0" lean-forward="false" selection-start-line="1056" selection-start-column="0" selection-end-line="1056" selection-end-column="62" />
+            <state relative-caret-position="135">
+              <caret line="1080" column="61" lean-forward="true" selection-start-line="1080" selection-start-column="0" selection-end-line="1080" selection-end-column="61" />
               <folding />
             </state>
           </provider>
@@ -86,8 +94,8 @@
       <file leaf-file-name="dmlearn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dmlearn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6120">
-              <caret line="369" column="83" lean-forward="false" selection-start-line="369" selection-start-column="83" selection-end-line="369" selection-end-column="83" />
+            <state relative-caret-position="206">
+              <caret line="450" column="0" lean-forward="false" selection-start-line="450" selection-start-column="0" selection-end-line="450" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -96,18 +104,8 @@
       <file leaf-file-name="makerecs.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/makerecs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5950">
-              <caret line="367" column="0" lean-forward="false" selection-start-line="367" selection-start-column="0" selection-end-line="367" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="config.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1156">
-              <caret line="68" column="12" lean-forward="false" selection-start-line="68" selection-start-column="12" selection-end-line="68" selection-end-column="12" />
+            <state relative-caret-position="167">
+              <caret line="171" column="0" lean-forward="false" selection-start-line="171" selection-start-column="0" selection-end-line="171" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -116,8 +114,8 @@
       <file leaf-file-name="learn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/learn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="99">
-              <caret line="85" column="39" lean-forward="false" selection-start-line="85" selection-start-column="34" selection-end-line="85" selection-end-column="46" />
+            <state relative-caret-position="167">
+              <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -144,13 +142,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>ruleid</find>
-      <find>cl_templ_grp</find>
-      <find>play</find>
-      <find>i_one_story</find>
-      <find>get_cont</find>
-      <find>__num_successes</find>
-      <find>ivec_dim_dict_fixed</find>
       <find>b_do_learn</find>
       <find>Learning all</find>
       <find>adv_conig</find>
@@ -173,7 +164,14 @@
       <find>event_result_score_list</find>
       <find>rule_grp</find>
       <find>__num_points</find>
+      <find>__perm_match_list</find>
+      <find>get_b_blocking</find>
+      <find>assign_gg</find>
+      <find>find_pgg</find>
+      <find>__perm_ipgg_arr</find>
+      <find>perm_result_list</find>
       <find>b_blocking</find>
+      <find>__b_validated</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -192,14 +190,14 @@
         <option value="$PROJECT_DIR$/adv_main1.py" />
         <option value="$PROJECT_DIR$/adv_config.py" />
         <option value="$PROJECT_DIR$/cascade.py" />
-        <option value="$PROJECT_DIR$/adv_learn.py" />
         <option value="$PROJECT_DIR$/config.py" />
-        <option value="$PROJECT_DIR$/addlearn.py" />
         <option value="$PROJECT_DIR$/recgrp.py" />
-        <option value="$PROJECT_DIR$/dmlearn.py" />
         <option value="$PROJECT_DIR$/makerecs.py" />
         <option value="$PROJECT_DIR$/learn.py" />
+        <option value="$PROJECT_DIR$/dmlearn.py" />
         <option value="$PROJECT_DIR$/clrecgrp.py" />
+        <option value="$PROJECT_DIR$/addlearn.py" />
+        <option value="$PROJECT_DIR$/adv_learn.py" />
         <option value="$PROJECT_DIR$/notebook.txt" />
       </list>
     </option>
@@ -493,7 +491,14 @@
       <option name="project" value="LOCAL" />
       <updated>1519020732610</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Version of blocking not working because applied to templ group">
+      <created>1519546184124</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1519546184124</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TodoView">
@@ -511,13 +516,13 @@
       <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17194323" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3275862" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3275862" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286638" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32879582" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286638" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32903227" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.14956331" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39870688" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.39870688" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -553,7 +558,8 @@
     <MESSAGE value="Rule learning works for webdip. About to start blocking." />
     <MESSAGE value="Blocking code running but no sig results." />
     <MESSAGE value="First version of step by step working." />
-    <option name="LAST_COMMIT_MESSAGE" value="First version of step by step working." />
+    <MESSAGE value="Version of blocking not working because applied to templ group" />
+    <option name="LAST_COMMIT_MESSAGE" value="Version of blocking not working because applied to templ group" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -619,18 +625,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/adv_learn.py</url>
-          <line>59</line>
+          <line>60</line>
           <option name="timeStamp" value="168" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/adv_learn.py</url>
-          <line>36</line>
+          <line>37</line>
           <option name="timeStamp" value="181" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>23</line>
-          <option name="timeStamp" value="182" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/adv_main1.py</url>
@@ -639,26 +640,31 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>60</line>
+          <line>63</line>
           <option name="timeStamp" value="202" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>33</line>
-          <option name="timeStamp" value="204" />
+          <url>file://$PROJECT_DIR$/learn.py</url>
+          <line>128</line>
+          <option name="timeStamp" value="217" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/learn.py</url>
-          <line>127</line>
-          <option name="timeStamp" value="217" />
+          <line>23</line>
+          <option name="timeStamp" value="259" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="234" />
+      <option name="time" value="260" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>gg.get_b_blocking()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>templ_grp.scvo() == scvo</expression-string>
         <language-id>Python</language-id>
@@ -854,13 +860,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1700">
-          <caret line="101" column="0" lean-forward="false" selection-start-line="101" selection-start-column="0" selection-end-line="101" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///media/eli/9e8621db-18e2-4230-bbe1-306cbf8d6165/home/eehrman/dev/dev/logic/clrecgrp.py" />
     <entry file="file:///media/eli/9e8621db-18e2-4230-bbe1-306cbf8d6165/home/eehrman/dev/dev/logic/wdlearn.py" />
     <entry file="file:///media/eli/9e8621db-18e2-4230-bbe1-306cbf8d6165/home/eehrman/dev/dev/logic/dmlearn.py" />
@@ -995,16 +994,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/dmlearn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6120">
-          <caret line="369" column="83" lean-forward="false" selection-start-line="369" selection-start-column="83" selection-end-line="369" selection-end-column="83" />
+        <state relative-caret-position="206">
+          <caret line="450" column="0" lean-forward="false" selection-start-line="450" selection-start-column="0" selection-end-line="450" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="101" column="0" lean-forward="false" selection-start-line="101" selection-start-column="0" selection-end-line="101" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/makerecs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5950">
-          <caret line="367" column="0" lean-forward="false" selection-start-line="367" selection-start-column="0" selection-end-line="367" selection-end-column="0" />
+        <state relative-caret-position="167">
+          <caret line="171" column="0" lean-forward="false" selection-start-line="171" selection-start-column="0" selection-end-line="171" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/addlearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="36" column="0" lean-forward="false" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -1012,7 +1027,7 @@
     <entry file="file://$PROJECT_DIR$/adv_learn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="167">
-          <caret line="59" column="0" lean-forward="false" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
+          <caret line="60" column="0" lean-forward="false" selection-start-line="60" selection-start-column="0" selection-end-line="60" selection-end-column="0" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -1021,42 +1036,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/adv_main1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="167">
-          <caret line="64" column="0" lean-forward="false" selection-start-line="64" selection-start-column="0" selection-end-line="64" selection-end-column="0" />
+        <state relative-caret-position="201">
+          <caret line="254" column="0" lean-forward="false" selection-start-line="254" selection-start-column="0" selection-end-line="254" selection-end-column="0" />
           <folding>
             <element signature="e#321#358#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/addlearn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="93">
-          <caret line="54" column="49" lean-forward="true" selection-start-line="54" selection-start-column="49" selection-end-line="54" selection-end-column="49" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/learn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="99">
-          <caret line="85" column="39" lean-forward="false" selection-start-line="85" selection-start-column="34" selection-end-line="85" selection-end-column="46" />
+        <state relative-caret-position="167">
+          <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/clrecgrp.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="291">
-          <caret line="661" column="41" lean-forward="false" selection-start-line="661" selection-start-column="29" selection-end-line="661" selection-end-column="41" />
+        <state relative-caret-position="155">
+          <caret line="264" column="37" lean-forward="false" selection-start-line="264" selection-start-column="24" selection-end-line="264" selection-end-column="37" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="558">
-          <caret line="1056" column="0" lean-forward="false" selection-start-line="1056" selection-start-column="0" selection-end-line="1056" selection-end-column="62" />
+        <state relative-caret-position="135">
+          <caret line="1080" column="61" lean-forward="true" selection-start-line="1080" selection-start-column="0" selection-end-line="1080" selection-end-column="61" />
           <folding />
         </state>
       </provider>

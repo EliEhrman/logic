@@ -328,7 +328,7 @@ def get_templ_cds(perm_vec, nd_W, nd_db):
 # The return value indicaates a match on the gg not whether the match succeeded in matching a result
 def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, thresh_cd,
 				 gens_rec, event_result_list, b_blocking,
-				 event_result_score_list, templ_len, templ_scvo, templ_blocking,
+				 event_result_score_list, templ_len, templ_scvo, gg_blocking,
 				 b_gg_confirmed, result_confirmed_list,
 				 gg_confirmed_list, success_score, b_score_valid):
 	perm_vec = modify_vec_for_success(perm_vec)
@@ -363,7 +363,7 @@ def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, th
 		return True, False, [perm_phrases, expected_result]
 
 	b_one_result_matched = False
-	if templ_blocking == b_blocking:
+	if gg_blocking == b_blocking:
 		for iresult, event_result in enumerate(event_result_list):
 			if mr.match_rec_exact(expected_result, event_result):
 				if b_score_valid:
@@ -438,7 +438,7 @@ def l2_norm_arr(nd_arr):
 	return nd_arr / en
 
 
-def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
+def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr, b_always_print=False):
 	rnd_for_print = random.random()
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
@@ -456,7 +456,7 @@ def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr):
 			if cd < min_match_cd:
 				min_match_cd = cd
 
-	if rnd_for_print < 0.2:
+	if b_always_print or rnd_for_print < 0.2:
 		print('min cd:', min_match_cd, 'max cd:', max_match_cd)
 	return min_match_cd
 

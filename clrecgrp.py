@@ -21,7 +21,7 @@ import makerecs as mr
 class cl_gens_grp(object):
 	glv_len = -1
 
-	def __init__(self, b_from_load, igg, gens_rec=None, templ_iperm=None):
+	def __init__(self, b_from_load, igg, gens_rec=None, b_blocking=None, templ_iperm=None):
 		if templ_iperm == None:
 			self.__iperm_list = []
 		else:
@@ -41,8 +41,11 @@ class cl_gens_grp(object):
 		self.__last_eid = -1
 		self.__thresh_cd = -1.0
 		self.__rule_grp = None
+		self.__b_blocking = b_blocking
 
-	def gens_matches(self, gens_rec):
+	def gens_matches(self, gens_rec, b_blocking):
+		if b_blocking != self.__b_blocking:
+			return False
 		return mr.match_gens_phrase(self.__gens_rec, gens_rec)
 
 	def add_perm(self, templ_iperm, eid):
@@ -57,6 +60,12 @@ class cl_gens_grp(object):
 	def get_gens_rec(self):
 		return self.__gens_rec
 
+	def get_b_blocking(self):
+		return self.__b_blocking
+
+	def set_b_blocking(self, b_blocking):
+		self.__b_blocking = b_blocking
+
 	def apply_penalty(self, penalty):
 		if penalty > 0 and self.__num_points > 0:
 			self.__num_points -= 1
@@ -69,7 +78,7 @@ class cl_gens_grp(object):
 		out_str = ''
 		if self.__gens_rec != None:
 			out_str = els.print_phrase(self.__gens_rec, self.__gens_rec, out_str, def_article_dict)
-		print(str(igg), ':',out_str)
+		print(str(igg), ':', ('blocking' if self.__b_blocking else ''), out_str)
 
 	def print_stats(self, def_article_dict):
 		print('Learn status:', self.__b_lrn_success, '. Scoring eid set:', self.__scoring_eid_set,
@@ -86,7 +95,7 @@ class cl_gens_grp(object):
 			out_str = ''
 			if self.__gens_rec != None:
 				out_str = els.print_phrase(self.__rule_grp, self.__gens_rec, out_str, def_article_dict)
-			print(out_str)
+			print(('Blocking gens:' if self.__b_blocking else ''), out_str)
 
 	def add_point(self):
 		if self.__penalty > 0:
@@ -110,6 +119,7 @@ class cl_gens_grp(object):
 		self.__perm_match_list = []
 
 	def set_match_limits(self, templ_perm_list, templ_perm_igg_arr, templ_len, glv_len, glv_dict):
+		# do I have to add templ result_blocking?
 		print('Testing for match limits for templ_olen, gg: ', templ_len, self.__igg)
 		self.__thresh_cd = 1.0
 		for one_iperm in self.__iperm_list:
@@ -128,10 +138,11 @@ class cl_gens_grp(object):
 			perm_vec = mr.make_vec(glv_dict, templ_perm_list[one_iperm], templ_len, glv_len)
 			if config.c_b_nbns:
 				perm_vec = dmlearn.modify_vec_for_success(perm_vec)
-			dmlearn.get_score_stats(one_iperm, perm_vec, self.__nd_W, self.__nd_db, templ_perm_igg_arr)
+			dmlearn.get_score_stats(one_iperm, perm_vec, self.__nd_W, self.__nd_db,
+									templ_perm_igg_arr, b_always_print=True)
 
-	def init_for_learn(self, vec_len, templ_scvo, igg, b_blocking):
-		var_scope = 'gg_'+('B' if b_blocking else 'N')+str(vec_len).rjust(5, '0')+str(igg).rjust(3, '0')+templ_scvo
+	def init_for_learn(self, vec_len, templ_scvo, igg):
+		var_scope = 'gg_'+('B' if self.__b_blocking else 'N')+str(vec_len).rjust(5, '0')+str(igg).rjust(3, '0')+templ_scvo
 		print('Creating var scope:', var_scope)
 		self.__nn_params = []
 		self.__nn_params += dmlearn.build_templ_nn(var_scope, vec_len, b_reuse=False)
@@ -196,7 +207,7 @@ class cl_gens_grp(object):
 
 	def get_match_score(self, preconds_rec, perm_vec, perm_phrases, event_step_id, event_result_list,
 						b_blocking, event_result_score_list,
-						templ_len, templ_scvo, templ_blocking, result_confirmed_list, gg_confirmed_list,
+						templ_len, templ_scvo, result_confirmed_list, gg_confirmed_list,
 						expected_but_not_found_list):
 		if not self.__b_lrn_success:
 			print('Cannot provide score for for failed learning igg:', self.__igg, 'match list:', self.__perm_match_list)
@@ -207,7 +218,7 @@ class cl_gens_grp(object):
 			dmlearn.get_gg_score(	preconds_rec, perm_vec, perm_phrases, self.__nd_W, self.__nd_db ,
 									self.__igg, self.__perm_match_list,
 									self.__thresh_cd, self.get_gens_rec(), event_result_list, b_blocking,
-									event_result_score_list, templ_len, templ_scvo, templ_blocking,
+									event_result_score_list, templ_len, templ_scvo, self.__b_blocking,
 									self.__b_confirmed, result_confirmed_list, gg_confirmed_list,
 									self.__num_successes / self.__num_tests if self.__num_tests else 0.0,
 									len(self.__scoring_eid_set) > config.c_gg_scoring_eid_thresh)
@@ -229,26 +240,27 @@ class cl_gens_grp(object):
 	def get_b_valid(self):
 		return self.__b_validated
 
-	def get_cont_stats(self, templ_len, templ_scvo, b_blocking, igg):
+	def get_cont_stats(self, templ_len, templ_scvo, igg):
 		rule_str = mr.gen_rec_str(self.__rule_grp)
-		return [templ_len, templ_scvo, b_blocking, igg, self.__num_successes, self.__num_tests,
+		return [templ_len, templ_scvo, self.__b_blocking, igg, self.__num_successes, self.__num_tests,
 				rule_str, self]
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['tgg', 'confirmed', self.__b_confirmed, 'gg id', self.__igg, 'num points', self.__num_points,
 						  'num successes', self.__num_successes, 'num tests', self.__num_tests,
 						  'penalty points', self.__penalty, 'rule grp', mr.gen_rec_str(self.__rule_grp),
-						  'gens rec', mr.gen_rec_str(self.get_gens_rec())])
+						  'gens rec', mr.gen_rec_str(self.get_gens_rec()),
+						  'blocking', self.__b_blocking])
 
 	def load(self, db_csvr):
 		_, _, sb_confirmed, _, sigg, _, snum_points, _, snum_successes, _, snum_tests, \
-		_, spenalty, _, srule_rec, _, sgens_rec = next(db_csvr)
+		_, spenalty, _, srule_rec, _, sgens_rec, _, sb_blocking, = next(db_csvr)
 		self.__b_confirmed, self.__igg, self.__num_points = sb_confirmed == 'True', int(sigg), int(snum_points)
 		self.__num_successes, self.__num_tests, self.__penalty = float(snum_successes), float(snum_tests), int(spenalty)
 		self.__gens_rec = mr.extract_rec_from_str(sgens_rec)
 		self.__rule_grp = mr.extract_rec_from_str(srule_rec)
 		self.__num_perm_adds_till_next_learn = config.c_gg_learn_every_num_perms
-		self.__b_lrn_success = False
+		self.__b_lrn_success, self.__b_blocking = False, sb_blocking == 'True'
 		if self.__num_points >= config.c_gg_validate_thresh:
 			if not self.__b_validated:
 				print('gg validated on load for igg:', self.__igg, 'gens rec:', self.__gens_rec)
@@ -261,15 +273,17 @@ class cl_gens_grp(object):
 	# 	return self.__mrg_list
 
 class cl_prov_gens_grp(cl_gens_grp):
-	def __init__(self, b_from_load, igg, gens_rec=None, templ_iperm=None, eid=None):
+	def __init__(self, b_from_load, igg, gens_rec=None, b_blocking=None, templ_iperm=None, eid=None):
 		# super(cl_prov_gens_grp, self).__init__(gens_rec, igg, templ_iperm)
 		if b_from_load:
 			cl_gens_grp.__init__(self, b_from_load=True, igg=igg )
 			self.__eid_set = set()
 		else:
-			cl_gens_grp.__init__(self, b_from_load=False, igg=igg, gens_rec=gens_rec, templ_iperm=templ_iperm)
+			cl_gens_grp.__init__(self, b_from_load=False, igg=igg, gens_rec=gens_rec,
+								 b_blocking=b_blocking, templ_iperm=templ_iperm)
 			self.__eid_set = set([eid])
 		self.__b_graduated = False
+		# self.__b_blocking = b_blocking
 
 	def add_perm(self, templ_iperm, eid, db_len_grps=None, templ_len=None):
 		super(cl_prov_gens_grp, self).add_perm(templ_iperm, eid)
@@ -291,13 +305,15 @@ class cl_prov_gens_grp(cl_gens_grp):
 		return False
 
 	def save(self, db_csvr):
-		db_csvr.writerow(['pgg', 'graduated', self.__b_graduated, 'gens rec', mr.gen_rec_str(self.get_gens_rec())])
+		db_csvr.writerow(['pgg', 'graduated', self.__b_graduated, 'gens rec', mr.gen_rec_str(self.get_gens_rec()),
+						  'is blocking', self.get_b_blocking()])
 
 	def load(self, db_csvr):
-		_, _, sb_graduated, _, srec = next(db_csvr)
+		_, _, sb_graduated, _, srec, _, sb_blocking = next(db_csvr)
 		self.__b_graduated = sb_graduated == 'True'
 		gens_rec = mr.extract_rec_from_str(srec)
 		self.set_gens_rec(gens_rec)
+		self.set_b_blocking(sb_blocking == 'True')
 
 class cl_templ_grp(object):
 	# __slots__='__len', '__templ_grp_list'
@@ -312,14 +328,15 @@ class cl_templ_grp(object):
 			self.__scvo = scvo
 			self.__olen = mr.get_olen(scvo)
 			for one_gens in gens_rec_list:
-				pgg_list.append(cl_prov_gens_grp(b_from_load=False, igg=len(pgg_list), gens_rec=one_gens, templ_iperm=0, eid=eid))
+				pgg_list.append(cl_prov_gens_grp(	b_from_load=False, igg=len(pgg_list), gens_rec=one_gens,
+													b_blocking=b_blocking, templ_iperm=0, eid=eid))
 			self.__pgg_list = pgg_list
 			self.__perm_list = [preconds_rec]
 			self.__perm_result_list = [event_result_list]
+			self.__perm_result_blocked_list = [b_blocking]
 			self.__perm_eid_list = [eid]
 			self.__perm_ipgg_arr = [range(len(pgg_list))] # list in list here
 			self.__perm_vec_list = [mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len)]
-			self.__b_blocking = b_blocking
 		else:
 			self.__templ_len = None
 			self.__scvo = None
@@ -330,7 +347,7 @@ class cl_templ_grp(object):
 			self.__perm_eid_list = []
 			self.__perm_ipgg_arr = []  # list in list here
 			self.__perm_vec_list = []
-			self.__b_blocking = None
+			self.__perm_result_blocked_list = []
 		# var_scope = 'templ'+str(templ_len)+scvo
 		# vec_len = self.__olen * self.glv_len
 		# self.__nn_params = []
@@ -349,9 +366,9 @@ class cl_templ_grp(object):
 	def scvo(self):
 		return self.__scvo
 
-	def find_pgg(self, gens_rec):
+	def find_pgg(self, gens_rec, b_blocking):
 		for ipgg, pgg in enumerate(self.__pgg_list):
-			if pgg.gens_matches(gens_rec):
+			if pgg.gens_matches(gens_rec, b_blocking):
 				return pgg, ipgg
 		return None, -1
 
@@ -366,7 +383,7 @@ class cl_templ_grp(object):
 		# self.__perm_ipgg_arr.append(ipgg)
 		return ipgg
 
-	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, eid, db_len_grps=None):
+	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, perm_result_blocked, eid, db_len_grps=None):
 		if self.__b_db_graduated:
 			b_add_valid = False
 			for one_gg in self.__gg_list[1:]:
@@ -378,6 +395,7 @@ class cl_templ_grp(object):
 		iperm = len(self.__perm_list)
 		self.__perm_list.append(preconds_rec)
 		self.__perm_result_list.append(perm_result_list)
+		self.__perm_result_blocked_list.append(perm_result_blocked)
 		self.__perm_vec_list.append(mr.make_vec(self.glv_dict, preconds_rec, self.__olen, self.glv_len))
 		self.__perm_eid_list.append(eid)
 		self.__perm_ipgg_arr.append([])
@@ -390,10 +408,10 @@ class cl_templ_grp(object):
 
 		for igens, one_gens in enumerate(gens_rec_list):
 			b_pgg_needs_graduating = False
-			perm_pgg, perm_ipgg = self.find_pgg(gens_rec=one_gens)
+			perm_pgg, perm_ipgg = self.find_pgg(gens_rec=one_gens, b_blocking=perm_result_blocked)
 			if not perm_pgg:
 				perm_pgg = cl_prov_gens_grp(b_from_load=False, igg=len(self.__pgg_list), gens_rec=one_gens,
-											templ_iperm=iperm, eid=eid)
+											b_blocking=perm_result_blocked, templ_iperm=iperm, eid=eid)
 				perm_ipgg = self.add_pgg(perm_pgg)
 			else:
 				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid, db_len_grps=db_len_grps, templ_len=self.__templ_len)
@@ -408,10 +426,11 @@ class cl_templ_grp(object):
 			if b_pgg_needs_graduating:
 				print('gg graduated in template:', self.__scvo, 'len:', self.__templ_len)
 				if len(self.__gg_list) == 0:
-					gg_null = cl_gens_grp(b_from_load = False, igg=0, gens_rec=[])
+					gg_null = cl_gens_grp(b_from_load = False, igg=0, gens_rec=[], b_blocking=False)
 					self.__gg_list = [gg_null]
-				gg = cl_gens_grp(b_from_load = False, igg=len(self.__gg_list), gens_rec=perm_pgg.get_gens_rec() )
- 				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list), self.__b_blocking)
+				gg = cl_gens_grp(b_from_load = False, igg=len(self.__gg_list),
+								 gens_rec=perm_pgg.get_gens_rec(), b_blocking=perm_pgg.get_b_blocking() )
+ 				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
 				self.__gg_list.append(gg)
 				b_needs_recalib = True
 				# self.__num_perm_adds_till_next_learn = 0
@@ -429,9 +448,6 @@ class cl_templ_grp(object):
 
 	def get_num_perms(self):
 		return len(self.__perm_pigg_arr)
-
-	def is_blocking(self):
-		return self.__b_blocking
 
 	def get_match_score(self, def_article_dict, preconds_rec, perm_phrases, event_result_list, event_step_id,
 						b_blocking, event_result_score_list,
@@ -464,7 +480,7 @@ class cl_templ_grp(object):
 				if gg_use_list[igg]:
 					one_gg.get_match_score(preconds_rec, perm_vec, perm_phrases, event_step_id,
 										   event_result_list, b_blocking,
-										   event_result_score_list, self.__templ_len, self.__scvo, self.__b_blocking,
+										   event_result_score_list, self.__templ_len, self.__scvo,
 										   result_confirmed_list, gg_confirmed_list,
 										   expected_but_not_found_list)
 			# 	one_gg.get_match_score(sess, self.__perm_vec_list, self.__perm_list, self.__olen, self.glv_len, self.glv_dict)
@@ -511,7 +527,7 @@ class cl_templ_grp(object):
 		if not self.__b_db_graduated:
 			return
 
-		print('printout for', ('blocking' if self.__b_blocking else 'normal'), 'template:', self.__scvo, 'len:', self.__templ_len)
+		print('printout for template:', self.__scvo, 'len:', self.__templ_len)
 		print('pggs in order:')
 		for ipgg, pgg in enumerate(self.__pgg_list):
 			pgg.print_gens_rec(ipgg, def_article_dict)
@@ -532,7 +548,9 @@ class cl_templ_grp(object):
 				out_str =  ''
 				out_str = els.print_phrase(rec, perm_result, out_str, def_article_dict)
 				print('\t', str(irec), out_str)
-			print('\tipgg:', self.__perm_ipgg_arr[irec], 'eid:', self.__perm_eid_list[irec])
+			print('\tipgg:', self.__perm_ipgg_arr[irec],
+				  ('result blocked' if self.__perm_result_blocked_list[irec] else ''),
+				  'eid:', self.__perm_eid_list[irec])
 			if self.__b_db_graduated:
 				print('assigned igg:', [[igg, gg.get_perm_match_val(irec)] for igg, gg in enumerate(self.__gg_list)])
 
@@ -549,6 +567,8 @@ class cl_templ_grp(object):
 															 gg.get_gens_rec())
 			b_success_found = False
 			for one_result in perm_result_list:
+				if self.__perm_result_blocked_list[perm_irec] != gg.get_b_blocking():
+					continue
 				if mr.match_rec_exact(generated_result[1:-1], one_result):
 					b_success_found = True
 					# igg_list.append(igg)
@@ -600,7 +620,7 @@ class cl_templ_grp(object):
 		valid_gg_list = []
 		for igg, gg in enumerate(self.__gg_list):
 			if gg.get_b_valid():
-				valid_gg_list.append(gg.get_cont_stats(templ_len, self.__scvo, self.__b_blocking, igg))
+				valid_gg_list.append(gg.get_cont_stats(templ_len, self.__scvo, igg))
 
 		return valid_gg_list
 
@@ -608,8 +628,7 @@ class cl_templ_grp(object):
 		db_csvr.writerow(['templ grp', 'confirmed', self.__b_confirmed, 'graduated', self.__b_db_graduated,
 						  'valid', self.__db_valid, 'num obj fields', self.__olen,
 						  'templ len', self.__templ_len, 'num pggs', len(self.__pgg_list),
-						  'num ggs', len(self.__gg_list), 'scvo', self.__scvo,
-						  'blocking', self.__b_blocking])
+						  'num ggs', len(self.__gg_list), 'scvo', self.__scvo])
 		for pgg in self.__pgg_list:
 			pgg.save(db_csvr)
 		for gg in self.__gg_list:
@@ -617,11 +636,10 @@ class cl_templ_grp(object):
 
 	def load(self, db_csvr, b_blocking):
 		_, _, sb_confirmed, _, sb_db_graduated, _, sdb_valid, _, solen, \
-			_, stempl_len, _, num_pggs, _, num_ggs, _, self.__scvo,\
-			_, sb_blocking, = next(db_csvr)
+			_, stempl_len, _, num_pggs, _, num_ggs, _, self.__scvo = next(db_csvr)
 		self.__b_confirmed, self.__b_db_graduated = sb_confirmed == 'True', sb_db_graduated == 'True'
 		self.__db_valid, self.__olen = sdb_valid == 'True', int(solen)
-		self.__templ_len, self.__b_blocking  = int(stempl_len), sb_blocking == 'True'
+		self.__templ_len  = int(stempl_len)
 
 		for ipgg in range(int(num_pggs)):
 			pgg = cl_prov_gens_grp(b_from_load=True, igg=ipgg)
@@ -632,7 +650,7 @@ class cl_templ_grp(object):
 			gg = cl_gens_grp(b_from_load=True, igg=igg)
 			gg.load(db_csvr)
 			if igg > 0:
-				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list), self.__b_blocking)
+				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
 			self.__gg_list.append(gg)
 
 class cl_len_grp(object):
@@ -659,9 +677,9 @@ class cl_len_grp(object):
 	def get_templ_grp_list(self):
 		return self.__templ_grp_list
 
-	def find_templ(self, scvo, b_blocking):
+	def find_templ(self, scvo):
 		for templ_grp in self.__templ_grp_list:
-			if templ_grp.scvo() == scvo and templ_grp.is_blocking() == b_blocking:
+			if templ_grp.scvo() == scvo:
 				return templ_grp
 		return None
 

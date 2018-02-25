@@ -1056,6 +1056,50 @@ template group was a mistake. It is a property of gens. Comment:
 
 Version of blocking not working because applied to templ group
 
+Also need to save db len grp information for each gg cont so that work can continue on a cont after lots of
+tries have already been made. Need an algorithm for deciding after each load, which gg cont it is worth
+continuing work on.
+
+Once there are many conts, need an algorithm for summing up and selecting a complete set of conts/rules
+
+Detailed short-term todo:
+
+Find all usages of find_templ which has now been changed
+check all calls to cl_gens_grp.get_gens_rec in case you also need to call get_b_blocking
+changed arguments for:
+    cl_len_grp.find_templ
+    cl_templ_grp.add_perm
+    cl_templ_grp.find_pgg
+    cl_prov_gens_grp.__init__
+    cl_gens_grp.__init__
+    cl_gens_grp.gens_matches
+    cl_gens_grp.init_for_learn
+    cl_gens_grp.get_match_score
+
+Checking in with the following comment:
+
+First signs of blocking working. No flexibility yet on conts.
+
+db grps file must contain:
+A line for the NULL cont
+The number of cont groups
+Each cont group with its db len grps
+We need a cont id
+Every cont needs a reference to its parent cont
+
+Each cont group must hold the text of the db len grps in raw format
+
+We need a fn that does not actually learn but just decides whether a child
+is significantly improving over its parent.
+Only these get to produce their own children
+
+fn should also consider if there is a class of perms that matched the parent, failed but simply did not match the child. In other words there are other alternative (not
+additional) conditions of failure or success
+
+
+special attention to 100% or nearly
+     but dont get fooled by low num of tests
+
 
 
 
