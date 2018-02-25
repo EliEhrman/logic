@@ -1,3 +1,6 @@
+"""
+module deprecated. May contain code from previous versions that has not been incorporated
+"""
 from __future__ import print_function
 import sys
 import math
@@ -122,7 +125,7 @@ def do_learn_rule_from_step(events_to_queue, event_step_id, story_db, event_phra
 
 						if not b_null_results and all(result_confirmed_list):
 							print('All results match confirmed ggs')
-							mr.report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr,
+							mr.report_confirmers(db_len_grps, False, gg_confirmed_list, el_set_arr,
 												 def_article_dict, glv_dict)
 							break
 						# if score >= 1.0:

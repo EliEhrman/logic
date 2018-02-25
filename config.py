@@ -68,6 +68,7 @@ c_gg_scoring_eid_thresh = 5 # length of eid set after learn for score to be vali
 c_gg_max_perms = 30
 c_negative_penalty = 5 # applied when an igg wins the score/len contest
 c_points_penalty_value = 2
+c_cd_epsilon = 0.01
 
 
 

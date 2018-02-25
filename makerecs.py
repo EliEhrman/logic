@@ -316,6 +316,20 @@ def make_rule_grp(glv_dict, rule_cluster, veclen):
 
 	return rule_phrase
 
+def does_match_rule(glv_dict, rule, perm):
+	b_match = True
+	for iel, el in enumerate(rule):
+		if el[0] != rules.rec_def_type.like:
+			continue
+		vec_rule = glv_dict[el[1]]
+		vec_perm = glv_dict[perm[iel][1]]
+		cd = sum([vec_perm[i] * rule_val for i, rule_val in enumerate(vec_rule)])
+		if cd < (el[2] - config.c_cd_epsilon):
+			b_match = False
+			break
+
+	return b_match
+
 
 def get_olen(scvo):
 	return scvo.count('o')
@@ -340,10 +354,11 @@ def make_vec(glv_dict, perm_rec, olen, glv_len):
 	return vec
 
 def find_gg_by_sig(db_len_grps, sig):
-	_, templ_len, templ_scvo, igg = sig
+	# Add blocking to the templ find here
+	_, templ_len, templ_scvo, igg, b_blocking = sig
 	for igrp, len_grp in enumerate(db_len_grps):
 		if len_grp.len() == templ_len:
-			found_templ = len_grp.find_templ(templ_scvo)
+			found_templ = len_grp.find_templ(templ_scvo, b_blocking)
 			return True, found_templ, igg
 
 	return False, None, None

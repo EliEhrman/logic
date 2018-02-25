@@ -16,12 +16,12 @@ def save_len_grps(db_len_grps, blocked_len_grps, gg_cont_list, i_gg_cont):
 	db_fh = open(db_fn, 'wb')
 	db_csvr = csv.writer(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
 	cont_list_size = 0 if gg_cont_list == None else len(gg_cont_list)
-	db_csvr.writerow(['Num gg cont rules', cont_list_size, c_len_grps_version])
+	db_csvr.writerow(['Num gg cont rules', cont_list_size, 'version', c_len_grps_version])
 	for gg_cont in gg_cont_list:
 		gg_cont.save(db_csvr)
 	def save_a_len_grps(which_len_grps, i_gg_cont, b_normal):
 		title = 'Num len grps' if b_normal else 'Num blocking len grps'
-		db_csvr.writerow([title, len(which_len_grps), i_gg_cont, c_len_grps_version])
+		db_csvr.writerow([title, len(which_len_grps), 'gg cont id', i_gg_cont, 'version', c_len_grps_version])
 		for len_grp in which_len_grps:
 			len_grp.save(db_csvr)
 	save_a_len_grps(db_len_grps, i_gg_cont, b_normal=True)
@@ -36,14 +36,14 @@ def load_len_grps():
 	try:
 		db_fh = open(db_fn, 'rb')
 		db_csvr = csv.reader(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
-		_, gg_cont_list_size, version_str = next(db_csvr)
+		_, gg_cont_list_size, _, version_str = next(db_csvr)
 		for i_cont in range(int(gg_cont_list_size)):
 			gg_cont = addlearn.cl_add_gg(b_from_load=True)
 			gg_cont.load(db_csvr)
 			gg_cont_list.append(gg_cont)
 
 		def load_a_len_grps(which_len_grps, b_normal):
-			_, num_len_grps, i_gg_cont, version_str = next(db_csvr)
+			_, num_len_grps, _, i_gg_cont, _, version_str = next(db_csvr)
 			for i_len_grp in range(int(num_len_grps)):
 				len_grp = clrecgrp.cl_len_grp(b_from_load = True)
 				len_grp.load(db_csvr, b_blocking= not b_normal)
@@ -57,7 +57,7 @@ def load_len_grps():
 	# except:
 		print('Could not open db_len_grps file! Starting from scratch.')
 
-	return db_len_grps, blocked_len_grps, gg_cont_list, i_gg_cont
+	return db_len_grps, blocked_len_grps, gg_cont_list, int(i_gg_cont)
 
 def learn_more(gg_cont_list, i_gg_cont, db_len_grps):
 	gg_cont_list, ibest = learn.learn_more(	gg_cont_list, i_gg_cont, db_len_grps, adv_config.c_cont_score_thresh,

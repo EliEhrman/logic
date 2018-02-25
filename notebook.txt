@@ -1036,3 +1036,26 @@ files can be places in a sub dir. The new code is growing in addlearn.py
 Checking in with the comment:
 First version of step by step working.
 
+Will now start working one making blocking rules work with a flag on the gg.
+
+However, first I need to make the load of gg cont working. That's not happened yet.
+
+Need to take care that penalized gg's to not generate gg conts
+
+Look at a gg cont score relative to his parent. If he went down, but not a block, then don't give
+him a cont. However, it might be important to be re-scoring his parent with the same data to be fair.
+
+Also, need to work on penalities using eid sets
+
+Show the values you are saving.
+
+Sunday 25th February
+
+Checking in just because I now have to make extensive changes. Making the blocking a property of the
+template group was a mistake. It is a property of gens. Comment:
+
+Version of blocking not working because applied to templ group
+
+
+
+

@@ -26,7 +26,7 @@ def learn_more(gg_cont_list, i_gg_cont, db_len_grps, score_thresh, score_min, mi
 	# new_gg_cont_list = []
 	b_pick_new = False
 	for gg_stats in valid_ggs:
-		templ_len, templ_scvo, igg, num_successes, num_tests, rule_str, gg = gg_stats
+		templ_len, templ_scvo, b_blocking, igg, num_successes, num_tests, rule_str, gg = gg_stats
 		if num_tests < min_tests:
 			continue
 		score = num_successes / num_tests
@@ -35,7 +35,7 @@ def learn_more(gg_cont_list, i_gg_cont, db_len_grps, score_thresh, score_min, mi
 		b_pick_new = True
 		gg_cont_list.append(addlearn.cl_add_gg(	b_from_load=False, templ_len=templ_len, scvo=templ_scvo,
 												gens_rec=gg.get_gens_rec(), score=score, rule_str=rule_str,
-												level=level))
+												level=level, b_blocking=b_blocking))
 
 	best_gg = None
 	best_score = 0.0
@@ -54,12 +54,16 @@ def learn_more(gg_cont_list, i_gg_cont, db_len_grps, score_thresh, score_min, mi
 
 	return gg_cont_list, ibest
 
+# modify gg, all its creation paths, save, load and gg cont creation
+
 def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, perm_phrases_list,
-						step_results, pcvo_list, expected_but_not_found_list, b_blocking, gg_confirmed_list,
+						step_results, pcvo_list, perm_results_blocked_list,
+						 expected_but_not_found_list, b_blocking_depr, gg_confirmed_list,
 						b_null_results, result_confirmed_list, event_result_score_list,
 						db_len_grps, sess, el_set_arr, glv_dict, def_article_dict):
 	if not b_null_results and all(result_confirmed_list):
 		return
+	b_blocking = perm_results_blocked_list[iperm]
 	comb_len = len(perm_preconds_list[iperm])
 	print('Evaluating the following perm', ('for block' if b_blocking else ''), ':')
 	out_str = ''
@@ -74,7 +78,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 	for igrp, len_grp in enumerate(db_len_grps):
 		if len_grp.len() == comb_len:
 			i_len_grp = igrp
-			perm_templ = len_grp.find_templ(pcvo_list[iperm])
+			perm_templ = len_grp.find_templ(pcvo_list[iperm], b_blocking=b_blocking)
 			if not perm_templ:
 				if b_null_results:
 					continue
@@ -91,7 +95,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 				event_result_score_list = \
 					perm_templ.get_match_score(	def_article_dict, perm_preconds_list[iperm],
 												perm_phrases_list[iperm],
-												step_results, event_step_id, event_result_score_list,
+												step_results, event_step_id, b_blocking, event_result_score_list,
 												result_confirmed_list, expected_but_not_found_list,
 												gg_confirmed_list)
 
@@ -121,7 +125,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 			db_len_grps.append(cl_len_grp(b_from_load=False, init_len=comb_len, first_scvo=pcvo_list[iperm],
 										  preconds_rec=perm_preconds_list[iperm],
 										  gens_rec_list=perm_gens_list[iperm], event_result_list=step_results,
-										  eid=event_step_id))
+										  eid=event_step_id, b_blocking=b_blocking))
 		# end of one perm in all_perms
 
 def learn_one_story_step(story_db, step_phrases, cascade_els, step_results, def_article_dict,
@@ -223,14 +227,16 @@ def learn_one_story_step(story_db, step_phrases, cascade_els, step_results, def_
 	return
 
 def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_src, def_article_dict,
-						 db_len_grps, el_set_arr, glv_dict, sess, event_step_id, expected_but_not_found_list,
-						 level_depr, gg_cont, b_blocking):
+						  db_len_grps, el_set_arr, glv_dict, sess, event_step_id, expected_but_not_found_list,
+						  level_depr, gg_cont, b_blocking_depr):
 	pcvo_blist = []
 	perm_preconds_blist = []
 	perm_phrases_blist = []
 	perm_gens_blist = []
+	perm_results_blocked_blist = []
 
 	step_results_list = [step_results_src]
+	step_results_blocked_list = [False]
 	step_phrases_list = [step_phrases_src]
 
 	if gg_cont == None:
@@ -244,9 +250,11 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 		perm_phrases_alist = []
 		perm_gens_alist = []
 		perm_results_alist = []
+		perm_results_blocked_alist = []
 
 		for i_prev_perm, step_phrases in enumerate(step_phrases_list):
 			step_results = step_results_list[i_prev_perm]
+			step_results_blocked = step_results_blocked_list[i_prev_perm]
 			event_result_score_list = [[] for _ in step_results]
 			result_confirmed_list = [False for _ in step_results]
 			gg_confirmed_list = [[] for _ in step_results]
@@ -311,18 +319,23 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 					perm_phrases_alist += perm_phrases_list
 					perm_gens_alist += perm_gens_list
 				else:
-					match_list, match_gens_list = \
-						gg_cont.filter(perm_gens_list, perm_preconds_list, perm_phrases_list,
+					# match_list, match_gens_list = \
+					match_list, result_list, normal_not_blocking_list = \
+						gg_cont.filter(glv_dict, perm_gens_list, perm_preconds_list, perm_phrases_list,
 										step_results, pcvo_list, level)
 					for imatch, one_match in enumerate(match_list):
 						pcvo_alist.append(pcvo_list[one_match])
 						perm_preconds_alist.append(perm_preconds_list[one_match])
 						perm_phrases_alist.append(perm_phrases_list[one_match])
 						perm_gens_alist.append(perm_gens_list[one_match])
-						if level_loop_range > 1 and level == level_loop_range - 2:
-							perm_results_alist.append([] if match_gens_list[imatch] == -1
-													  else [step_results[match_gens_list[imatch]]])
+						if level_loop_range > 1 and level == (level_loop_range - 2):
+							perm_results_alist.append([result_list[imatch]])
+							perm_results_blocked_alist.append(not normal_not_blocking_list[imatch])
 			# end loop of one_comb over all_combs
+			# if the results haven't changed, we need to copy over the results of the last level loop
+			if not (level_loop_range > 1 and level == (level_loop_range - 2)) and len(pcvo_alist) > 0:
+				perm_results_alist.append([step_results]*len(pcvo_alist))
+				perm_results_blocked_alist += [step_results_blocked]*len(pcvo_alist)
 		# end loop over all step phrases alternatives
 
 		if level == level_loop_range - 1:
@@ -330,46 +343,50 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 			perm_preconds_blist = perm_preconds_alist
 			perm_phrases_blist = perm_phrases_alist
 			perm_gens_blist = perm_gens_alist
+			perm_results_blocked_blist = perm_results_blocked_alist
+
 		else:
 			step_phrases_list = copy.deepcopy(perm_phrases_alist)
-			if level_loop_range > 1 and level == level_loop_range - 2:
-				step_results_list =  copy.deepcopy(perm_results_alist)
+			# if level_loop_range > 1 and level == (level_loop_range - 2):
+			step_results_list =  copy.deepcopy(perm_results_alist)
+			step_results_blocked_list = copy.deepcopy(perm_results_blocked_alist)
 	# end of level loop
 	for iperm, _ in enumerate(pcvo_blist):
 		process_one_perm(perm_gens_blist, iperm, event_step_id, perm_preconds_blist, perm_phrases_blist,
-						 step_results, pcvo_blist, expected_but_not_found_list, b_blocking, gg_confirmed_list,
+						 step_results, pcvo_blist, perm_results_blocked_blist,
+						 expected_but_not_found_list, b_blocking_depr, gg_confirmed_list,
 						 b_null_results, result_confirmed_list, event_result_score_list,
 						 db_len_grps, sess, el_set_arr, glv_dict, def_article_dict)
 	if b_null_results:
 		# Shouldn't be able to enter the following loop, but we'll get out anyway
 		return
 	for i_event_result, event_result_score in enumerate(event_result_score_list):
-		top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg = -1.0, -1, 1000, '', 0
+		top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg, b_top_blocking = -1.0, -1, 1000, '', 0, None
 		participants = set()
 		random.shuffle(event_result_score)
 		for iresult, one_score in enumerate(event_result_score):
-			print(('Blocking' if b_blocking else 'Normal'), 'event result:', one_score)
-			templ_score, templ_len, templ_scvo, templ_igg = one_score
-			participants.add((templ_len, templ_scvo, templ_igg))
+			templ_score, templ_len, templ_scvo, templ_igg, b_result_blocking = one_score
+			print(('Blocking' if b_result_blocking else 'Normal'), 'event result:', one_score)
+			participants.add((templ_len, templ_scvo, templ_igg, b_result_blocking))
 			# if templ_len < top_score_len:
 			if templ_score > top_score or (templ_score == top_score and templ_len < top_score_len):
-				top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg = \
-					templ_score, iresult, templ_len, templ_scvo, templ_igg
+				top_score, i_top_score, top_score_len, top_score_scvo, top_score_igg, b_top_blocking = \
+					templ_score, iresult, templ_len, templ_scvo, templ_igg, b_result_blocking
 
 	if i_top_score > -1:
 		for igrp, len_grp in enumerate(db_len_grps):
 			if len_grp.len() == top_score_len:
 				print('Successful match using templ len, scvo, igg, score:', top_score_len, top_score_scvo,
-					  top_score_igg, top_score, 'For event result', step_results[i_event_result])
-				top_score_templ = len_grp.find_templ(top_score_scvo)
+					  top_score_igg, top_score, b_top_blocking, 'For event result', step_results[i_event_result])
+				top_score_templ = len_grp.find_templ(top_score_scvo, b_top_blocking)
 				top_score_templ.add_point(top_score_igg)
 				break
 
-		winner = (top_score_len, top_score_scvo, top_score_igg)
+		winner = (top_score_len, top_score_scvo, top_score_igg, b_top_blocking)
 		for one_particp in participants:
 			for igrp, len_grp in enumerate(db_len_grps):
 				if len_grp.len() == one_particp[0]:
-					particp_templ = len_grp.find_templ(one_particp[1])
+					particp_templ = len_grp.find_templ(one_particp[1], one_particp[3])
 					particp_templ.apply_penalty(one_particp[2], -5 if one_particp == winner else 1)
 					break
 
