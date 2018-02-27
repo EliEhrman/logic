@@ -13,7 +13,7 @@ import adv_config
 
 db_fnt = '~/tmp/advlengrps.txt'
 
-c_len_grps_version = 3
+c_len_grps_version = 4
 
 def save_db_status(db_len_grps, db_cont_mgr):
 	db_fn = expanduser(db_fnt)
@@ -113,20 +113,51 @@ def sel_cont_and_len_grps(db_cont_mgr):
 	return db_len_grps, ibest
 
 def create_new_conts(db_cont_mgr, db_len_grps, i_active_cont):
-	return db_cont_mgr.create_new_conts(db_len_grps, i_active_cont, adv_config.c_cont_score_thresh,
-										adv_config.c_cont_score_min, adv_config.c_cont_min_tests)
+	b_keep_working = db_cont_mgr.create_new_conts(	db_len_grps, i_active_cont, adv_config.c_cont_score_thresh,
+													adv_config.c_cont_score_min, adv_config.c_cont_min_tests)
+	return b_keep_working
 
 
 def do_learn_rule_from_step(event_as_decided, event_step_id, story_db, one_decide, seed,
 							def_article_dict, db_len_grps, sess, el_set_arr, glv_dict,
-							els_sets, cascade_dict, gg_cont):
+							els_sets, cascade_dict, gg_cont, db_cont_mgr):
 	expected_but_not_found_list = []
 	b_blocking = False
 	# story_els_set = utils.combine_sets([els_sets.objects, els_sets.places, els_sets.names])
 	# cascade_els = story_els_set[2]
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
 
-	learn.learn_one_story_step2(story_db, [one_decide], cascade_els, event_as_decided, def_article_dict,
-							 db_len_grps, el_set_arr, glv_dict, sess, event_step_id,
-							 expected_but_not_found_list,
-							 0, gg_cont, b_blocking)
+	cont_status = gg_cont.get_status()
+	b_std_learn = True
+	cont_use = gg_cont
+	if cont_status == addlearn.cl_cont_mgr.status.untried:
+		cont_parent = db_cont_mgr.get_cont(gg_cont.get_parent_id())
+		if not cont_parent.is_null():
+			b_std_learn = False
+			b_first_run = True
+
+	while True:
+
+		stats = learn.learn_one_story_step2(story_db, [one_decide], cascade_els, event_as_decided, def_article_dict,
+											db_len_grps, el_set_arr, glv_dict, sess, event_step_id,
+											expected_but_not_found_list,
+											0, cont_use, b_blocking, b_test_rule=not b_std_learn)
+		if not b_std_learn:
+			if b_first_run:
+				cont_use = cont_parent
+				b_first_run = False
+				child_stats = stats
+			else:
+				params = gg_cont.get_status_params()
+				if stats[0]:
+					if not stats[1]:
+						if child_stats[0] and gg_cont.is_blocking() and child_stats[1]:
+							gg_cont.set_status_params([params[0] + 1.0, params[1] + 1.0])
+						elif not gg_cont.is_blocking() and not child_stats[0]:
+							gg_cont.set_status_params([params[0] + 1.0, params[1] + 1.0])
+						else:
+							gg_cont.set_status_params([params[0], params[1] + 1.0])
+				break
+		else:
+			break
+

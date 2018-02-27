@@ -200,7 +200,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				if event_as_decided != [] or (random.random() > (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1]))):
 					adv_learn.do_learn_rule_from_step(	event_as_decided, event_step_id, story_db, one_decide, '',
 														def_article_dict, db_len_grps, sess,
-														el_set_arr, glv_dict, els_sets, cascade_dict, gg_cont)
+														el_set_arr, glv_dict, els_sets, cascade_dict,
+														gg_cont, db_cont_mgr)
 
 
 			elif story_loop_stage == e_story_loop_stage.state1:
@@ -231,8 +232,10 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 
 		# end of loop over story steps
 		if i_one_story % adv_config.c_save_every == 0:
-			adv_learn.create_new_conts(db_cont_mgr, db_len_grps, i_gg_cont)
+			b_keep_working = adv_learn.create_new_conts(db_cont_mgr, db_len_grps, i_gg_cont)
 			adv_learn.save_db_status(db_len_grps, db_cont_mgr)
+			if not b_keep_working:
+				break
 
 	# end of loop over stories
 	sess.close()

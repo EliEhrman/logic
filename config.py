@@ -71,7 +71,13 @@ c_gg_max_perms = 30
 c_negative_penalty = 5 # applied when an igg wins the score/len contest
 c_points_penalty_value = 2
 c_cd_epsilon = 0.01
-
+c_expands_min_tries = 30
+c_expands_score_thresh = 0.8
+c_expands_score_min_thresh = 0.3
+c_select_cont_review_null_prob = 0.2
+c_select_cont_random_prob = 0.1
+c_select_cont_score_bonus = 0.2
+c_select_cont_untried_bonus = 1.0
 
 
 # logger = None

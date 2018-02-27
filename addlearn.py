@@ -1,4 +1,5 @@
 import random
+import config
 import makerecs as mr
 
 class cl_add_gg(object):
@@ -24,6 +25,9 @@ class cl_add_gg(object):
 		self.__grp_data = []
 		self.__id = cont_id
 		self.__parent_id = parent_id
+		self.__status = ''
+		self.__status_params = []
+
 
 	def update_stats(self, score, rule_str ):
 		self.__initial_score = score
@@ -37,6 +41,9 @@ class cl_add_gg(object):
 
 	def is_active(self):
 		return self.__b_active
+
+	def is_blocking(self):
+		return self.__b_blocking
 
 	def set_active(self, b_active):
 		self.__b_active = b_active
@@ -59,16 +66,30 @@ class cl_add_gg(object):
 	def get_parent_id(self):
 		return self.__parent_id
 
+	def get_status(self):
+		return self.__status
+
+	def set_status(self, new_status):
+		self.__status = new_status
+
+	def get_status_params(self):
+		return self.__status_params
+
+	def set_status_params(self, new_params):
+		self.__status_params = new_params
+
 	def save(self, db_csvr):
 		if self.__b_null_cont:
 			db_csvr.writerow(['gg null cont rule', 'active', self.__b_active, 'num grp data rows', self.__num_rows_grp_data])
 		else:
-			db_csvr.writerow([	'gg cont rule', 'active', self.__b_active, 'num grp data rows', self.__num_rows_grp_data,
-								'templ len', self.__templ_len, 'scvo', self.__scvo,
-								'gens rec', mr.gen_rec_str(self.__gens_rec	),
-								'score', self.__initial_score, 'rule str', self.__rule_str,
-								'level', self.__level, 'is blocking', self.__b_blocking,
-								'id', self.__id, 'parent id', self.__parent_id])
+			db_csvr.writerow([	'gg cont rule', 'active:', self.__b_active, 'num grp data rows:', self.__num_rows_grp_data,
+								'templ len:', self.__templ_len, 'scvo:', self.__scvo,
+								'gens rec:', mr.gen_rec_str(self.__gens_rec	),
+								'score:', self.__initial_score, 'rule str:', self.__rule_str,
+								'level:', self.__level, 'is blocking:', self.__b_blocking,
+								'id:', self.__id, 'parent id:', self.__parent_id,
+								'status:', self.__status,
+								'status params:', '|'.join([str(v) for v in self.__status_params])])
 		if not self.__b_active and self.__num_rows_grp_data:
 			for row in self.__grp_data:
 				db_csvr.writerow(row)
@@ -80,7 +101,8 @@ class cl_add_gg(object):
 			_, _, sb_active, _, s_num_rows_grp_data = next(db_csvr)
 		else:
 			_,  _, sb_active, _, s_num_rows_grp_data, _, s_templ_len, _, self.__scvo, _, s_gens_rec, _, sscore, \
-			_, s_rule_str, _, slevel, _, sb_blocking, _, sid, _, s_parent_id = next(db_csvr)
+			_, s_rule_str, _, slevel, _, sb_blocking, _, sid, _, s_parent_id, \
+			_, self.__status, _, s_status_params = next(db_csvr)
 			self.__templ_len, self.__initial_score, self.__level = int(s_templ_len), float(sscore), int(slevel)
 			self.__gens_rec = mr.extract_rec_from_str(s_gens_rec)
 			self.__rule_str = s_rule_str
@@ -88,6 +110,8 @@ class cl_add_gg(object):
 			self.__b_blocking = sb_blocking == 'True'
 			self.__id, self.__parent_id = int(sid), int(s_parent_id)
 			self.__b_null_cont = False
+			l_status_params = s_status_params.split('|')
+			self.__status_params = [float(sstatus) for sstatus in l_status_params]
 
 		self.__b_active, self.__num_rows_grp_data = sb_active == 'True', int(s_num_rows_grp_data)
 		self.__grp_data = []
@@ -135,10 +159,22 @@ class cl_add_gg(object):
 # 	return
 
 class cl_cont_mgr(object):
+	class Enum(set):
+		def __getattr__(self, name):
+			if name in self:
+				return name
+			raise AttributeError
+
+	# The difference between expands and perfect or blocks and perfect_blocks is that
+	# one is through tries and the other is just a perfect score on the gg score
+	status = Enum(['untried', 'initial', 'perfect', 'expands', 'perfect_block', 'blocks',
+				   'partial_expand', 'partial_block', 'irrelevant'])
+
 	def __init__(self):
 		null_cont = cl_add_gg(b_from_load=False)
 		self.__cont_list = [null_cont]
 		self.__max_cont_id = 0
+		print(self.status.untried)
 		return
 
 	def add_cont(self, gg_cont):
@@ -162,34 +198,58 @@ class cl_cont_mgr(object):
 		return
 
 	def select_cont(self):
-		best_gg = self.__cont_list[0]
+		best_cc = self.__cont_list[0]
 		best_score = 0.0
 		ibest = 0
+		b_has_best_score_bonus = False
 		if len(self.__cont_list) > 1:
-			for igg, gg in enumerate(self.__cont_list):
-				if igg == 0:
-					if random.random() < 0.2/(float(len(self.__cont_list))):
+			for icc, ccont in enumerate(self.__cont_list):
+				if icc == 0:
+					if random.random() < config.c_select_cont_review_null_prob:
 						break
 					else:
 						continue
-				if gg.get_initial_score() > best_score:
-					best_gg = gg
-					best_score = gg.get_initial_score()
-					ibest = igg
+				status = ccont.get_status()
+				params = ccont.get_status_params()
+				if status == self.status.perfect or status == self.status.perfect_block \
+						or status == self.status.irrelevant or status == self.status.blocks \
+						or status == self.status.expands:
+					continue
+				score_bonus = 0.0
+				untried_bonus = 0.0
+				if status == self.status.initial or status == self.status.partial_expand \
+						or status == self.status.partial_block:
+					score_bonus += params[0]
+					ccont.set_status_params([params[0] + config.c_select_cont_score_bonus, params[1]])
+				if status == self.status.untried:
+					untried_bonus = random.random() * config.c_select_cont_untried_bonus
+				if random.random() < config.c_select_cont_random_prob:
+					best_cc = ccont
+					ibest = icc
+					break
+				total_score = ccont.get_initial_score() + score_bonus + untried_bonus
+				if total_score > best_score:
+					best_cc = ccont
+					best_score = total_score
+					ibest = icc
+					if score_bonus > 0.0:
+						b_has_best_score_bonus = True
 
-		for igg, gg in enumerate(self.__cont_list):
-			if igg == ibest:
-				gg.set_active(True)
+		for icc, ccont in enumerate(self.__cont_list):
+			if icc == ibest:
+				ccont.set_active(True)
+				if b_has_best_score_bonus:
+					params = ccont.get_status_params()
+					ccont.set_status_params([0.0, params[1]])
 			else:
-				gg.set_active(False)
+				ccont.set_active(False)
 
-		return best_gg, ibest
+		return best_cc, ibest
 
 	def create_new_conts(self, db_len_grps, i_active_cont, score_thresh, score_min, min_tests):
 		parent_cont = self.__cont_list[i_active_cont]
 		assert parent_cont.is_active()
 		level = parent_cont.get_level() + 1
-		parent_with_new_child_list = []
 
 		valid_ggs = []
 		for len_grp in db_len_grps:
@@ -200,7 +260,7 @@ class cl_cont_mgr(object):
 			if num_tests < min_tests: # for now, don't update rule
 				continue
 			score = num_successes / num_tests
-			if score < score_min or score > score_thresh:
+			if score < score_min: #  or score > score_thresh:
 				continue
 			# b_pick_new = True
 			if cont_id >= 0:
@@ -210,8 +270,32 @@ class cl_cont_mgr(object):
 								gens_rec=gg.get_gens_rec(), score=score, rule_str=rule_str,
 								level=level, b_blocking=b_blocking, parent_id=parent_cont.get_id(),
 								gg_src=gg)
+				new_cont = self.get_cont(self.__max_cont_id)
+				if score > 1.0 - config.c_cd_epsilon:
+					new_cont.set_status(self.status.perfect_block if b_blocking else self.status.perfect)
+				elif parent_cont.is_null():
+					new_cont.set_status(self.status.initial)
+				else:
+					new_cont.set_status(self.status.untried)
+				new_cont.set_status_params([0.0, 0.0])
 
-		return b_pick_new
+		status = parent_cont.get_status()
+		params = parent_cont.get_status_params()
+		if status == self.status.untried:
+			num_hits, num_tries = params
+			if num_tries > config.c_expands_min_tries:
+				expands_score = num_hits / num_tries
+				if expands_score > config.c_expands_score_thresh:
+					parent_cont.set_status(self.status.blocks if parent_cont.is_blocking() else self.status.expands)
+				elif  expands_score < config.c_expands_score_min_thresh:
+					parent_cont.set_status(self.status.irrelevant)
+				else:
+					parent_cont.set_status(self.status.partial_block if parent_cont.is_blocking() else self.status.partial_expand)
+				parent_cont.set_status_params([0.0, 0.0])
+				return False
+
+		# return True means I see no reason to stop learning from this cont
+		return True
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['db cont mgr', 'num conts', len(self.__cont_list), 'max cont id', self.__max_cont_id])

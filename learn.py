@@ -288,6 +288,12 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 		level_loop_range = gg_cont.get_level() + 1
 
 	for level in range(level_loop_range):
+		if b_test_rule and level == (level_loop_range - 1):
+			if step_phrases_list == []:
+				return [False, False]
+			elif not all(step_results_blocked_list):
+				return [True, True]
+			return [True, False]
 		pcvo_alist = []
 		perm_preconds_alist = []
 		perm_phrases_alist = []
@@ -445,5 +451,5 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 					particp_templ.apply_penalty(one_particp[2], -5 if one_particp == winner else 1)
 					break
 
-	return
+	return []
 

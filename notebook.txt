@@ -1117,3 +1117,11 @@ Checking in with the following comment:
 
 Blocking with multilevel works. Still need to work on selecting conts to cont.
 
+I now plan to add a comparison between parent and child conts. Each calls learn step without actual learning
+and sees whether the child improves on the parent.
+
+Wednesday 28th Feb
+
+Checking in with the following comment:
+
+Blocking and multilevel work. All rules of adv decision phase discovered.
