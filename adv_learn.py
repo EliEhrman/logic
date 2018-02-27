@@ -1,69 +1,120 @@
+import sys
 import csv
 from os.path import expanduser
+from StringIO import StringIO
+import copy
 
 import utils
 import learn
 import clrecgrp
 import addlearn
+import dmlearn
 import adv_config
 
 db_fnt = '~/tmp/advlengrps.txt'
 
-c_len_grps_version = 2
+c_len_grps_version = 3
 
-def save_len_grps(db_len_grps, blocked_len_grps, gg_cont_list, i_gg_cont):
+def save_db_status(db_len_grps, db_cont_mgr):
 	db_fn = expanduser(db_fnt)
 	db_fh = open(db_fn, 'wb')
 	db_csvr = csv.writer(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
-	cont_list_size = 0 if gg_cont_list == None else len(gg_cont_list)
-	db_csvr.writerow(['Num gg cont rules', cont_list_size, 'version', c_len_grps_version])
-	for gg_cont in gg_cont_list:
-		gg_cont.save(db_csvr)
-	def save_a_len_grps(which_len_grps, i_gg_cont, b_normal):
-		title = 'Num len grps' if b_normal else 'Num blocking len grps'
-		db_csvr.writerow([title, len(which_len_grps), 'gg cont id', i_gg_cont, 'version', c_len_grps_version])
+	def save_a_len_grps(which_len_grps):
+		# title = 'Num len grps' if b_normal else 'Num blocking len grps'
+		db_csvr.writerow(['Num len grps', len(which_len_grps)])
 		for len_grp in which_len_grps:
 			len_grp.save(db_csvr)
-	save_a_len_grps(db_len_grps, i_gg_cont, b_normal=True)
-	save_a_len_grps(blocked_len_grps, i_gg_cont, b_normal=False)
+	# cont_list_size = 0 if gg_cont_list == None else len(gg_cont_list)
+	db_csvr.writerow(['version', c_len_grps_version])
+	db_cont_mgr.save(db_csvr)
+	for cont in db_cont_mgr.get_cont_list():
+		if cont.is_active():
+			num_data_rows = 1
+			for len_grp in db_len_grps:
+				num_data_rows += len_grp.get_num_data_rows()
+			cont.set_num_rows_grp_data(num_data_rows)
+		cont.save(db_csvr)
+		if cont.is_active():
+			save_a_len_grps(db_len_grps)
+	# save_a_len_grps(blocked_len_grps, i_gg_cont, b_normal=False)
 
 	db_fh.close()
 
-def load_len_grps():
+def load_cont_mgr():
 	db_fn = expanduser(db_fnt)
 	i_gg_cont = -1
-	db_len_grps, blocked_len_grps, gg_cont_list = [], [], []
+	# db_len_grps, blocked_len_grps, gg_cont_list = [], [], []
+	db_cont_mgr = addlearn.cl_cont_mgr()
 	try:
 	# if True:
-		db_fh = open(db_fn, 'rb')
-		db_csvr = csv.reader(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
-		_, gg_cont_list_size, _, version_str = next(db_csvr)
-		for i_cont in range(int(gg_cont_list_size)):
-			gg_cont = addlearn.cl_add_gg(b_from_load=True)
-			gg_cont.load(db_csvr)
-			gg_cont_list.append(gg_cont)
+		with open(db_fn, 'rb') as db_fh:
+			db_csvr = csv.reader(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+			_, version_str = next(db_csvr)
+			if int(version_str) != c_len_grps_version:
+				raise ValueError('db len grps file version cannot be used. Starting from scratch')
+				# return db_len_grps, blocked_len_grps, gg_cont_list, int(i_gg_cont)
 
-		def load_a_len_grps(which_len_grps, b_normal):
-			_, num_len_grps, _, i_gg_cont, _, version_str = next(db_csvr)
-			for i_len_grp in range(int(num_len_grps)):
-				len_grp = clrecgrp.cl_len_grp(b_from_load = True)
-				len_grp.load(db_csvr, b_blocking= not b_normal)
-				which_len_grps.append(len_grp)
-			return int(version_str), i_gg_cont
-		version, _ = load_a_len_grps(db_len_grps, b_normal=True)
-		if version > 1:
-			_, i_gg_cont = load_a_len_grps(blocked_len_grps, b_normal=False)
+			# _, gg_cont_list_size = next(db_csvr)
+			gg_cont_list_size = db_cont_mgr.load(db_csvr)
+			for i_cont in range(gg_cont_list_size):
+				gg_cont = addlearn.cl_add_gg(b_from_load=True)
+				gg_cont.load(db_csvr, b_null=(i_cont==0))
+				db_cont_mgr.add_cont(gg_cont)
 
+			# def load_a_len_grps(which_len_grps, b_normal):
+
+			# version, _ = load_a_len_grps(db_len_grps, b_normal=True)
+		# if version > 1:
+		# 	_, i_gg_cont = load_a_len_grps(blocked_len_grps, b_normal=False)
+
+	except ValueError as verr:
+		print(verr.args)
 	except IOError:
 	# except:
 		print('Could not open db_len_grps file! Starting from scratch.')
+	except:
+		print "Unexpected error:", sys.exc_info()[0]
+		raise
 
-	return db_len_grps, blocked_len_grps, gg_cont_list, int(i_gg_cont)
+	return db_cont_mgr
 
-def learn_more(gg_cont_list, i_gg_cont, db_len_grps):
-	gg_cont_list, ibest = learn.learn_more(	gg_cont_list, i_gg_cont, db_len_grps, adv_config.c_cont_score_thresh,
-								adv_config.c_cont_score_min, adv_config.c_cont_min_tests)
-	return gg_cont_list, ibest
+def load_len_grps(grp_data_list, db_len_grps):
+	assert  db_len_grps == []
+	data_list = copy.deepcopy(grp_data_list)
+	# f = StringIO(s_grp_data)
+	# db_csvr = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+	# db_len_grps = []
+	_, num_len_grps = data_list.pop(0)
+	for i_len_grp in range(int(num_len_grps)):
+		len_grp = clrecgrp.cl_len_grp(b_from_load=True)
+		len_grp.load(data_list)
+		db_len_grps.append(len_grp)
+	return db_len_grps
+
+
+# def learn_more(gg_cont_list, i_gg_cont, db_len_grps):
+def sel_cont_and_len_grps(db_cont_mgr):
+	db_len_grps = []
+	sel_cont, ibest = db_cont_mgr.select_cont()
+	grp_data = sel_cont.get_grp_data()
+	# if there is no grp data return and db_len_grps will be empty
+	# if there is data but no cont can be created, just keep learning with what we have
+	# if new conts are created, select from all of them again
+	if grp_data != []:
+		load_len_grps(grp_data, db_len_grps)
+	# if db_len_grps != []:
+	# 	dmlearn.learn_reset()
+	# 	del db_len_grps[:]
+
+
+	# gg_cont_list, ibest = learn.learn_more(	gg_cont_list, i_gg_cont, db_len_grps, adv_config.c_cont_score_thresh,
+	# 						adv_config.c_cont_score_min, adv_config.c_cont_min_tests)
+	# return gg_cont_list, ibest
+	return db_len_grps, ibest
+
+def create_new_conts(db_cont_mgr, db_len_grps, i_active_cont):
+	return db_cont_mgr.create_new_conts(db_len_grps, i_active_cont, adv_config.c_cont_score_thresh,
+										adv_config.c_cont_score_min, adv_config.c_cont_min_tests)
 
 
 def do_learn_rule_from_step(event_as_decided, event_step_id, story_db, one_decide, seed,

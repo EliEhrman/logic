@@ -6,6 +6,7 @@ import numpy as np
 # import itertools
 import csv
 from StringIO import StringIO
+import copy
 
 import config
 import rules
@@ -377,3 +378,89 @@ def report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr, def_article_di
 			gens_str = ''
 			gens_str = els.print_phrase(gens_rec, gens_rec, gens_str, def_article_dict, el_set_arr, glv_dict)
 			print('PRECONDS:', out_str, '\nGENS:', gens_str)
+
+
+
+def make_scvo_arr(scvo):
+	core = str(scvo)
+	if scvo[0:2] =='ca':
+		core = core[2:-2]
+	core_arr = core.split('cs')[1:]
+	core_arr = [acore[:-2] for acore in core_arr]
+	return core_arr
+
+def match_partial_scvo(perm_scvo, rule_scvo, rule_level):
+	perm_arr = make_scvo_arr(perm_scvo)
+	rule_arr = make_scvo_arr(rule_scvo)
+	for ipiece, piece in enumerate(rule_arr):
+		if ipiece > rule_level:
+			return True
+		if piece != perm_arr[ipiece]:
+			return False
+	return True
+
+def make_rule_arr(rule):
+	el = rule[0]
+	core = copy.deepcopy(rule)
+	if el[0] == rules.rec_def_type.conn and el[1] == rules.conn_type.AND:
+		core = core[1:-1]
+	start, end = -1, -1
+	b_inside = False
+	core_arr = []
+	for iel, el in enumerate(core):
+		if not b_inside and el[0] == rules.rec_def_type.conn and el[1] == rules.conn_type.start:
+			b_inside = True
+			start = iel
+		elif b_inside and el[0] == rules.rec_def_type.conn and el[1] == rules.conn_type.end:
+			b_inside = False
+			end = iel
+			core_arr.append(core[start:end])
+	return core_arr
+
+def match_rule_part(glv_dict, rule, perm):
+	b_match = True
+	for iel, el in enumerate(rule):
+		if el[0] != rules.rec_def_type.like:
+			continue
+		vec_rule = glv_dict[el[1]]
+		vec_perm = glv_dict[perm[iel][1]]
+		cd = sum([vec_perm[i] * rule_val for i, rule_val in enumerate(vec_rule)])
+		if cd < (el[2] - config.c_cd_epsilon):
+			b_match = False
+			break
+
+	return b_match
+
+def match_partial_rule(glv_dict, rule, perm, rule_level):
+	perm_arr = make_rule_arr(perm)
+	rule_arr = make_rule_arr(rule)
+	for ipiece, piece in enumerate(rule_arr):
+		if ipiece > rule_level:
+			return True
+		if not match_rule_part(glv_dict, piece, perm_arr[ipiece]):
+			return False
+	return True
+	# b_match = True
+	#
+	# return b_match
+
+
+
+	# 	if rule_scvo[0:2] == 'ca':
+	# 	srule = str(rule_scvo[2:])
+	# 	rule_arr = []
+	# 	pieces = srule.split('cs')[1:]
+	# 	if rule_level == 0 and perm_scvo[0:2] == 'cs':
+	# 		return perm_scvo[2:] == pieces[0]
+	# 	sperm = str(perm_scvo[2:])
+	# 	perm_pieces = sperm.split('cs')[1:]
+	# 	for ipiece, piece in enumerate(pieces):
+	# 		if ipiece > rule_level:
+	# 			return True
+	# 		if piece != perm_pieces[ipiece]:
+	# 			return False
+	# 	return True
+	# else:
+	# 	if rule_level == 0:
+	# 		return perm_scvo == rule_scvo
+

@@ -1100,6 +1100,20 @@ additional) conditions of failure or success
 special attention to 100% or nearly
      but dont get fooled by low num of tests
 
+Monday 26th Feb
 
+Detailed short-term stuff:
+Changed arguments for:
+    save_len_grps
 
+Create a random chance that the null cont will be selected
+
+You MUST!!! make sure that repeats of the phrase cannot comprise a perm. See around line 309 of learn.py
+Done!
+
+Tuesday 27th Feb
+
+Checking in with the following comment:
+
+Blocking with multilevel works. Still need to work on selecting conts to cont.
 

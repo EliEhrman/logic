@@ -54,7 +54,7 @@ def init_sets(els_lists):
 
 
 def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
-			num_stories, num_story_steps, db_len_grps, gg_cont_list, i_gg_cont, b_for_query):
+			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, b_for_query):
 	start_rule_names = ['objects_start', 'people_start']
 	event_rule_names = ['pickup_rule', 'went_rule']
 	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went',
@@ -62,10 +62,11 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 	decide_rule_names = ['pickup_decide_rule']
 	event_from_decide_names = ['pickup_rule', 'went_rule']
 
-	if i_gg_cont < 0:
-		gg_cont = None
-	else:
-		gg_cont = gg_cont_list[i_gg_cont]
+	gg_cont = db_cont_mgr.get_cont(i_gg_cont)
+	# if i_gg_cont < 0:
+	# 	gg_cont = None
+	# else:
+	# 	gg_cont = gg_cont_list[i_gg_cont]
 
 	sess = dmlearn.init_templ_learn()
 
@@ -230,7 +231,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 
 		# end of loop over story steps
 		if i_one_story % adv_config.c_save_every == 0:
-			adv_learn.save_len_grps(db_len_grps, [], gg_cont_list, i_gg_cont)
+			adv_learn.create_new_conts(db_cont_mgr, db_len_grps, i_gg_cont)
+			adv_learn.save_db_status(db_len_grps, db_cont_mgr)
 
 	# end of loop over stories
 	sess.close()
@@ -250,22 +252,18 @@ def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists):
 
 	for iplay in range(adv_config.c_num_plays):
 		dmlearn.learn_reset()
-		db_len_grps, blocked_len_grps, gg_cont_list, i_gg_cont = adv_learn.load_len_grps()
+		# db_len_grps, blocked_len_grps, gg_cont_list, i_gg_cont = adv_learn.load_cont_mgr()
+		db_cont_mgr = adv_learn.load_cont_mgr()
 
-		gg_cont_list, ibest = adv_learn.learn_more(gg_cont_list, i_gg_cont, db_len_grps)
+		db_len_grps, i_active_cont  = adv_learn.sel_cont_and_len_grps(db_cont_mgr)
 
-		if gg_cont_list != []:
-			# gg_cont = new_cont_rules[ibest]
-			dmlearn.learn_reset()
-			db_len_grps = []
-
-
-		# ibest += len(gg_cont_list)
-		# gg_cont_list += new_cont_rules
+		# if gg_cont_list != []:
+		# 	dmlearn.learn_reset()
+		# 	db_len_grps = []
 
 		play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				adv_config.c_num_stories, adv_config.c_story_len, db_len_grps,
-				 gg_cont_list, ibest, b_for_query=False)
+				 db_cont_mgr, i_active_cont, b_for_query=False)
 	print('Done!')
 	exit(1)
 

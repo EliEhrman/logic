@@ -18,6 +18,10 @@ import ykmeans
 import utils
 import makerecs as mr
 
+def get_next(ldata):
+	# return next(ldata)
+	return ldata.pop(0)
+
 class cl_gens_grp(object):
 	glv_len = -1
 
@@ -42,6 +46,7 @@ class cl_gens_grp(object):
 		self.__thresh_cd = -1.0
 		self.__rule_grp = None
 		self.__b_blocking = b_blocking
+		self.__cont_id = -1
 
 	def gens_matches(self, gens_rec, b_blocking):
 		if b_blocking != self.__b_blocking:
@@ -240,27 +245,31 @@ class cl_gens_grp(object):
 	def get_b_valid(self):
 		return self.__b_validated
 
+	def set_cont_id(self, cont_id):
+		self.__cont_id = cont_id
+
 	def get_cont_stats(self, templ_len, templ_scvo, igg):
 		rule_str = mr.gen_rec_str(self.__rule_grp)
 		return [templ_len, templ_scvo, self.__b_blocking, igg, self.__num_successes, self.__num_tests,
-				rule_str, self]
+				rule_str, self.__cont_id, self]
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['tgg', 'confirmed', self.__b_confirmed, 'gg id', self.__igg, 'num points', self.__num_points,
 						  'num successes', self.__num_successes, 'num tests', self.__num_tests,
 						  'penalty points', self.__penalty, 'rule grp', mr.gen_rec_str(self.__rule_grp),
 						  'gens rec', mr.gen_rec_str(self.get_gens_rec()),
-						  'blocking', self.__b_blocking])
+						  'blocking', self.__b_blocking, 'cont id', self.__cont_id])
 
 	def load(self, db_csvr):
 		_, _, sb_confirmed, _, sigg, _, snum_points, _, snum_successes, _, snum_tests, \
-		_, spenalty, _, srule_rec, _, sgens_rec, _, sb_blocking, = next(db_csvr)
+		_, spenalty, _, srule_rec, _, sgens_rec, _, sb_blocking, _, s_cont_id = get_next(db_csvr)
 		self.__b_confirmed, self.__igg, self.__num_points = sb_confirmed == 'True', int(sigg), int(snum_points)
 		self.__num_successes, self.__num_tests, self.__penalty = float(snum_successes), float(snum_tests), int(spenalty)
 		self.__gens_rec = mr.extract_rec_from_str(sgens_rec)
 		self.__rule_grp = mr.extract_rec_from_str(srule_rec)
 		self.__num_perm_adds_till_next_learn = config.c_gg_learn_every_num_perms
 		self.__b_lrn_success, self.__b_blocking = False, sb_blocking == 'True'
+		self.__cont_id = int(s_cont_id)
 		if self.__num_points >= config.c_gg_validate_thresh:
 			if not self.__b_validated:
 				print('gg validated on load for igg:', self.__igg, 'gens rec:', self.__gens_rec)
@@ -309,7 +318,7 @@ class cl_prov_gens_grp(cl_gens_grp):
 						  'is blocking', self.get_b_blocking()])
 
 	def load(self, db_csvr):
-		_, _, sb_graduated, _, srec, _, sb_blocking = next(db_csvr)
+		_, _, sb_graduated, _, srec, _, sb_blocking = get_next(db_csvr)
 		self.__b_graduated = sb_graduated == 'True'
 		gens_rec = mr.extract_rec_from_str(srec)
 		self.set_gens_rec(gens_rec)
@@ -624,6 +633,9 @@ class cl_templ_grp(object):
 
 		return valid_gg_list
 
+	def get_num_data_rows(self):
+		return 1 + len(self.__pgg_list) + len(self.__gg_list)
+
 	def save(self, db_csvr):
 		db_csvr.writerow(['templ grp', 'confirmed', self.__b_confirmed, 'graduated', self.__b_db_graduated,
 						  'valid', self.__db_valid, 'num obj fields', self.__olen,
@@ -634,9 +646,9 @@ class cl_templ_grp(object):
 		for gg in self.__gg_list:
 			gg.save(db_csvr)
 
-	def load(self, db_csvr, b_blocking):
+	def load(self, db_csvr):
 		_, _, sb_confirmed, _, sb_db_graduated, _, sdb_valid, _, solen, \
-			_, stempl_len, _, num_pggs, _, num_ggs, _, self.__scvo = next(db_csvr)
+			_, stempl_len, _, num_pggs, _, num_ggs, _, self.__scvo = get_next(db_csvr)
 		self.__b_confirmed, self.__b_db_graduated = sb_confirmed == 'True', sb_db_graduated == 'True'
 		self.__db_valid, self.__olen = sdb_valid == 'True', int(solen)
 		self.__templ_len  = int(stempl_len)
@@ -652,6 +664,25 @@ class cl_templ_grp(object):
 			if igg > 0:
 				gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
 			self.__gg_list.append(gg)
+
+	# def sload(self, ldata):
+	# 	_, _, sb_confirmed, _, sb_db_graduated, _, sdb_valid, _, solen, \
+	# 		_, stempl_len, _, num_pggs, _, num_ggs, _, self.__scvo = ldata.pop(0)
+	# 	self.__b_confirmed, self.__b_db_graduated = sb_confirmed == 'True', sb_db_graduated == 'True'
+	# 	self.__db_valid, self.__olen = sdb_valid == 'True', int(solen)
+	# 	self.__templ_len  = int(stempl_len)
+	#
+	# 	for ipgg in range(int(num_pggs)):
+	# 		pgg = cl_prov_gens_grp(b_from_load=True, igg=ipgg)
+	# 		pgg.load(ldata)
+	# 		self.__pgg_list.append(pgg)
+	#
+	# 	for igg in range(int(num_ggs)):
+	# 		gg = cl_gens_grp(b_from_load=True, igg=igg)
+	# 		gg.load(ldata)
+	# 		if igg > 0:
+	# 			gg.init_for_learn(self.__olen * self.glv_len, self.__scvo, len(self.__gg_list))
+	# 		self.__gg_list.append(gg)
 
 class cl_len_grp(object):
 	# __slots__='__len', '__templ_grp_list'
@@ -699,18 +730,32 @@ class cl_len_grp(object):
 
 		return valid_gg_list
 
+	def get_num_data_rows(self):
+		num_data_rows = 1
+		for templ_grp in self.__templ_grp_list:
+			num_data_rows += templ_grp.get_num_data_rows()
+		return num_data_rows
+
 	def save(self, db_csvr):
 		db_csvr.writerow(['len grp', self.__len, 'num templates', len(self.__templ_grp_list)])
 		for templ_grp in self.__templ_grp_list:
 			templ_grp.save(db_csvr)
 
-	def load(self, db_csvr, b_blocking):
-		_, slen, _, num_tmpl_grps = next(db_csvr)
+	def load(self, db_csvr):
+		_, slen, _, num_tmpl_grps = get_next(db_csvr)
 		self.__len = int(slen)
 		for i_templ_grp in range(int(num_tmpl_grps)):
 			templ_grp = cl_templ_grp(b_from_load=True)
-			templ_grp.load(db_csvr, b_blocking)
+			templ_grp.load(db_csvr)
 			self.__templ_grp_list.append(templ_grp)
+
+	# def sload(self, ldata):
+	# 	_, slen, _, num_tmpl_grps = ldata.pop(0)
+	# 	self.__len = int(slen)
+	# 	for i_templ_grp in range(int(num_tmpl_grps)):
+	# 		templ_grp = cl_templ_grp(b_from_load=True)
+	# 		templ_grp.load(ldata)
+	# 		self.__templ_grp_list.append(templ_grp)
 
 
 
