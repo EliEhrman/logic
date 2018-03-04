@@ -54,6 +54,9 @@ class cl_add_gg(object):
 	def get_num_rows_grp_data(self):
 		return self.__num_rows_grp_data
 
+	def get_rule(self):
+		return self.__rule
+
 	def set_num_rows_grp_data(self, num_rows):
 		self.__num_rows_grp_data = num_rows
 
@@ -169,6 +172,9 @@ class cl_cont_mgr(object):
 	# one is through tries and the other is just a perfect score on the gg score
 	status = Enum(['untried', 'initial', 'perfect', 'expands', 'perfect_block', 'blocks',
 				   'partial_expand', 'partial_block', 'irrelevant'])
+	c_expands_min_tries = -1
+	c_expands_score_thresh = 0.0
+	c_expands_score_min_thresh = 0.0
 
 	def __init__(self):
 		null_cont = cl_add_gg(b_from_load=False)
@@ -226,6 +232,7 @@ class cl_cont_mgr(object):
 				if random.random() < config.c_select_cont_random_prob:
 					best_cc = ccont
 					ibest = icc
+					b_has_best_score_bonus = False
 					break
 				total_score = ccont.get_initial_score() + score_bonus + untried_bonus
 				if total_score > best_score:
@@ -234,6 +241,8 @@ class cl_cont_mgr(object):
 					ibest = icc
 					if score_bonus > 0.0:
 						b_has_best_score_bonus = True
+
+		ibest = 8
 
 		for icc, ccont in enumerate(self.__cont_list):
 			if icc == ibest:
@@ -244,6 +253,7 @@ class cl_cont_mgr(object):
 			else:
 				ccont.set_active(False)
 
+		best_cc = self.__cont_list[ibest] # just to make sure we access it again explicitly
 		return best_cc, ibest
 
 	def create_new_conts(self, db_len_grps, i_active_cont, score_thresh, score_min, min_tests):
@@ -283,15 +293,15 @@ class cl_cont_mgr(object):
 		params = parent_cont.get_status_params()
 		if status == self.status.untried:
 			num_hits, num_tries = params
-			if num_tries > config.c_expands_min_tries:
+			if num_tries > self.c_expands_min_tries:
 				expands_score = num_hits / num_tries
-				if expands_score > config.c_expands_score_thresh:
+				if expands_score > self.c_expands_score_thresh:
 					parent_cont.set_status(self.status.blocks if parent_cont.is_blocking() else self.status.expands)
-				elif  expands_score < config.c_expands_score_min_thresh:
+				elif  expands_score < self.c_expands_score_min_thresh:
 					parent_cont.set_status(self.status.irrelevant)
 				else:
 					parent_cont.set_status(self.status.partial_block if parent_cont.is_blocking() else self.status.partial_expand)
-				parent_cont.set_status_params([0.0, 0.0])
+				# parent_cont.set_status_params([0.0, 0.0])
 				return False
 
 		# return True means I see no reason to stop learning from this cont

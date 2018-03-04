@@ -1125,3 +1125,11 @@ Wednesday 28th Feb
 Checking in with the following comment:
 
 Blocking and multilevel work. All rules of adv decision phase discovered.
+
+Sunday 4th March
+
+Changed gg processing so that only one action happens per eid, giving a chance to more focused (and often successful) rules
+
+Checking in with the following comment:
+
+Rule discovery for Diplomacy working with Blocking.

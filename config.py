@@ -60,12 +60,13 @@ c_gg_validate_thresh = 10 # number of points to accumulate before finding missin
 c_gg_confirm_thresh = 25
 c_templ_learn_every_num_perms = 12
 c_gg_learn_every_num_perms = 10
-c_gg_num_learn_steps = 50000
+c_gg_num_learn_steps = 100000
 c_gg_learn_test_every = 1000
 c_gg_learn_good_thresh = 0.01
-c_gg_learn_give_up_at = 20000
+c_gg_learn_give_up_at = 50000
 c_gg_learn_give_up_thresh = 0.1
 c_b_nbns = True # Necessary but not sufficient
+c_fudge_thresh_cd = 0.97 # lowers the thresh to allow just outside
 c_gg_scoring_eid_thresh = 5 # length of eid set after learn for score to be valid
 c_gg_max_perms = 30
 c_negative_penalty = 5 # applied when an igg wins the score/len contest
@@ -78,6 +79,7 @@ c_select_cont_review_null_prob = 0.2
 c_select_cont_random_prob = 0.1
 c_select_cont_score_bonus = 0.2
 c_select_cont_untried_bonus = 1.0
+c_gg_starting_penalty = -10
 
 
 # logger = None

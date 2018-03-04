@@ -291,10 +291,32 @@ def make_rule_grp_old(glv_dict, rule_cluster, el_set_arr):
 
 	return rule_phrase
 
-def make_rule_grp(glv_dict, rule_cluster, veclen):
+def make_rule_grp(glv_dict, rule_cluster, veclen, curr_cont):
 	# veclen = len(glv_dict[config.sample_el])
 	rule_phrase = []
+	prev_rule_grp = []
+	b_take_from_prev = False
+	if not curr_cont.is_null():
+		b_take_from_prev = True
+		prev_rule_grp = curr_cont.get_rule()
+		if prev_rule_grp[0][0] == rules.rec_def_type.conn and prev_rule_grp[0][1] == rules.conn_type.AND:
+			b_prev_has_AND = True
+			take_from_prev_until = len(prev_rule_grp) - 1
+			start_offset = 0
+		else:
+			b_prev_has_AND = False
+			take_from_prev_until = len(prev_rule_grp)
+			start_offset = 1
+
 	for iel, el in enumerate(rule_cluster[0]):
+		if b_take_from_prev:
+			if iel == 0 and not b_prev_has_AND:
+				rule_phrase.append([el[0], el[1]])
+				continue
+			if iel < take_from_prev_until + start_offset:
+				rule_phrase.append(prev_rule_grp[iel-start_offset])
+				continue
+
 		if el[0] != rules.rec_def_type.obj:
 			rule_phrase.append([el[0], el[1]])
 			continue
@@ -304,14 +326,16 @@ def make_rule_grp(glv_dict, rule_cluster, veclen):
 			vec = glv_dict[phrase[iel][1]]
 			vec_list.append(vec)
 
-		vec_avg, min_cd = utils.get_avg_min_cd(vec_list, veclen)
-		min_cd = find_quant_thresh(min_cd)
+		vec_avg = utils.get_avg_cd(vec_list, veclen)
 		best_cd = -1.0
 		best_name = 'not found!'
 		for sym, one_vec in glv_dict.iteritems():
 			cd = sum([one_vec[i] * set_val for i, set_val in enumerate(vec_avg)])
 			if cd > best_cd:
-				best_name, best_cd = sym, cd
+				best_name, best_cd, best_vec = sym, cd, one_vec
+
+		min_cd = utils.get_min_cd(vec_list, best_vec, veclen)
+		min_cd = find_quant_thresh(min_cd)
 		rule_phrase.append([rules.rec_def_type.like, best_name, min_cd])
 		# el_set_arr.append([vec_avg, min_cd, vec_list])
 

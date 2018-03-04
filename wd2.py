@@ -13,6 +13,7 @@ import embed
 import els
 import dmlearn
 import clrecgrp
+import wdconfig
 import wdlearn
 
 
@@ -387,7 +388,7 @@ def create_results_db(orders_db, orders_status_list):
 
 	return results_db
 
-def play_turn(	all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, learn_vars, db, cursor, gname, country_names_tbl,
+def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars, db, cursor, gname, country_names_tbl,
 				terr_id_tbl, supply_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 				init_db, orders_status_list, old_status_db, old_orders_db):
 	sqlOrderComplete = string.Template(
@@ -419,8 +420,10 @@ def play_turn(	all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, learn
 	unit_owns_tbl, new_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_status_list)
 	results_db = create_results_db(old_orders_db, new_orders_status_list)
 	if results_db != None and len(results_db) > 0:
-		wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
-									 all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, learn_vars)
+		b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
+									 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
+		if not b_keep_working:
+			return gameID, False, [], []
 
 	status_db = els.convert_list_to_phrases(statement_list)
 
@@ -493,7 +496,7 @@ def create_dict_files(terr_names_fn):
 				terr_names_fh.write(row[0]+'\n')
 			return
 
-def play(gameID, all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, learn_vars, b_create_dict_file=False):
+def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, b_create_dict_file=False):
 
 	if gameID == -1:
 		gname = 't' + str(int(time.time()))[-6:]
@@ -515,17 +518,23 @@ def play(gameID, all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, lea
 
 			orders_status_list = []
 			status_db, orders_db = [], []
-			for iturn in range(300):
+			b_keep_working = True
+			for iturn in range(wdconfig.c_num_turns_per_play):
+				if not b_keep_working:
+					return gameID
+
 				if iturn > 0:
 					gameID, b_finished, status_db, orders_db = \
-						play_turn(	all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, learn_vars,
+						play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
 									db, cursor, gname, country_names_tbl,
 									terr_id_tbl, supply_tbl, army_can_pass_tbl,
 									fleet_can_pass_tbl, init_db, orders_status_list,
 									old_status_db=status_db, old_orders_db=orders_db)
 					if b_finished:
 						print('Game Over!')
-						return
+						return -1
+					elif status_db == []: # means turn finished early
+						b_keep_working = False
 					print('Next turn for game id:', gameID)
 				if gameID != -1:
 					process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
@@ -534,6 +543,8 @@ def play(gameID, all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, lea
 					except urllib2.HTTPError as err:
 						print('HTTP Exception: ', err)
 					time.sleep(0.2)
+
+	return gameID
 
 glv_file_list = ['wd_terrname', 'wd_order']
 cap_first_arr = [False, False]
@@ -559,13 +570,25 @@ def logic_init():
 	# cwdtest = os.getcwd()
 	return [glv_dict, def_article_dict, cascade_dict]
 
+def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
+	dmlearn.learn_reset()
+
+	db_cont_mgr = wdlearn.load_cont_mgr()
+	db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
+
+	# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
+	sess = dmlearn.init_templ_learn()
+	gameID = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
+	sess.close()
+	return gameID
+
 def main():
 	# create_dict_files(glv_file_list[0] + 's.txt')
 	# return
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 35 # Set to -1 to restart
+	gameID =43 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
@@ -573,11 +596,10 @@ def main():
 	learn_vars = [event_step_id]
 	clrecgrp.cl_templ_grp.glv_dict = all_dicts[0]
 	clrecgrp.cl_gens_grp.glv_len = clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0]['army'])
+	wdlearn.init_learn()
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
-	db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
-	sess = dmlearn.init_templ_learn()
-	play(gameID, all_dicts, db_len_grps, blocked_len_grps, el_set_arr, sess, learn_vars)
-	sess.close()
+	for iplay in range(wdconfig.c_num_plays):
+		gameID = do_wd(gameID, all_dicts, el_set_arr, learn_vars)
 
 if __name__ == "__main__":
     main()

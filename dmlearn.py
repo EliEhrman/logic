@@ -92,7 +92,7 @@ def init_templ_learn():
 
 	return sess #, saver_dict, saver
 
-def do_templ_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
+def do_gg_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
 	b_success = True
 	ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = learn_params
 	numrecs = len(igg_arr)
