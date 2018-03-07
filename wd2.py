@@ -575,12 +575,14 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 
 	db_cont_mgr = wdlearn.load_cont_mgr()
 	db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
+	if i_active_cont < 0:
+		return -1, False
 
 	# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
 	gameID = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
 	sess.close()
-	return gameID
+	return gameID, True
 
 def main():
 	# create_dict_files(glv_file_list[0] + 's.txt')
@@ -588,7 +590,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID =43 # Set to -1 to restart
+	gameID = 68 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
@@ -599,7 +601,9 @@ def main():
 	wdlearn.init_learn()
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	for iplay in range(wdconfig.c_num_plays):
-		gameID = do_wd(gameID, all_dicts, el_set_arr, learn_vars)
+		gameID, b_can_continue = do_wd(gameID, all_dicts, el_set_arr, learn_vars)
+		if not b_can_continue:
+			print('Program will not continue due to no conts being available.')
 
 if __name__ == "__main__":
     main()

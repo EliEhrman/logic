@@ -178,6 +178,9 @@ class cl_gens_grp(object):
 		if self.__num_perm_adds_till_next_learn > 0:
 			return False
 
+		if self.__cont_id >= 0:
+			return False
+
 		if eid == self.__eid_last_learn:
 			return False
 
@@ -190,6 +193,9 @@ class cl_gens_grp(object):
 		if not self.__b_lrn_success:
 			return False
 
+		# if self.__cont_id >= 0:
+		# 	return False
+		#
 		if eid == self.__eid_last_score:
 			return False
 
@@ -376,6 +382,8 @@ class cl_templ_grp(object):
 	# __slots__='__len', '__templ_grp_list'
 	glv_dict = []
 	glv_len = -1
+	c_score_loser_penalty = config.c_score_loser_penalty
+	c_score_winner_bonus = config.c_score_winner_bonus
 
 	def __init__(self, b_from_load, templ_len=None, scvo=None, preconds_rec=None, gens_rec_list=None,
 				 event_result_list=None, eid=None, b_blocking=None):
@@ -665,8 +673,8 @@ class cl_templ_grp(object):
 			print('gg confirmed in templ group with scvo, len;', self.__scvo, 'len:', self.__templ_len)
 			self.__b_confirmed = True
 
-	def apply_penalty(self, igg, penalty):
-		self.__gg_list[igg].apply_penalty(penalty)
+	def apply_penalty(self, igg, bwinner):
+		self.__gg_list[igg].apply_penalty(-self.c_score_winner_bonus if bwinner else self.c_score_loser_penalty)
 
 	def get_gg(self, igg):
 		if igg >= len((self.__gg_list)):

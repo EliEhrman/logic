@@ -18,6 +18,8 @@ def init_learn():
 	addlearn.cl_cont_mgr.c_expands_min_tries = wdconfig.c_expands_min_tries
 	addlearn.cl_cont_mgr.c_expands_score_thresh = wdconfig.c_expands_score_thresh
 	addlearn.cl_cont_mgr.c_expands_score_min_thresh = wdconfig.c_expands_score_min_thresh
+	clrecgrp.cl_templ_grp.c_score_loser_penalty = wdconfig.c_score_loser_penalty
+	clrecgrp.cl_templ_grp.c_score_winner_bonus = wdconfig.c_score_winner_bonus
 
 
 def save_db_status(db_len_grps, db_cont_mgr):
@@ -102,12 +104,13 @@ def load_len_grps(grp_data_list, db_len_grps):
 def sel_cont_and_len_grps(db_cont_mgr):
 	db_len_grps = []
 	sel_cont, ibest = db_cont_mgr.select_cont()
-	grp_data = sel_cont.get_grp_data()
-	# if there is no grp data return and db_len_grps will be empty
-	# if there is data but no cont can be created, just keep learning with what we have
-	# if new conts are created, select from all of them again
-	if grp_data != []:
-		load_len_grps(grp_data, db_len_grps)
+	if ibest >= 0:
+		grp_data = sel_cont.get_grp_data()
+		# if there is no grp data return and db_len_grps will be empty
+		# if there is data but no cont can be created, just keep learning with what we have
+		# if new conts are created, select from all of them again
+		if grp_data != []:
+			load_len_grps(grp_data, db_len_grps)
 
 	return db_len_grps, ibest
 

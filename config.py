@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 
 FLAGS = tf.flags.FLAGS
@@ -59,11 +59,11 @@ c_gg_graduate_len = 10
 c_gg_validate_thresh = 10 # number of points to accumulate before finding missing surprising
 c_gg_confirm_thresh = 25
 c_templ_learn_every_num_perms = 12
-c_gg_learn_every_num_perms = 10
-c_gg_num_learn_steps = 100000
+c_gg_learn_every_num_perms = 50 # 10
+c_gg_num_learn_steps = 200000
 c_gg_learn_test_every = 1000
 c_gg_learn_good_thresh = 0.01
-c_gg_learn_give_up_at = 50000
+c_gg_learn_give_up_at = 100000
 c_gg_learn_give_up_thresh = 0.1
 c_b_nbns = True # Necessary but not sufficient
 c_fudge_thresh_cd = 0.97 # lowers the thresh to allow just outside
@@ -76,10 +76,13 @@ c_expands_min_tries = 30
 c_expands_score_thresh = 0.8
 c_expands_score_min_thresh = 0.3
 c_select_cont_review_null_prob = 0.2
-c_select_cont_random_prob = 0.1
+c_select_cont_random_prob = 0.001
 c_select_cont_score_bonus = 0.2
 c_select_cont_untried_bonus = 1.0
 c_gg_starting_penalty = -10
+c_score_loser_penalty = 1
+c_score_winner_bonus = 5
+c_cont_not_parent_max = 10.0
 
 
 # logger = None

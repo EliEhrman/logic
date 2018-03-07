@@ -1,3 +1,6 @@
+from __future__ import print_function
+import sys
+
 import random
 import config
 import makerecs as mr
@@ -68,6 +71,9 @@ class cl_add_gg(object):
 
 	def get_parent_id(self):
 		return self.__parent_id
+
+	def set_score(self, score):
+		self.__initial_score = score
 
 	def get_status(self):
 		return self.__status
@@ -204,14 +210,64 @@ class cl_cont_mgr(object):
 		return
 
 	def select_cont(self):
+		print('Select cont called.')
 		best_cc = self.__cont_list[0]
 		best_score = 0.0
 		ibest = 0
 		b_has_best_score_bonus = False
+		b_has_parent_bonus = False
+		b_parent_score = False
 		if len(self.__cont_list) > 1:
+			b_can_null, b_can_initial, b_can_untried, b_can_partial  = False, False, False, False
+			untried_min_level, partial_min_level = sys.maxint, sys.maxint
+			sel_type = 'null'
+			for icc, ccont in enumerate(self.__cont_list):
+				if icc == 0:
+					b_can_null = True # Do more about this later
+					continue
+				status = ccont.get_status()
+				params = ccont.get_status_params()
+				if status == self.status.partial_expand or status == self.status.partial_block:
+					no_new_cont_count = params[1]
+					if no_new_cont_count >= config.c_cont_not_parent_max:
+						print('icc partial:', icc, 'blocked by no new cont')
+						continue
+					b_can_partial = True
+					level = ccont.get_level()
+					if level > partial_min_level:
+						print('icc partial:', icc, 'blocked by level', level)
+						continue
+					partial_min_level = level
+					if b_can_untried or b_can_initial:
+						print('icc partial:', icc, 'blocked by pre-set sel type')
+						continue
+					sel_type = 'partial'
+					print('Select cont. icc:', icc, 'status:', self.status, 'level', level)
+				elif status == self.status.untried:
+					b_can_untried = True
+					level = ccont.get_level()
+					if level > untried_min_level:
+						print('icc untried:', icc, 'blocked by level', level)
+						continue
+					untried_min_level = level
+					if b_can_initial:
+						print('icc untried:', icc, 'blocked by active intial')
+						continue
+					sel_type = 'untried'
+				elif status == self.status.initial:
+					no_new_cont_count = params[1]
+					if no_new_cont_count >= config.c_cont_not_parent_max:
+						print('icc initial:', icc, 'blocked by no new cont')
+						continue
+					b_can_initial = True
+					sel_type = 'initial'
+
+
+
 			for icc, ccont in enumerate(self.__cont_list):
 				if icc == 0:
 					if random.random() < config.c_select_cont_review_null_prob:
+						print('cont random null override:')
 						break
 					else:
 						continue
@@ -220,40 +276,74 @@ class cl_cont_mgr(object):
 				if status == self.status.perfect or status == self.status.perfect_block \
 						or status == self.status.irrelevant or status == self.status.blocks \
 						or status == self.status.expands:
+					print('Cont ignore icc', icc, 'status', status)
 					continue
 				score_bonus = 0.0
-				untried_bonus = 0.0
-				if status == self.status.initial or status == self.status.partial_expand \
-						or status == self.status.partial_block:
-					score_bonus += params[0]
-					ccont.set_status_params([params[0] + config.c_select_cont_score_bonus, params[1]])
-				if status == self.status.untried:
-					untried_bonus = random.random() * config.c_select_cont_untried_bonus
 				if random.random() < config.c_select_cont_random_prob:
 					best_cc = ccont
 					ibest = icc
 					b_has_best_score_bonus = False
+					print('cont random override for icc', icc, 'status:', status)
 					break
-				total_score = ccont.get_initial_score() + score_bonus + untried_bonus
+				if status == self.status.partial_expand or status == self.status.partial_block:
+					if sel_type != 'partial':
+						continue
+					no_new_cont_count = params[1]
+					if no_new_cont_count >= config.c_cont_not_parent_max:
+						continue
+					level  = ccont.get_level()
+					if level > partial_min_level:
+						continue
+					score = ccont.get_initial_score()
+					score_bonus += params[0]
+					print('icc partial:', icc, 'score:', score, 'score bonus:', score_bonus)
+					ccont.set_status_params([params[0] + config.c_select_cont_score_bonus, params[1]])
+				elif status == self.status.untried:
+					if sel_type != 'untried':
+						continue
+					level = ccont.get_level()
+					if level > untried_min_level:
+						continue
+					score = ccont.get_initial_score()
+					print('icc untried:', icc, 'score:', score)
+					# exit()
+				elif status == self.status.initial:
+					if sel_type != 'initial':
+						continue
+					no_new_cont_count = params[1]
+					if no_new_cont_count >= config.c_cont_not_parent_max:
+						continue
+					score = ccont.get_initial_score()
+					score_bonus += params[0]
+					ccont.set_status_params([params[0] + config.c_select_cont_score_bonus, params[1]])
+					print('icc inital:', icc, 'score:', score, 'score bonus:', score_bonus)
+				total_score = score + score_bonus
 				if total_score > best_score:
 					best_cc = ccont
 					best_score = total_score
 					ibest = icc
-					if score_bonus > 0.0:
-						b_has_best_score_bonus = True
+					b_has_best_score_bonus = score_bonus > 0.0
+					print('cont best:', icc, 'best score', best_score)
 
-		ibest = 8
+		# ibest = 8
 
-		for icc, ccont in enumerate(self.__cont_list):
-			if icc == ibest:
-				ccont.set_active(True)
-				if b_has_best_score_bonus:
-					params = ccont.get_status_params()
-					ccont.set_status_params([0.0, params[1]])
-			else:
-				ccont.set_active(False)
+		if ibest >= 0:
+			for icc, ccont in enumerate(self.__cont_list):
+				if icc == ibest:
+					print('Final cont selection. icc', icc)
+					ccont.set_active(True)
+					if b_has_best_score_bonus:
+						params = ccont.get_status_params()
+						ccont.set_status_params([0.0, params[1]])
+					status = ccont.get_status()
+					if status == self.status.initial or status == self.status.partial_expand or status == self.status.partial_block:
+						params = ccont.get_status_params()
+						ccont.set_status_params([params[0], params[1] + 1.0])
 
-		best_cc = self.__cont_list[ibest] # just to make sure we access it again explicitly
+				else:
+					ccont.set_active(False)
+
+			best_cc = self.__cont_list[ibest] # just to make sure we access it again explicitly
 		return best_cc, ibest
 
 	def create_new_conts(self, db_len_grps, i_active_cont, score_thresh, score_min, min_tests):
@@ -287,7 +377,12 @@ class cl_cont_mgr(object):
 					new_cont.set_status(self.status.initial)
 				else:
 					new_cont.set_status(self.status.untried)
+				print('new cont created. parent:', parent_cont.get_id(), 'new id', self.__max_cont_id,
+					  'status:', new_cont.get_status())
 				new_cont.set_status_params([0.0, 0.0])
+				parent_params = parent_cont.get_status_params()
+				if parent_params != []:
+					parent_cont.set_status_params([parent_params[0], 0.0])
 
 		status = parent_cont.get_status()
 		params = parent_cont.get_status_params()
@@ -295,13 +390,15 @@ class cl_cont_mgr(object):
 			num_hits, num_tries = params
 			if num_tries > self.c_expands_min_tries:
 				expands_score = num_hits / num_tries
+				print('untried got ', num_hits, 'hits out of ', num_tries, 'tries.')
 				if expands_score > self.c_expands_score_thresh:
 					parent_cont.set_status(self.status.blocks if parent_cont.is_blocking() else self.status.expands)
 				elif  expands_score < self.c_expands_score_min_thresh:
 					parent_cont.set_status(self.status.irrelevant)
 				else:
 					parent_cont.set_status(self.status.partial_block if parent_cont.is_blocking() else self.status.partial_expand)
-				# parent_cont.set_status_params([0.0, 0.0])
+					parent_cont.set_score(expands_score)
+				parent_cont.set_status_params([0.0, 0.0])
 				return False
 
 		# return True means I see no reason to stop learning from this cont

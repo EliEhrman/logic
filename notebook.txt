@@ -1133,3 +1133,47 @@ Changed gg processing so that only one action happens per eid, giving a chance t
 Checking in with the following comment:
 
 Rule discovery for Diplomacy working with Blocking.
+
+Notes for future improvements:
+1. Make blocking part of the rule itself. Perhpas a phrase can end with ce to indicate normal or cb to mean
+that the phrase in the rule must NOT match with any pattern in the db
+2. Change wd to make learning know about whehter all other rules succeeded
+Once rules have been learned, processing will have to keep iterating until no further changes occur or some rules keep flipping
+
+However, for now I would rather get on with some AI. At least a montecarlo based on rules learned
+One or two things must be cleaned up first:
+1. Why does occupied not figure as a successful rule
+2. Advance partial_expand and partial_block processs
+3. Always advance untried processing
+4. Summarize and extract winning conts
+5. Consider removing penalty and a module-based option. Rely on 'untried' processing
+
+Perhaps commit at the end of that before adding wd_imagine. This latter must create the results and status for the next turn
+without actually consulting the sql db,
+Look at convert_list_to_phrases. All that must be recreated in imagine
+
+I'm going to try a radical experiment so I want to records enough details to be able to roll it back
+1. Don't learn if you have a cont id
+2. Don't score if you have a cont id
+3. Create a cont id for ANY gg that has a score whatsoever
+increase by a lot the number of eids needed to validate
+c_gg_graduate_len
+c_gg_learn_every_num_perms
+c_gg_validate_thresh
+
+Experiment basically a failure. Must revert to penalties etc. But this must be done when I ca see the consequences and have time.
+Will keep the idea of no learning after a cont id and marking when a cont has finished producing viable children
+scoring is not so important once there is a cont id - but it keeps the others' heads down
+
+conts must be done in order
+null  - till no kids
+initials - till no kids
+untried - order by level - till all have evolved
+partial expand/block don't proceed to higher level while lower level still producing viable kids
+
+Wednesday 7th March
+
+Checking in with the following comment:
+
+Rule learning looks solid.
+

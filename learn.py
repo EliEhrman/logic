@@ -452,7 +452,7 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 			for igrp, len_grp in enumerate(db_len_grps):
 				if len_grp.len() == one_particp[0]:
 					particp_templ = len_grp.find_templ(one_particp[1])
-					particp_templ.apply_penalty(one_particp[2], -5 if one_particp == winner else 1)
+					particp_templ.apply_penalty(one_particp[2], one_particp == winner)
 					break
 
 	return []
