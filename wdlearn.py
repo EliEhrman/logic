@@ -9,7 +9,7 @@ import els
 import clrecgrp
 import wdconfig
 
-db_fnt = '~/tmp/wdlengrps.txt'
+# wdconfig.db_fnt = '~/tmp/wdlengrps.txt'
 # db_fn = '/home/eli/tmp/lengrps.txt'
 
 c_len_grps_version = 2
@@ -23,7 +23,7 @@ def init_learn():
 
 
 def save_db_status(db_len_grps, db_cont_mgr):
-	db_fn = expanduser(db_fnt)
+	db_fn = expanduser(wdconfig.db_fnt)
 	db_fh = open(db_fn, 'wb')
 	db_csvr = csv.writer(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
 	def save_a_len_grps(which_len_grps):
@@ -60,7 +60,7 @@ def save_db_status(db_len_grps, db_cont_mgr):
 # 	db_fh.close()
 
 def load_cont_mgr():
-	db_fn = expanduser(db_fnt)
+	db_fn = expanduser(wdconfig.db_fnt)
 	i_gg_cont = -1
 	db_cont_mgr = addlearn.cl_cont_mgr()
 	try:
@@ -142,7 +142,51 @@ def create_new_conts(db_cont_mgr, db_len_grps, i_active_cont):
 													wdconfig.c_cont_score_min, wdconfig.c_cont_min_tests)
 	return b_keep_working
 
+def load_order_freq_tbl(freq_tbl, fnt):
+	try:
+		o_fn = expanduser(fnt)
+		with open(o_fn, 'rb') as o_fhr:
+			o_csvr = csv.reader(o_fhr, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+			for row in o_csvr:
+				freq_tbl[tuple(row[1:])] = int(row[0])
+	except IOError:
+		return
 
+
+def create_order_freq_tbl(orders_list, order_status_list):
+	success_orders_freq, failed_orders_freq = dict(), dict()
+
+	load_order_freq_tbl(success_orders_freq, wdconfig.orders_success_fnt)
+	load_order_freq_tbl(failed_orders_freq, wdconfig.orders_failed_fnt)
+
+
+	def add_to_tbl(freq_tbl, order):
+		freq = freq_tbl.get(order, -1)
+		if freq == -1:
+			freq_tbl[order] = 1
+		else:
+			freq_tbl[order] = freq + 1
+
+	for iorder, order in enumerate(orders_list):
+		if order_status_list[iorder].status:
+			add_to_tbl(success_orders_freq, tuple(order))
+		else:
+			add_to_tbl(failed_orders_freq, tuple(order))
+
+	def save_tbl(freq_tbl, fnt):
+		o_fn = expanduser(fnt)
+		o_fhw = open(o_fn, 'wb')
+		o_csvw = csv.writer(o_fhw, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+		for korder, vfreq in freq_tbl.iteritems():
+			row = [vfreq] + list(korder)
+			o_csvw.writerow(row)
+
+		o_fhw.close()
+
+	save_tbl(success_orders_freq, wdconfig.orders_success_fnt)
+	save_tbl(failed_orders_freq, wdconfig.orders_failed_fnt)
+
+	return True
 
 def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dicts, db_len_grps, db_cont_mgr, i_active_cont,
 						 el_set_arr, sess, learn_vars):

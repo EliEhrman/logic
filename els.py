@@ -276,6 +276,27 @@ def print_phrase(src_phrase, out_phrase, out_str, def_article_dict, el_set_arr =
 	filled_phrase, out_str = complete_phrase(src_phrase, out_phrase, out_str, el_set_arr, glv_dict)
 	return output_phrase(def_article_dict, out_str, filled_phrase)
 
+# This function may be one useful but it does no add starts, end and AND
+def build_vars_dict(phrase_list):
+	new_phrase_list, vars_dict = [], dict()
+	for iel, el in enumerate(phrase_list):
+		if el[0] == rec_def_type.var:
+			print('Error! Assuming the input phrase list contains no vars. Exiting!')
+			exit()
+		if el[0] != rec_def_type.obj:
+			new_phrase_list.append(el)
+			continue
+		word = el[1]
+		idx = vars_dict.get(word, None)
+		if idx == None:
+			# new_phrase_list.append([rec_def_type.var, len(vars_dict)])
+			new_phrase_list.append(el)
+			vars_dict[word] = iel
+		else:
+			new_phrase_list.append([rec_def_type.var, idx])
+
+	return new_phrase_list, vars_dict
+
 def make_vec(recs, glv_dict):
 	# numrecs = len(recs)
 	# num_els = len(els_dict)

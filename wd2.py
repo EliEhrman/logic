@@ -15,6 +15,7 @@ import dmlearn
 import clrecgrp
 import wdconfig
 import wdlearn
+import wd_imagine
 
 
 c_rnd_bad_move = 0.6
@@ -304,12 +305,52 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 
 	db.commit()
 
+def create_move_orders2(db, cursor, gameID, sql_complete_order,
+						unit_owns_tbl, terr_id_tbl,
+						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+						orders_list, orders_status_list,
+						init_db, status_db, db_cont_mgr, all_the_dicts,
+						terr_owns_tbl, supply_tbl):
+	nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
+	sql_get_unit_id = string.Template(
+		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
+	sql_make_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
+										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+
+	orders_list, orders_db, success_list, icountry_list = \
+		wd_imagine.create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit_owns_tbl,
+										all_the_dicts, terr_owns_tbl, supply_tbl)
+
+	for iorder, order in enumerate(orders_list):
+		sutype, _,  src_name, _, _, dest_name = order
+		unit_terr_id = terr_id_tbl[src_name]
+		sql_get = sql_get_unit_id.substitute(gameID=str(gameID), terrID=str(unit_terr_id))
+		cursor.execute(sql_get)
+		unit_id = cursor.fetchone()
+		dest_id = terr_id_tbl[dest_name]
+		dstr = ' '.join(order)
+		order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
+									   fromTerrID=unit_terr_id, toTerrID=dest_id)
+		if success_list[iorder]:
+			sql_order = sql_make_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
+			print(sql_order)
+			cursor.execute(sql_order)
+		print(dstr)
+
+	for icountry in icountry_list:
+		sql_order = sql_complete_order.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
+		print(sql_order)
+		cursor.execute(sql_order)
+
+	db.commit()
+
 
 
 def create_move_orders(db, cursor, gameID, sql_complete_order,
 					   unit_owns_tbl, terr_id_tbl,
 					   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-					   orders_list, orders_status_list):
+					   orders_list, orders_status_list,
+					   init_db, status_db, db_cont_mgr):
 	sql_get_unit_id = string.Template(
 		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
 	sql_make_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
@@ -390,7 +431,7 @@ def create_results_db(orders_db, orders_status_list):
 
 def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars, db, cursor, gname, country_names_tbl,
 				terr_id_tbl, supply_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-				init_db, orders_status_list, old_status_db, old_orders_db):
+				init_db, orders_status_list, old_status_db, old_orders_db, old_orders_list):
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
@@ -403,7 +444,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 			print('Failed to create game. Exiting!')
 			exit(1)
 		AddPlayers(db, cursor, gameID)
-		return gameID, False, None, None
+		return gameID, False, None, None, None
 
 	# gameID = 28
 
@@ -420,10 +461,13 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	unit_owns_tbl, new_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_status_list)
 	results_db = create_results_db(old_orders_db, new_orders_status_list)
 	if results_db != None and len(results_db) > 0:
-		b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
-									 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
+		if wdconfig.c_b_save_orders:
+			b_keep_working = wdlearn.create_order_freq_tbl(old_orders_list, new_orders_status_list)
+		else:
+			b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
+										 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
 		if not b_keep_working:
-			return gameID, False, [], []
+			return gameID, False, [], [], []
 
 	status_db = els.convert_list_to_phrases(statement_list)
 
@@ -438,21 +482,23 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
 							  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
-		create_move_orders(db, cursor, gameID, sqlOrderComplete,
+		create_move_orders2(db, cursor, gameID, sqlOrderComplete,
 						   unit_owns_tbl, terr_id_tbl,
 						   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-						   orders_list, orders_status_list)
+						   orders_list, orders_status_list,
+						   init_db, status_db, db_cont_mgr, all_dicts,
+							terr_owns_tbl, supply_tbl)
 	elif game_phase == 'Finished':
-		return gameID, True, None, None
+		return gameID, True, None, None, None
 	else:
-		return gameID, False, None, None
+		return gameID, False, None, None, None
 
 	orders_db = els.convert_list_to_phrases(orders_list)
 
 
 	time.sleep(0.2)
 
-	return gameID, False, status_db, orders_db
+	return gameID, False, status_db, orders_db, orders_list
 
 def init(cursor, country_names_tbl):
 	terr_id_tbl = dict()
@@ -517,19 +563,20 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				gname = get_game_name(cursor, gameID)
 
 			orders_status_list = []
-			status_db, orders_db = [], []
+			status_db, orders_db, orders_list = [], [], []
 			b_keep_working = True
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
 					return gameID
 
 				if iturn > 0:
-					gameID, b_finished, status_db, orders_db = \
+					gameID, b_finished, status_db, orders_db, orders_list = \
 						play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
 									db, cursor, gname, country_names_tbl,
 									terr_id_tbl, supply_tbl, army_can_pass_tbl,
 									fleet_can_pass_tbl, init_db, orders_status_list,
-									old_status_db=status_db, old_orders_db=orders_db)
+									old_status_db=status_db, old_orders_db=orders_db,
+									old_orders_list=orders_list)
 					if b_finished:
 						print('Game Over!')
 						return -1
@@ -574,11 +621,14 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 	dmlearn.learn_reset()
 
 	db_cont_mgr = wdlearn.load_cont_mgr()
-	db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
-	if i_active_cont < 0:
-		return -1, False
+	if wdconfig.c_b_play_learned:
+		db_len_grps, i_active_cont = [], -1
+	else:
+		db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
+		if i_active_cont < 0:
+			return -1, False
 
-	# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
+		# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
 	gameID = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
 	sess.close()
@@ -590,7 +640,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 68 # Set to -1 to restart
+	gameID = -1 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

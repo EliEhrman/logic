@@ -10,6 +10,7 @@ import copy
 
 import config
 import rules
+from rules import rec_def_type
 # import story
 # import cascade
 from rules import conn_type
@@ -488,3 +489,35 @@ def match_partial_rule(glv_dict, rule, perm, rule_level):
 	# 	if rule_level == 0:
 	# 		return perm_scvo == rule_scvo
 
+# A phrase list in this case is a list of els, each with just an obj
+# Different phrases are simply structured as a list without start, end and AND
+
+def make_rec_from_phrase_list(phrase_list, b_force_AND = False):
+	new_phrase_list, vars_dict = [], dict()
+
+	if len(phrase_list) > 1 or b_force_AND:
+		new_phrase_list.append([rec_def_type.conn, conn_type.AND])
+
+	for phrase in phrase_list:
+		new_phrase_list.append([rec_def_type.conn, conn_type.start])
+		for iel, el in enumerate(phrase):
+			if el[0] == rec_def_type.var:
+				print('Error! Assuming the input phrase list contains no vars. Exiting!')
+				exit()
+			if el[0] != rec_def_type.obj:
+				new_phrase_list.append(el)
+				continue
+			word = el[1]
+			idx = vars_dict.get(word, None)
+			if idx == None:
+				# new_phrase_list.append([rec_def_type.var, len(vars_dict)])
+				vars_dict[word] = len(new_phrase_list)
+				new_phrase_list.append(el)
+			else:
+				new_phrase_list.append([rec_def_type.var, idx])
+		new_phrase_list.append([rec_def_type.conn, conn_type.end])
+
+	if len(phrase_list) > 1 or b_force_AND:
+		new_phrase_list.append([rec_def_type.conn, conn_type.end])
+
+	return new_phrase_list, vars_dict

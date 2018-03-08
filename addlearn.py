@@ -60,6 +60,12 @@ class cl_add_gg(object):
 	def get_rule(self):
 		return self.__rule
 
+	def get_rule_str(self):
+		return self.__rule_str
+
+	def get_gens_rec(self):
+		return self.__gens_rec
+
 	def set_num_rows_grp_data(self, num_rows):
 		self.__num_rows_grp_data = num_rows
 
@@ -209,6 +215,21 @@ class cl_cont_mgr(object):
 					score, rule_str, level, b_blocking, self.__max_cont_id, parent_id))
 		return
 
+	def get_conts_above(self, score):
+		icc_list = []
+		for icc, ccont in enumerate(self.__cont_list):
+			if icc == 0:
+				continue
+			status = ccont.get_status()
+			params = ccont.get_status_params()
+			if status == self.status.initial \
+					or status == self.status.irrelevant\
+					or status == self.status.untried:
+				continue
+			if ccont.get_initial_score() > score:
+				icc_list.append(icc)
+		return icc_list
+
 	def select_cont(self):
 		print('Select cont called.')
 		best_cc = self.__cont_list[0]
@@ -242,7 +263,7 @@ class cl_cont_mgr(object):
 						print('icc partial:', icc, 'blocked by pre-set sel type')
 						continue
 					sel_type = 'partial'
-					print('Select cont. icc:', icc, 'status:', self.status, 'level', level)
+					print('Select cont. icc:', icc, 'status:', status, 'level', level)
 				elif status == self.status.untried:
 					b_can_untried = True
 					level = ccont.get_level()
@@ -393,12 +414,14 @@ class cl_cont_mgr(object):
 				print('untried got ', num_hits, 'hits out of ', num_tries, 'tries.')
 				if expands_score > self.c_expands_score_thresh:
 					parent_cont.set_status(self.status.blocks if parent_cont.is_blocking() else self.status.expands)
+					parent_cont.set_score(expands_score)
+					parent_cont.set_status_params([0.0, 0.0])
 				elif  expands_score < self.c_expands_score_min_thresh:
 					parent_cont.set_status(self.status.irrelevant)
 				else:
 					parent_cont.set_status(self.status.partial_block if parent_cont.is_blocking() else self.status.partial_expand)
 					parent_cont.set_score(expands_score)
-				parent_cont.set_status_params([0.0, 0.0])
+					parent_cont.set_status_params([0.0, 0.0])
 				return False
 
 		# return True means I see no reason to stop learning from this cont

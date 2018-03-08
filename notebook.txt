@@ -1177,3 +1177,10 @@ Checking in with the following comment:
 
 Rule learning looks solid.
 
+Thursday 8th March
+
+Checking in with the following comment:
+
+AI of Monte Carlo beats random using rules it learned.
+
+
