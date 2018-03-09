@@ -4,6 +4,7 @@ import sys
 import random
 import config
 import makerecs as mr
+import clrecgrp
 
 class cl_add_gg(object):
 	def __init__(	self, b_from_load, templ_len=None, scvo=None, gens_rec=None,
@@ -367,7 +368,22 @@ class cl_cont_mgr(object):
 			best_cc = self.__cont_list[ibest] # just to make sure we access it again explicitly
 		return best_cc, ibest
 
-	def create_new_conts(self, db_len_grps, i_active_cont, score_thresh, score_min, min_tests):
+	def is_gens_in_target(self, glv_dict, target_list, rule_grp, gens_rec):
+		if target_list == None:
+			return True
+
+		b_success = False
+		for target_rule_str in target_list:
+			gens_rule_grp = mr.get_result_for_cvo_and_rec(rule_grp, gens_rec)
+			target_rule_grp = mr.extract_rec_from_str(target_rule_str)
+			if mr.rule_grp_is_one_in_two(glv_dict, gens_rule_grp, target_rule_grp):
+				b_success = True
+				break
+
+		return b_success
+
+
+	def create_new_conts(self, glv_dict, db_len_grps, i_active_cont, score_thresh, score_min, min_tests):
 		parent_cont = self.__cont_list[i_active_cont]
 		assert parent_cont.is_active()
 		level = parent_cont.get_level() + 1
@@ -395,7 +411,11 @@ class cl_cont_mgr(object):
 				if score > 1.0 - config.c_cd_epsilon:
 					new_cont.set_status(self.status.perfect_block if b_blocking else self.status.perfect)
 				elif parent_cont.is_null():
-					new_cont.set_status(self.status.initial)
+					if self.is_gens_in_target(	glv_dict, clrecgrp.cl_templ_grp.c_target_gens,
+												gg.get_rule_grp(), gg.get_gens_rec()):
+						new_cont.set_status(self.status.initial)
+					else:
+						new_cont.set_status(self.status.irrelevant)
 				else:
 					new_cont.set_status(self.status.untried)
 				print('new cont created. parent:', parent_cont.get_id(), 'new id', self.__max_cont_id,

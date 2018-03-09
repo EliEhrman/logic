@@ -112,8 +112,8 @@ def sel_cont_and_len_grps(db_cont_mgr):
 	# return gg_cont_list, ibest
 	return db_len_grps, ibest
 
-def create_new_conts(db_cont_mgr, db_len_grps, i_active_cont):
-	b_keep_working = db_cont_mgr.create_new_conts(	db_len_grps, i_active_cont, adv_config.c_cont_score_thresh,
+def create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont):
+	b_keep_working = db_cont_mgr.create_new_conts(	glv_dict, db_len_grps, i_active_cont, adv_config.c_cont_score_thresh,
 													adv_config.c_cont_score_min, adv_config.c_cont_min_tests)
 	return b_keep_working
 

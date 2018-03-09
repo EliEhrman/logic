@@ -384,6 +384,7 @@ class cl_templ_grp(object):
 	glv_len = -1
 	c_score_loser_penalty = config.c_score_loser_penalty
 	c_score_winner_bonus = config.c_score_winner_bonus
+	c_target_gens = None
 
 	def __init__(self, b_from_load, templ_len=None, scvo=None, preconds_rec=None, gens_rec_list=None,
 				 event_result_list=None, eid=None, b_blocking=None):

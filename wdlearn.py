@@ -137,8 +137,8 @@ def sel_cont_and_len_grps(db_cont_mgr):
 #
 # 	return db_len_grps, blocked_len_grps
 
-def create_new_conts(db_cont_mgr, db_len_grps, i_active_cont):
-	b_keep_working = db_cont_mgr.create_new_conts(	db_len_grps, i_active_cont, wdconfig.c_cont_score_thresh,
+def create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont):
+	b_keep_working = db_cont_mgr.create_new_conts(	glv_dict, db_len_grps, i_active_cont, wdconfig.c_cont_score_thresh,
 													wdconfig.c_cont_score_min, wdconfig.c_cont_min_tests)
 	return b_keep_working
 
@@ -251,7 +251,7 @@ def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dict
 		orders_db.append(order)
 
 		if iorder % 10 == 0:
-			b_keep_working = create_new_conts(db_cont_mgr, db_len_grps, i_active_cont)
+			b_keep_working = create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont)
 			save_db_status(db_len_grps, db_cont_mgr)
 			if not b_keep_working:
 				break

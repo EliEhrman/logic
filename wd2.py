@@ -308,7 +308,7 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 def create_move_orders2(db, cursor, gameID, sql_complete_order,
 						unit_owns_tbl, terr_id_tbl,
 						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-						orders_list, orders_status_list,
+						ref_orders_list, orders_status_list,
 						init_db, status_db, db_cont_mgr, all_the_dicts,
 						terr_owns_tbl, supply_tbl):
 	nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
@@ -319,7 +319,8 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 
 	orders_list, orders_db, success_list, icountry_list = \
 		wd_imagine.create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit_owns_tbl,
-										all_the_dicts, terr_owns_tbl, supply_tbl)
+										all_the_dicts, terr_owns_tbl, supply_tbl, wdconfig.c_num_montes,
+										wdconfig.c_preferred_nation, wdconfig.c_b_predict_success)
 
 	for iorder, order in enumerate(orders_list):
 		sutype, _,  src_name, _, _, dest_name = order
@@ -331,6 +332,7 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 		dstr = ' '.join(order)
 		order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
 									   fromTerrID=unit_terr_id, toTerrID=dest_id)
+		orders_status_list.append(order_status)
 		if success_list[iorder]:
 			sql_order = sql_make_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
 			print(sql_order)
@@ -342,6 +344,8 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 		print(sql_order)
 		cursor.execute(sql_order)
 
+	ref_orders_list[:] = []
+	ref_orders_list += orders_list
 	db.commit()
 
 
@@ -514,8 +518,9 @@ def init(cursor, country_names_tbl):
 			for dst_name in pass_list:
 				statement_list.append([stype, 'can', 'pass', 'from', src_name, 'to', dst_name])
 
-	add_pass_statements('army', army_can_pass_tbl)
-	add_pass_statements('fleet', fleet_can_pass_tbl)
+	if wdconfig.c_include_pass_statements:
+		add_pass_statements('army', army_can_pass_tbl)
+		add_pass_statements('fleet', fleet_can_pass_tbl)
 
 	supply_tbl = create_supply_tbl(cursor, country_names_tbl, statement_list)
 
@@ -621,7 +626,7 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 	dmlearn.learn_reset()
 
 	db_cont_mgr = wdlearn.load_cont_mgr()
-	if wdconfig.c_b_play_learned:
+	if not wdconfig.c_b_add_to_db_len_grps:
 		db_len_grps, i_active_cont = [], -1
 	else:
 		db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
@@ -640,14 +645,15 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = -1 # Set to -1 to restart
+	gameID = 111 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
 	event_step_id = -1
 	learn_vars = [event_step_id]
 	clrecgrp.cl_templ_grp.glv_dict = all_dicts[0]
-	clrecgrp.cl_gens_grp.glv_len = clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0]['army'])
+	clrecgrp.cl_gens_grp.glv_len = clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0][wdconfig.c_sample_el])
+	clrecgrp.cl_templ_grp.c_target_gens = wdconfig.c_target_gens
 	wdlearn.init_learn()
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	for iplay in range(wdconfig.c_num_plays):

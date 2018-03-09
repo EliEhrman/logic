@@ -1183,4 +1183,11 @@ Checking in with the following comment:
 
 AI of Monte Carlo beats random using rules it learned.
 
+Friday 9th March
+
+Checking in with the following comment:
+
+Learning based on success list. Learning to a target.
+
+
 

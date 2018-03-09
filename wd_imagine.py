@@ -29,12 +29,14 @@ def select_move(order_templ, success_orders_freq):
 	return random.choice(order_list)
 
 def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit_owns_tbl,
-						all_the_dicts, terr_owns_tbl, supply_tbl):
+						all_the_dicts, terr_owns_tbl, supply_tbl, num_montes, preferred_nation,
+						b_predict_success):
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
 	success_orders_freq = dict()
 	wdlearn.load_order_freq_tbl(success_orders_freq, wdconfig.orders_success_fnt)
-	icc_list = db_cont_mgr.get_conts_above(wdconfig.c_use_rule_thresh)
+	if b_predict_success:
+		icc_list = db_cont_mgr.get_conts_above(wdconfig.c_use_rule_thresh)
 	full_db = init_db + status_db
 
 	supply_set = set()
@@ -56,7 +58,7 @@ def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit
 
 	monte_success_lists, monte_num_supplies_list, monte_orders_list = [], [], []
 
-	for imonte in range(wdconfig.c_num_montes):
+	for imonte in range(num_montes):
 		num_supplies_list = [0 for country in country_names_tbl]
 		orders_list, icountry_list, order_country_list = [], [], []
 		for icountry in range(1, len(country_names_tbl)):
@@ -76,34 +78,40 @@ def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit
 		num_orders = len(orders_db)
 		success_list = []
 		for iorder in range(num_orders):
-			order = orders_db.pop(0)
-			order_rec, _ = mr.make_rec_from_phrase_list([order])
-			order_rec_AND, _ = mr.make_rec_from_phrase_list([order], b_force_AND=True)
-			success_result = order + [[rules.rec_def_type.obj, 'succeeded']]
-			out_str = ''
-			out_str = els.print_phrase(order, order, out_str, def_article_dict)
-			print('Testing order: ', out_str)
+			if b_predict_success:
+				order = orders_db.pop(0)
+				order_rec, _ = mr.make_rec_from_phrase_list([order])
+				order_rec_AND, _ = mr.make_rec_from_phrase_list([order], b_force_AND=True)
+				success_result = order + [[rules.rec_def_type.obj, 'succeeded']]
+				out_str = ''
+				out_str = els.print_phrase(order, order, out_str, def_article_dict)
+				print('Testing order: ', out_str)
 
-			b_succeed = True
-			for icc in icc_list:
-				curr_cont = db_cont_mgr.get_cont(icc)
-				if curr_cont.get_level() > 1:
-					cont_result = mr.get_result_for_cvo_and_rec(order_rec_AND, curr_cont.get_gens_rec())
-				else:
-					cont_result = mr.get_result_for_cvo_and_rec(order_rec, curr_cont.get_gens_rec())
+				b_succeed = True
+				for icc in icc_list:
+					curr_cont = db_cont_mgr.get_cont(icc)
+					if curr_cont.get_level() > 1:
+						cont_result = mr.get_result_for_cvo_and_rec(order_rec_AND, curr_cont.get_gens_rec())
+					else:
+						cont_result = mr.get_result_for_cvo_and_rec(order_rec, curr_cont.get_gens_rec())
 
-				if not mr.match_rec_exact(success_result, cont_result[1:-1]):
-					continue
+					if not mr.match_rec_exact(success_result, cont_result[1:-1]):
+						continue
 
-				stats = learn.learn_one_story_step2(els.make_rec_list(full_db + orders_db), [order], cascade_els, [success_result],
-													def_article_dict=def_article_dict, db_len_grps = None,
-													el_set_arr=None, glv_dict=glv_dict, sess = None, event_step_id= -1,
-													expected_but_not_found_list = [], level_depr=0, gg_cont=curr_cont,
-													b_blocking_depr=False, b_test_rule=True)
-				if stats[0] and stats[1] and curr_cont.is_blocking():
-					print('Order blocked:', ' '.join(orders_list[iorder]), 'by rule:', curr_cont.get_rule_str())
-					b_succeed = False
-					break
+					stats = learn.learn_one_story_step2(els.make_rec_list(full_db + orders_db), [order], cascade_els, [success_result],
+														def_article_dict=def_article_dict, db_len_grps = None,
+														el_set_arr=None, glv_dict=glv_dict, sess = None, event_step_id= -1,
+														expected_but_not_found_list = [], level_depr=0, gg_cont=curr_cont,
+														b_blocking_depr=False, b_test_rule=True)
+					if stats[0] and stats[1] and curr_cont.is_blocking():
+						print('Order blocked:', ' '.join(orders_list[iorder]), 'by rule:', curr_cont.get_rule_str())
+						b_succeed = False
+						break
+				orders_db.append(order)
+			else: # if not b_predict_success
+				b_succeed = True
+
+			# end if b_predict success
 			if b_succeed:
 				terr_at = orders_list[iorder][-1]
 			else:
@@ -114,7 +122,6 @@ def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit
 				num_supplies_list[country_dict[prev_owner]] -= 1
 				num_supplies_list[country_dict[order_country_list[iorder]]] += 1
 
-			orders_db.append(order)
 			success_list.append(b_succeed)
 		monte_success_lists.append(success_list)
 		monte_num_supplies_list.append(num_supplies_list)
@@ -122,7 +129,7 @@ def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit
 
 	# status is highest value, index of monte. Initialized to 0 insead of -1 just in casee..
 	best_monte_by_country = [[-1000, 0] for country in country_names_tbl]
-	for imonte in range(wdconfig.c_num_montes):
+	for imonte in range(num_montes):
 		for icountry, status in enumerate(best_monte_by_country):
 			if monte_num_supplies_list[imonte][icountry] > status[0]:
 				status[0] = monte_num_supplies_list[imonte][icountry]
@@ -131,10 +138,11 @@ def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit
 	orders_list, success_list = [], []
 	for iorder, country in enumerate(order_country_list):
 		icountry = country_dict[country]
-		if country == 'england':
-			imonte = best_monte_by_country[icountry][1]
+		if preferred_nation == None or country != preferred_nation:
+			imonte = random.randint(0, num_montes-1)
 		else:
-			imonte = random.randint(0, wdconfig.c_num_montes-1)
+			imonte = best_monte_by_country[icountry][1]
+
 		orders_list.append(monte_orders_list[imonte][iorder])
 		success_list.append(monte_success_lists[imonte][iorder])
 

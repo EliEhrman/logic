@@ -214,8 +214,7 @@ def get_result_for_cvo_and_rec(preconds_rec, gens_rec):
 	result = []
 	for el in gens_rec:
 		if el[0] == rules.rec_def_type.var:
-			ivar = el[1]
-			result.append(preconds_rec[ivar])
+			result.append(preconds_rec[el[1]])
 		else:
 			result.append(el)
 
@@ -351,6 +350,26 @@ def does_match_rule(glv_dict, rule, perm):
 		vec_perm = glv_dict[perm[iel][1]]
 		cd = sum([vec_perm[i] * rule_val for i, rule_val in enumerate(vec_rule)])
 		if cd < (el[2] - config.c_cd_epsilon):
+			b_match = False
+			break
+
+	return b_match
+
+def rule_grp_is_one_in_two(glv_dict, rule1, rule2):
+	b_match = True
+	for iel, el in enumerate(rule2):
+		if el[0] != rules.rec_def_type.like:
+			continue
+		vec_rule = glv_dict[el[1]]
+		vec_perm = glv_dict[rule1[iel][1]]
+		min_cd2 = el[2]
+		if rule1[iel][0] == rules.rec_def_type.like:
+			min_cd1 = rule1[iel][2]
+			if min_cd1 < (min_cd2 - config.c_cd_epsilon):
+				b_match = False
+				break
+		cd = sum([vec_perm[i] * rule_val for i, rule_val in enumerate(vec_rule)])
+		if cd < (min_cd2 - config.c_cd_epsilon):
 			b_match = False
 			break
 
