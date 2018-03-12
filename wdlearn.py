@@ -87,7 +87,7 @@ def load_cont_mgr():
 
 	return db_cont_mgr
 
-def load_len_grps(grp_data_list, db_len_grps):
+def load_len_grps(grp_data_list, db_len_grps, b_cont_blocking):
 	assert  db_len_grps == []
 	data_list = copy.deepcopy(grp_data_list)
 	# f = StringIO(s_grp_data)
@@ -96,7 +96,7 @@ def load_len_grps(grp_data_list, db_len_grps):
 	_, num_len_grps = data_list.pop(0)
 	for i_len_grp in range(int(num_len_grps)):
 		len_grp = clrecgrp.cl_len_grp(b_from_load=True)
-		len_grp.load(data_list)
+		len_grp.load(data_list, b_cont_blocking)
 		db_len_grps.append(len_grp)
 	return db_len_grps
 
@@ -105,12 +105,13 @@ def sel_cont_and_len_grps(db_cont_mgr):
 	db_len_grps = []
 	sel_cont, ibest = db_cont_mgr.select_cont()
 	if ibest >= 0:
+		b_cont_blocking = sel_cont.is_blocking()
 		grp_data = sel_cont.get_grp_data()
 		# if there is no grp data return and db_len_grps will be empty
 		# if there is data but no cont can be created, just keep learning with what we have
 		# if new conts are created, select from all of them again
 		if grp_data != []:
-			load_len_grps(grp_data, db_len_grps)
+			load_len_grps(grp_data, db_len_grps, b_cont_blocking)
 
 	return db_len_grps, ibest
 
@@ -220,6 +221,10 @@ def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dict
 				b_std_learn = False
 				b_first_run = True
 
+		# The first returned value is whether it matched. The second is whether the result occurred
+		# This will be the same regardless of whether the cont is a blocking cont or not
+		# The first param of the status params is how many matches were true for the parent
+		# The second param is how many results occurred
 		while True:
 			stats = learn.learn_one_story_step2(full_db+orders_db, [order.phrase()], cascade_els, [results_pl[iorder]],
 									def_article_dict, db_len_grps, el_set_arr, glv_dict, sess, event_step_id,
@@ -231,15 +236,33 @@ def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dict
 					b_first_run = False
 					child_stats = stats
 				else:
-					params = curr_cont.get_status_params()
-					if stats[0]:
-						if not stats[1]:
-							if child_stats[0] and curr_cont.is_blocking() and child_stats[1]:
-								curr_cont.set_status_params([params[0] + 1.0, params[1] + 1.0])
-							elif not curr_cont.is_blocking() and not child_stats[0]:
-								curr_cont.set_status_params([params[0] + 1.0, params[1] + 1.0])
-							else:
-								curr_cont.set_status_params([params[0], params[1] + 1.0])
+					if not stats[0]:
+						if child_stats[1]:
+							print('Interesting option here. Child matched preconds but parent did not. Investigate.')
+					else:
+						params = curr_cont.get_status_params()
+						if len(params) < 4:
+							num_child_hits, num_child_results, num_parent_hits, num_parent_results = 0.0, 0.0, 0.0, 0.0
+						else:
+							num_child_hits, num_child_results, num_parent_hits, num_parent_results = params
+						if child_stats[0] and stats[1] != child_stats[1]:
+							print('Interesting option here. Result occurred in only one of parent and child. Investigate.')
+						num_parent_hits += 1.0
+						if stats[1]:
+							num_parent_results += 1.0
+						if child_stats[0]:
+							num_child_hits += 1.0
+							if child_stats[1]:
+								num_child_results += 1.0
+						curr_cont.set_status_params([num_child_hits, num_child_results, num_parent_hits, num_parent_results ])
+					# if stats[0]:
+					# 	if not stats[1]:
+					# 		if child_stats[0] and curr_cont.is_blocking() and child_stats[1]:
+					# 			curr_cont.set_status_params([params[0] + 1.0, params[1] + 1.0])
+					# 		elif not curr_cont.is_blocking() and not child_stats[0]:
+					# 			curr_cont.set_status_params([params[0] + 1.0, params[1] + 1.0])
+					# 		else:
+					# 			curr_cont.set_status_params([params[0], params[1] + 1.0])
 					break
 			else:
 				break

@@ -91,9 +91,9 @@ def create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit
 				for icc in icc_list:
 					curr_cont = db_cont_mgr.get_cont(icc)
 					if curr_cont.get_level() > 1:
-						cont_result = mr.get_result_for_cvo_and_rec(order_rec_AND, curr_cont.get_gens_rec())
+						cont_result = mr.replace_vars_in_phrase(order_rec_AND, curr_cont.get_gens_rec())
 					else:
-						cont_result = mr.get_result_for_cvo_and_rec(order_rec, curr_cont.get_gens_rec())
+						cont_result = mr.replace_vars_in_phrase(order_rec, curr_cont.get_gens_rec())
 
 					if not mr.match_rec_exact(success_result, cont_result[1:-1]):
 						continue

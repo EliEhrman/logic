@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 
 FLAGS = tf.flags.FLAGS
@@ -60,6 +60,7 @@ c_gg_validate_thresh = 10 # number of points to accumulate before finding missin
 c_gg_confirm_thresh = 25
 c_templ_learn_every_num_perms = 12
 c_gg_learn_every_num_perms = 50 # 10
+c_gg_num_perms_till_learn_on_load = 10
 c_gg_num_learn_steps = 200000
 c_gg_learn_test_every = 1000
 c_gg_learn_good_thresh = 0.01

@@ -78,7 +78,7 @@ def load_cont_mgr():
 
 	return db_cont_mgr
 
-def load_len_grps(grp_data_list, db_len_grps):
+def load_len_grps(grp_data_list, db_len_grps, b_cont_blocking):
 	assert  db_len_grps == []
 	data_list = copy.deepcopy(grp_data_list)
 	# f = StringIO(s_grp_data)
@@ -87,7 +87,7 @@ def load_len_grps(grp_data_list, db_len_grps):
 	_, num_len_grps = data_list.pop(0)
 	for i_len_grp in range(int(num_len_grps)):
 		len_grp = clrecgrp.cl_len_grp(b_from_load=True)
-		len_grp.load(data_list)
+		len_grp.load(data_list, b_cont_blocking)
 		db_len_grps.append(len_grp)
 	return db_len_grps
 
@@ -97,11 +97,12 @@ def sel_cont_and_len_grps(db_cont_mgr):
 	db_len_grps = []
 	sel_cont, ibest = db_cont_mgr.select_cont()
 	grp_data = sel_cont.get_grp_data()
+	b_cont_blocking = sel_cont.is_blocking()
 	# if there is no grp data return and db_len_grps will be empty
 	# if there is data but no cont can be created, just keep learning with what we have
 	# if new conts are created, select from all of them again
 	if grp_data != []:
-		load_len_grps(grp_data, db_len_grps)
+		load_len_grps(grp_data, db_len_grps, b_cont_blocking)
 	# if db_len_grps != []:
 	# 	dmlearn.learn_reset()
 	# 	del db_len_grps[:]

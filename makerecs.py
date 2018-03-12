@@ -206,17 +206,33 @@ def match_gens_phrase(rec0, rec1):
 
 	return b_matched
 
-def get_result_for_cvo_and_rec(preconds_rec, gens_rec):
-	# sleft = str(scvo)
-	#
-	# while sleft != '':
-	# 	c, sleft = sleft[0], sleft[1:]
+def replace_vars_in_phrase(preconds_rec, gens_rec):
 	result = []
 	for el in gens_rec:
 		if el[0] == rules.rec_def_type.var:
 			result.append(preconds_rec[el[1]])
 		else:
 			result.append(el)
+
+	return result
+
+def place_vars_in_phrase(vars_dict, gens_rec):
+	result = []
+	for el in gens_rec:
+		if el[0] == rules.rec_def_type.obj:
+			idx = vars_dict.get(el[1], -1)
+			if idx >= 0:
+				new_el = []
+				for inel, nel in enumerate(el):
+					if inel == 0:
+						new_el.append(rules.rec_def_type.var)
+					elif inel == 1:
+						new_el.append(idx)
+					else:
+						new_el.append(nel)
+				result.append(new_el)
+			else:
+				result.append(el)
 
 	return result
 
@@ -510,6 +526,23 @@ def match_partial_rule(glv_dict, rule, perm, rule_level):
 
 # A phrase list in this case is a list of els, each with just an obj
 # Different phrases are simply structured as a list without start, end and AND
+def make_rec_from_phrase_arr(phrase_list, b_force_AND = False):
+	new_phrase_list = []
+
+	if len(phrase_list) > 1 or b_force_AND:
+		new_phrase_list.append([rec_def_type.conn, conn_type.AND])
+
+	for phrase in phrase_list:
+		new_phrase_list.append([rec_def_type.conn, conn_type.start])
+		for iel, el in enumerate(phrase):
+			new_phrase_list.append(el)
+		new_phrase_list.append([rec_def_type.conn, conn_type.end])
+
+	if len(phrase_list) > 1 or b_force_AND:
+		new_phrase_list.append([rec_def_type.conn, conn_type.end])
+
+	return new_phrase_list
+
 
 def make_rec_from_phrase_list(phrase_list, b_force_AND = False):
 	new_phrase_list, vars_dict = [], dict()
@@ -540,3 +573,11 @@ def make_rec_from_phrase_list(phrase_list, b_force_AND = False):
 		new_phrase_list.append([rec_def_type.conn, conn_type.end])
 
 	return new_phrase_list, vars_dict
+
+def make_perm_preconds_rec(rule_base, one_perm, story_db):
+	phrase_list = list(rule_base)
+	for iphrase in one_perm:
+		phrase_list += [story_db[iphrase].phrase()]
+
+	new_phrase_list, vars_dict = make_rec_from_phrase_list(phrase_list, b_force_AND=False)
+	return new_phrase_list, vars_dict, phrase_list

@@ -1189,5 +1189,19 @@ Checking in with the following comment:
 
 Learning based on success list. Learning to a target.
 
+Saturday 10th March
 
+Figure out why the following seems so rare:
 
+cacsoooooocecsv02v03v07v05v06v04cece
+
+Look for blocking, that while perfect, do not explain all the blocking.
+Thus there parent has status T,F and the child is ALWAYS T,T and yet there are situations where the parent was T,F
+but the child what F,F. So there is a different explanation for why the parent matched but did not succeed. Conversely,
+if we add up all the perfect blockers and they cover ALL the T.F  cases for the parent - that is perfect knowledge
+
+Monday 12th March
+
+Checking in with the following comment:
+
+Learning wd rules. No nonblock after block. New untried maturation.

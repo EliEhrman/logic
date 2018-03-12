@@ -149,7 +149,7 @@ class cl_add_gg(object):
 				match_list.append(iperm)
 				if loop_level == self.__level-1:
 					b_result_found = False
-					generated_result = mr.get_result_for_cvo_and_rec(perm_preconds_list[iperm], self.__gens_rec)
+					generated_result = mr.replace_vars_in_phrase(perm_preconds_list[iperm], self.__gens_rec)
 					expected_result = generated_result[1:-1]
 					for igens, one_perm_gens in enumerate(perm_gens_list[iperm]):
 						event_result = step_results[igens]
@@ -347,7 +347,7 @@ class cl_cont_mgr(object):
 					b_has_best_score_bonus = score_bonus > 0.0
 					print('cont best:', icc, 'best score', best_score)
 
-		# ibest = 8
+		# ibest = 24
 
 		if ibest >= 0:
 			for icc, ccont in enumerate(self.__cont_list):
@@ -374,7 +374,7 @@ class cl_cont_mgr(object):
 
 		b_success = False
 		for target_rule_str in target_list:
-			gens_rule_grp = mr.get_result_for_cvo_and_rec(rule_grp, gens_rec)
+			gens_rule_grp = mr.replace_vars_in_phrase(rule_grp, gens_rec)
 			target_rule_grp = mr.extract_rec_from_str(target_rule_str)
 			if mr.rule_grp_is_one_in_two(glv_dict, gens_rule_grp, target_rule_grp):
 				b_success = True
@@ -428,20 +428,35 @@ class cl_cont_mgr(object):
 		status = parent_cont.get_status()
 		params = parent_cont.get_status_params()
 		if status == self.status.untried:
-			num_hits, num_tries = params
-			if num_tries > self.c_expands_min_tries:
-				expands_score = num_hits / num_tries
-				print('untried got ', num_hits, 'hits out of ', num_tries, 'tries.')
-				if expands_score > self.c_expands_score_thresh:
+			# num_occurred = 0.0
+			if len(params) < 4:
+				return True
+			else:
+				num_child_hits, num_child_results, num_parent_hits, num_parent_results = params
+
+			if num_child_hits > self.c_expands_min_tries:
+				child_prob = num_child_results / num_child_hits
+				parent_prob = num_parent_results / num_parent_hits
+				if parent_cont.is_blocking():
+					expands_score = self.c_expands_score_thresh if child_prob <= 0.0 else parent_prob / child_prob
+					# expands_score = num_hits / num_tries
+				else:
+					expands_score = self.c_expands_score_thresh if child_prob >= 0.9999  else (1.0 - parent_prob) / (1.0 - child_prob)
+
+				print('untried results. num_child_hits', num_child_hits, 'num_child_results', num_child_results,
+					  'num_parent_hits', num_parent_hits, 'num_parent_results', num_parent_results)
+				if expands_score >= self.c_expands_score_thresh:
 					parent_cont.set_status(self.status.blocks if parent_cont.is_blocking() else self.status.expands)
-					parent_cont.set_score(expands_score)
+					parent_cont.set_score(expands_score/self.c_expands_score_thresh)
 					parent_cont.set_status_params([0.0, 0.0])
 				elif  expands_score < self.c_expands_score_min_thresh:
 					parent_cont.set_status(self.status.irrelevant)
 				else:
 					parent_cont.set_status(self.status.partial_block if parent_cont.is_blocking() else self.status.partial_expand)
-					parent_cont.set_score(expands_score)
+					parent_cont.set_score(expands_score/self.c_expands_score_thresh)
 					parent_cont.set_status_params([0.0, 0.0])
+
+				print('untried matured to status:', parent_cont.get_status())
 				return False
 
 		# return True means I see no reason to stop learning from this cont

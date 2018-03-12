@@ -105,6 +105,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 	if not b_null_results and all(result_confirmed_list):
 		return
 	b_blocking = perm_results_blocked_list[iperm]
+	b_cont_blocking = not curr_cont.is_null and curr_cont.is_blocking()
 	comb_len = len(perm_preconds_list[iperm])
 	print('Evaluating the following perm', ('for block' if b_blocking else ''), ':')
 	out_str = ''
@@ -128,7 +129,8 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 											   preconds_rec=perm_preconds_list[iperm],
 											   gens_rec_list=perm_gens_list[iperm],
 											   event_result_list=step_results,
-											   eid=event_step_id, b_blocking=b_blocking))
+											   eid=event_step_id, b_blocking=b_blocking,
+											   b_cont_blocking=b_cont_blocking))
 			else:
 				# num_pggs = perm_templ.get_num_pggs()
 				# if num_pggs >= 2:
@@ -167,7 +169,7 @@ def process_one_perm(	perm_gens_list, iperm, event_step_id, perm_preconds_list, 
 			db_len_grps.append(cl_len_grp(b_from_load=False, init_len=comb_len, first_scvo=pcvo_list[iperm],
 										  preconds_rec=perm_preconds_list[iperm],
 										  gens_rec_list=perm_gens_list[iperm], event_result_list=step_results,
-										  eid=event_step_id, b_blocking=b_blocking))
+										  eid=event_step_id, b_blocking=b_blocking, b_cont_blocking=b_cont_blocking))
 		# end of one perm in all_perms
 
 # def learn_one_story_step(story_db, step_phrases, cascade_els, step_results, def_article_dict,
@@ -287,13 +289,20 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 	else:
 		level_loop_range = gg_cont.get_level() + 1
 
+	b_cont_blocking = gg_cont.is_blocking()
+
+
 	for level in range(level_loop_range):
 		if b_test_rule and level == (level_loop_range - 1):
 			if step_phrases_list == []:
 				return [False, False]
-			elif not all(step_results_blocked_list):
-				return [True, True]
-			return [True, False]
+			if b_cont_blocking:
+				step_results_matched = step_results_blocked_list
+			else:
+				step_results_matched = [not b for b in step_results_blocked_list]
+			if any(step_results_matched):
+				return [True, not b_cont_blocking]
+			return [True, b_cont_blocking]
 		pcvo_alist = []
 		perm_preconds_alist = []
 		perm_phrases_alist = []
@@ -337,27 +346,38 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 
 				rule_base = step_phrases
 				for one_perm in all_perms:
-					new_conds, vars_dict, rule_phrases = mr.make_preconds_rule_from_phrases(rule_base, one_perm, story_db)
+					preconds_recs, vars_dict, rule_phrases = mr.make_perm_preconds_rec(rule_base, one_perm, story_db)
 					gens_recs_arr = []
 					if b_null_results:
-						new_rule = rules.nt_rule(preconds=new_conds, gens=[])
-						preconds_recs, gens_recs = \
-							rules.gen_for_rule(b_gen_for_learn=True, rule=new_rule)
 						perm_gens_list.append([])
 					else:
 						for event_result in step_results:
-							new_gens = mr.make_gens_rule_from_phrases(vars_dict, event_result)
-							new_rule = rules.nt_rule(preconds=new_conds, gens=new_gens)
-							# overwrite the preconds_rec because it should always be identical in this inner loop
-							preconds_recs, gens_recs = \
-								rules.gen_for_rule(b_gen_for_learn=True, rule=new_rule)
-							gens_recs_arr.append(gens_recs[0].phrase())
+							gens_recs_arr.append(mr.make_rec_from_phrase_arr([mr.place_vars_in_phrase(vars_dict, event_result)]))
 						perm_gens_list.append(gens_recs_arr)
+
+					# new_conds, vars_dict, rule_phrases = mr.make_preconds_rule_from_phrases(rule_base, one_perm, story_db)
+					# gens_recs_arr = []
+					# if b_null_results:
+					# 	new_rule = rules.nt_rule(preconds=new_conds, gens=[])
+					# 	preconds_recs, gens_recs = \
+					# 		rules.gen_for_rule(b_gen_for_learn=True, rule=new_rule)
+					# 	perm_gens_list.append([])
+					# else:
+					# 	for event_result in step_results:
+					# 		new_gens = mr.make_gens_rule_from_phrases(vars_dict, event_result)
+					# 		new_rule = rules.nt_rule(preconds=new_conds, gens=new_gens)
+					# 		# overwrite the preconds_rec because it should always be identical in this inner loop
+					# 		preconds_recs, gens_recs = \
+					# 			rules.gen_for_rule(b_gen_for_learn=True, rule=new_rule)
+					# 		gens_recs_arr.append(gens_recs[0].phrase())
+					# 	perm_gens_list.append(gens_recs_arr)
 					# take first el because the result is put into a list
-					perm_preconds_list.append(preconds_recs[0].phrase())
+					# perm_preconds_list.append(preconds_recs[0].phrase())
+					# pcvo_list.append(mr.gen_cvo_str(preconds_recs[0].phrase()))
+					perm_preconds_list.append(preconds_recs)
+					pcvo_list.append(mr.gen_cvo_str(preconds_recs))
 					perm_phrases_list.append(rule_phrases)
 					# perm_gens_list.append(gens_recs[0].phrase())
-					pcvo_list.append(mr.gen_cvo_str(preconds_recs[0].phrase()))
 					perm_story_idx_list += [list(perm_story_idxs) + [one_comb]]
 
 				# end of one_perm in all perms
@@ -384,7 +404,18 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 					match_list, result_list, normal_not_blocking_list = \
 						gg_cont.filter(glv_dict, perm_gens_list, perm_preconds_list, perm_phrases_list,
 										step_results, pcvo_list, level)
+					# Each ipem will produce one item in the match list and ONE item in the normal_not_blocking list
+					# This is true even if there are multiple results. If one matches out of these multiple results
+					# there will be an entry of True and if NONE, then there will be an entry of false
+					# There is a potential bug here - not for now it's not real. If we are filtering we assume we are
+					# level 1 or above and therefore there is only one result
 					for imatch, one_match in enumerate(match_list):
+						# if not b_test_rule and b_cont_blocking and len(normal_not_blocking_list) > imatch \
+						# 		and normal_not_blocking_list[imatch] == True:
+						# 	# Very important. A rule that is already blocking cannot block the block. It can only extend it
+						# 	# This means that when using the rules we can iterate down the succeed rules and check whether
+						# 	# they have a block
+						# 	continue
 						pcvo_alist.append(pcvo_list[one_match])
 						perm_preconds_alist.append(perm_preconds_list[one_match])
 						perm_phrases_alist.append(perm_phrases_list[one_match])
@@ -415,6 +446,8 @@ def learn_one_story_step2(story_db, step_phrases_src, cascade_els, step_results_
 			step_results_blocked_list = copy.deepcopy(perm_results_blocked_alist)
 			step_story_idx_list = copy.deepcopy(perm_story_idx_alist)
 	# end of level loop
+	# if b_cont_blocking and pcvo_blist != []:
+	# 	perm_results_blocked_blist = [not b for b in perm_results_blocked_blist]
 	for iperm, _ in enumerate(pcvo_blist):
 		process_one_perm(perm_gens_blist, iperm, event_step_id, perm_preconds_blist, perm_phrases_blist,
 						 step_results, pcvo_blist, perm_results_blocked_blist,

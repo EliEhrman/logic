@@ -5,7 +5,7 @@ import os
 # import time
 import random
 import numpy as np
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
 from utils import ulogger as logger
@@ -356,7 +356,7 @@ def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, th
 
 	# if event_result_list is empty, every gg match means a problem, so find a way to report
 	# under all circumstances, the list of unsuccessful matches needs to be created to learn blocking
-	generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gens_rec)
+	generated_result = mr.replace_vars_in_phrase(perm_rec, gens_rec)
 	expected_result = generated_result[1:-1]
 
 	if event_result_list == []:
@@ -406,7 +406,7 @@ def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_
 		if igg == 0:
 			continue
 		if igg_sums[igg] > 0.3:
-			generated_result = mr.get_result_for_cvo_and_rec(perm_rec, gg.get_gens_rec())
+			generated_result = mr.replace_vars_in_phrase(perm_rec, gg.get_gens_rec())
 			for iresult, event_result in enumerate(event_result_list):
 				if mr.match_rec_exact(generated_result[1:-1], event_result):
 					event_result_score_list[iresult].append([igg_sums[igg], templ_len, templ_scvo, igg])

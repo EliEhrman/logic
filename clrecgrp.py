@@ -63,7 +63,8 @@ class cl_gens_grp(object):
 
 		self.__eid_last_add = eid
 
-		if self.__b_lrn_success and not utils.prob_for_penalty(self.__penalty):
+		# if self.__b_lrn_success and not utils.prob_for_penalty(self.__penalty):
+		if not utils.prob_for_penalty(self.__penalty):
 			return False
 
 		self.__iperm_list.append(templ_iperm)
@@ -318,7 +319,7 @@ class cl_gens_grp(object):
 		self.__num_successes, self.__num_tests, self.__penalty = float(snum_successes), float(snum_tests), int(spenalty)
 		self.__gens_rec = mr.extract_rec_from_str(sgens_rec)
 		self.__rule_grp = mr.extract_rec_from_str(srule_rec)
-		self.__num_perm_adds_till_next_learn = config.c_gg_learn_every_num_perms
+		self.__num_perm_adds_till_next_learn = config.c_gg_num_perms_till_learn_on_load
 		self.__b_lrn_success, self.__b_blocking = False, sb_blocking == 'True'
 		self.__cont_id = int(s_cont_id)
 		if self.__num_points >= config.c_gg_validate_thresh:
@@ -345,13 +346,17 @@ class cl_prov_gens_grp(cl_gens_grp):
 		self.__b_graduated = False
 		# self.__b_blocking = b_blocking
 
-	def add_perm(self, templ_iperm, eid, db_len_grps=None, templ_len=None):
+	def add_perm(self, templ_iperm, eid, db_len_grps=None, templ_len=None, templ_b_cont_blocking=True):
 		b_success = super(cl_prov_gens_grp, self).add_perm(templ_iperm, eid)
 		if not b_success:
 			return False
 
 		self.__eid_set.add(eid)
 		if not self.__b_graduated and len(self.__eid_set) > config.c_gg_graduate_len:
+			if templ_b_cont_blocking and not self.get_b_blocking():
+				print('Will not graduate a non-blocking pgg in a templ grp that has cont blocked')
+				return False
+
 			self.__b_graduated = True
 			print('gg graduated. igg:', self.get_igg())
 			return True
@@ -387,7 +392,7 @@ class cl_templ_grp(object):
 	c_target_gens = None
 
 	def __init__(self, b_from_load, templ_len=None, scvo=None, preconds_rec=None, gens_rec_list=None,
-				 event_result_list=None, eid=None, b_blocking=None):
+				 event_result_list=None, eid=None, b_blocking=None, b_cont_blocking=None):
 		pgg_list = []
 		if not b_from_load:
 			self.__templ_len = templ_len
@@ -425,6 +430,7 @@ class cl_templ_grp(object):
 		self.__gg_list = []
 		self.__b_confirmed = False
 		self.__num_perm_adds_till_next_learn = -1
+		self.__b_cont_blocking = b_cont_blocking
 
 	def get_nn_params(self):
 		return self.__nn_params
@@ -450,6 +456,9 @@ class cl_templ_grp(object):
 		return ipgg
 
 	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, perm_result_blocked, eid, db_len_grps=None):
+		if self.__scvo == 'cacsoooooocecsv02v03v07v05v06v04cece':
+			print('stop here')
+
 		if self.__b_db_graduated:
 			b_add_valid = False
 			for one_gg in self.__gg_list[1:]:
@@ -481,7 +490,9 @@ class cl_templ_grp(object):
 											b_blocking=perm_result_blocked, templ_iperm=iperm, eid=eid)
 				perm_ipgg = self.add_pgg(perm_pgg)
 			else:
-				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid, db_len_grps=db_len_grps, templ_len=self.__templ_len)
+				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid, db_len_grps=db_len_grps,
+														   templ_len=self.__templ_len,
+														   templ_b_cont_blocking=self.__b_cont_blocking)
 				# perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm], gens_rec=perm_gens_list[iperm], igg=perm_igg)
 
 			# if igens == 0:
@@ -537,6 +548,8 @@ class cl_templ_grp(object):
 					score_list = event_result_score_list
 				else:
 					print('No gg valid for getting score for template:', self.__scvo, 'len:', self.__templ_len)
+					if self.__scvo == 'cacsoooooocecsv02v03v07v05v06v04cece':
+						print('stop here')
 			else:
 				score_list = [[] for _ in event_result_score_list]
 
@@ -631,8 +644,8 @@ class cl_templ_grp(object):
 			if igg == 0:
 				continue
 
-			generated_result = mr.get_result_for_cvo_and_rec(perm_rec,
-															 gg.get_gens_rec())
+			generated_result = mr.replace_vars_in_phrase(perm_rec,
+														 gg.get_gens_rec())
 			b_success_found = False
 			for one_result in perm_result_list:
 				if self.__perm_result_blocked_list[perm_irec] != gg.get_b_blocking():
@@ -709,12 +722,13 @@ class cl_templ_grp(object):
 		for gg in self.__gg_list:
 			gg.save(db_csvr)
 
-	def load(self, db_csvr):
+	def load(self, db_csvr, b_cont_blocking):
 		_, _, sb_confirmed, _, sb_db_graduated, _, sdb_valid, _, solen, \
 			_, stempl_len, _, num_pggs, _, num_ggs, _, self.__scvo = get_next(db_csvr)
 		self.__b_confirmed, self.__b_db_graduated = sb_confirmed == 'True', sb_db_graduated == 'True'
 		self.__db_valid, self.__olen = sdb_valid == 'True', int(solen)
 		self.__templ_len  = int(stempl_len)
+		self.__b_cont_blocking = b_cont_blocking
 
 		for ipgg in range(int(num_pggs)):
 			pgg = cl_prov_gens_grp(b_from_load=True, igg=ipgg)
@@ -751,7 +765,7 @@ class cl_len_grp(object):
 	# __slots__='__len', '__templ_grp_list'
 
 	def __init__(self, b_from_load, init_len=None, first_scvo=None, preconds_rec=None, gens_rec_list=None,
-				 event_result_list=None, eid=None, b_blocking=None):
+				 event_result_list=None, eid=None, b_blocking=None, b_cont_blocking=None):
 		# gg = cl_gens_grp(gens_rec, preconds_rec)
 		if b_from_load:
 			self.__templ_grp_list = []
@@ -760,7 +774,8 @@ class cl_len_grp(object):
 			self.__len = init_len
 			self.__templ_grp_list = [cl_templ_grp(b_from_load=False, templ_len=init_len, scvo=first_scvo,
 												  gens_rec_list=gens_rec_list, preconds_rec=preconds_rec,
-												  event_result_list=event_result_list, eid=eid, b_blocking=b_blocking)]
+												  event_result_list=event_result_list, eid=eid, b_blocking=b_blocking,
+												  b_cont_blocking=b_cont_blocking)]
 
 	def add_templ(self, templ):
 		self.__templ_grp_list.append(templ)
@@ -804,12 +819,12 @@ class cl_len_grp(object):
 		for templ_grp in self.__templ_grp_list:
 			templ_grp.save(db_csvr)
 
-	def load(self, db_csvr):
+	def load(self, db_csvr, b_cont_blocking):
 		_, slen, _, num_tmpl_grps = get_next(db_csvr)
 		self.__len = int(slen)
 		for i_templ_grp in range(int(num_tmpl_grps)):
 			templ_grp = cl_templ_grp(b_from_load=True)
-			templ_grp.load(db_csvr)
+			templ_grp.load(db_csvr, b_cont_blocking)
 			self.__templ_grp_list.append(templ_grp)
 
 	# def sload(self, ldata):
