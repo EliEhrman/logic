@@ -5,7 +5,7 @@ import os
 # import time
 import random
 import numpy as np
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"
 import tensorflow as tf
 from tensorflow.python import debug as tf_debug
 from utils import ulogger as logger

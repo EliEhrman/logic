@@ -1205,3 +1205,7 @@ Monday 12th March
 Checking in with the following comment:
 
 Learning wd rules. No nonblock after block. New untried maturation.
+
+Checking in with the following comment:
+
+Add wd_admin. Deleting all finshed games.

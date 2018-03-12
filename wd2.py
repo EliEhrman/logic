@@ -16,6 +16,7 @@ import clrecgrp
 import wdconfig
 import wdlearn
 import wd_imagine
+import wd_admin
 
 
 c_rnd_bad_move = 0.6
@@ -353,8 +354,7 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 def create_move_orders(db, cursor, gameID, sql_complete_order,
 					   unit_owns_tbl, terr_id_tbl,
 					   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-					   orders_list, orders_status_list,
-					   init_db, status_db, db_cont_mgr):
+					   orders_list, orders_status_list):
 	sql_get_unit_id = string.Template(
 		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
 	sql_make_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
@@ -486,12 +486,18 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
 							  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
-		create_move_orders2(db, cursor, gameID, sqlOrderComplete,
-						   unit_owns_tbl, terr_id_tbl,
-						   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-						   orders_list, orders_status_list,
-						   init_db, status_db, db_cont_mgr, all_dicts,
-							terr_owns_tbl, supply_tbl)
+		if wdconfig.c_b_play_from_saved:
+			create_move_orders2(db, cursor, gameID, sqlOrderComplete,
+							   unit_owns_tbl, terr_id_tbl,
+							   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+							   orders_list, orders_status_list,
+							   init_db, status_db, db_cont_mgr, all_dicts,
+								terr_owns_tbl, supply_tbl)
+		else:
+			create_move_orders(db, cursor, gameID, sqlOrderComplete,
+								unit_owns_tbl, terr_id_tbl,
+								country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+								orders_list, orders_status_list)
 	elif game_phase == 'Finished':
 		return gameID, True, None, None, None
 	else:
@@ -548,6 +554,7 @@ def create_dict_files(terr_names_fn):
 			return
 
 def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, b_create_dict_file=False):
+	b_can_continue = True
 
 	if gameID == -1:
 		gname = 't' + str(int(time.time()))[-6:]
@@ -559,6 +566,12 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 	with closing(MySQLdb.connect("localhost","webdiplomacy","mypassword123","webdiplomacy" )) as db:
 		# prepare a cursor object using cursor() method
 		with closing(db.cursor()) as cursor:
+
+			if wdconfig.c_admin_action != None:
+				if wdconfig.c_admin_action == 'DeleteGames':
+					wd_admin.DeleteFinishedGames(db, cursor)
+				b_can_continue= False
+				return -1, b_can_continue
 
 			terr_id_tbl, army_can_pass_tbl, fleet_can_pass_tbl, supply_tbl, statement_list = \
 				init(cursor, country_names_tbl)
@@ -572,7 +585,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 			b_keep_working = True
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
-					return gameID
+					return gameID, b_can_continue
 
 				if iturn > 0:
 					gameID, b_finished, status_db, orders_db, orders_list = \
@@ -584,7 +597,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 									old_orders_list=orders_list)
 					if b_finished:
 						print('Game Over!')
-						return -1
+						return -1, b_can_continue
 					elif status_db == []: # means turn finished early
 						b_keep_working = False
 					print('Next turn for game id:', gameID)
@@ -596,7 +609,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 						print('HTTP Exception: ', err)
 					time.sleep(0.2)
 
-	return gameID
+	return gameID, b_can_continue
 
 glv_file_list = ['wd_terrname', 'wd_order']
 cap_first_arr = [False, False]
@@ -635,9 +648,9 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 
 		# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
-	gameID = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
+	gameID, b_can_continue = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
 	sess.close()
-	return gameID, True
+	return gameID, b_can_continue
 
 def main():
 	# create_dict_files(glv_file_list[0] + 's.txt')
@@ -645,7 +658,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 146 # Set to -1 to restart
+	gameID = 236 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
@@ -659,7 +672,8 @@ def main():
 	for iplay in range(wdconfig.c_num_plays):
 		gameID, b_can_continue = do_wd(gameID, all_dicts, el_set_arr, learn_vars)
 		if not b_can_continue:
-			print('Program will not continue due to no conts being available.')
+			print('Program will not continue due to no conts being available or administrative action taken.')
+			return
 
 if __name__ == "__main__":
     main()
