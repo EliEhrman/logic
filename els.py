@@ -377,3 +377,13 @@ def pad_ovec(vecs):
 	vecs = np.concatenate((vecs, np.zeros((numrecs, pad_len), dtype=np.int32,)), axis=1)
 
 	return vecs
+
+def match_rec_to_templ(rec, template):
+	for i, v in enumerate(template):
+		if v == '?':
+			continue
+		if rec[i][0] != rules.rec_def_type.obj:
+			return False
+		if rec[i][1] != v:
+			return False
+	return True

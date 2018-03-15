@@ -110,3 +110,12 @@ def prob_for_penalty(penalty):
 		return True
 	thresh = 1.0 - (1.0 / float(penalty))
 	return random.random() > thresh
+
+def match_list_for_blanks(l_with_blanks, l_to_match):
+	for i, v in enumerate(l_with_blanks):
+		if v == '?':
+			continue
+		if v != l_to_match[i]:
+			return False
+	return True
+

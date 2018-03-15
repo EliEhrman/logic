@@ -5,6 +5,7 @@ import random
 import config
 import makerecs as mr
 import clrecgrp
+import compare_conts as cc
 
 class cl_add_gg(object):
 	def __init__(	self, b_from_load, templ_len=None, scvo=None, gens_rec=None,
@@ -94,11 +95,12 @@ class cl_add_gg(object):
 	def set_status_params(self, new_params):
 		self.__status_params = new_params
 
-	def save(self, db_csvr):
+	def save(self, db_csvr, b_write_grp_data=True):
 		if self.__b_null_cont:
 			db_csvr.writerow(['gg null cont rule', 'active', self.__b_active, 'num grp data rows', self.__num_rows_grp_data])
 		else:
-			db_csvr.writerow([	'gg cont rule', 'active:', self.__b_active, 'num grp data rows:', self.__num_rows_grp_data,
+			num_rows_grp_data = self.__num_rows_grp_data if b_write_grp_data else 0
+			db_csvr.writerow([	'gg cont rule', 'active:', self.__b_active, 'num grp data rows:', num_rows_grp_data,
 								'templ len:', self.__templ_len, 'scvo:', self.__scvo,
 								'gens rec:', mr.gen_rec_str(self.__gens_rec	),
 								'score:', self.__initial_score, 'rule str:', self.__rule_str,
@@ -106,7 +108,7 @@ class cl_add_gg(object):
 								'id:', self.__id, 'parent id:', self.__parent_id,
 								'status:', self.__status,
 								'status params:', '|'.join([str(v) for v in self.__status_params])])
-		if not self.__b_active and self.__num_rows_grp_data:
+		if b_write_grp_data and not self.__b_active and self.__num_rows_grp_data:
 			for row in self.__grp_data:
 				db_csvr.writerow(row)
 
@@ -193,12 +195,48 @@ class cl_cont_mgr(object):
 		null_cont = cl_add_gg(b_from_load=False)
 		self.__cont_list = [null_cont]
 		self.__max_cont_id = 0
+		# self.__b_cont_stats_initialized = False
+		self.__cont_stats_mgr = None
 		print(self.status.untried)
 		return
 
 	def add_cont(self, gg_cont):
 		self.__cont_list.append(gg_cont)
 
+	def get_cont_stats_mgr(self):
+		return self.__cont_stats_mgr
+
+	def init_cont_stats_mgr(self, thresh, target_gens, glv_dict, b_exclude_irrelevant):
+		exclude_list = []
+		if b_exclude_irrelevant:
+			exclude_list += [self.status.irrelevant]
+		self.__cont_stats_mgr = cc.cl_cont_stats_mgr()
+		target_conts_list = []
+		for cont in self.__cont_list:
+			if cont.is_null():
+				continue
+			if self.is_gens_in_target(glv_dict, target_gens,
+									  cont.get_rule(), cont.get_gens_rec()):
+				target_conts_list.append(cont)
+
+		self.__cont_stats_mgr.init_from_list(target_conts_list, thresh, exclude_list)
+
+	def init_cont_stats_mgr_from_file(self, fnt):
+		self.__cont_stats_mgr = cc.cl_cont_stats_mgr()
+		b_load_done = self.__cont_stats_mgr.load(fnt)
+		if b_load_done:
+			stats_list = self.__cont_stats_mgr.get_cont_stats_list()
+			for cont_stat in stats_list:
+				self.add_cont(cont_stat.get_cont())
+
+		return b_load_done
+
+	# def get_cont_stats_list(self):
+	# 	return self.__cont_stats_list
+	#
+	# def set_cont_stats_list(self, stats_list):
+	# 	self.__cont_stats_list = stats_list
+	#
 	def get_max_cont_id(self):
 		return self.__max_cont_id
 
@@ -373,9 +411,9 @@ class cl_cont_mgr(object):
 			return True
 
 		b_success = False
-		for target_rule_str in target_list:
+		for target_rule_grp in target_list:
 			gens_rule_grp = mr.replace_vars_in_phrase(rule_grp, gens_rec)
-			target_rule_grp = mr.extract_rec_from_str(target_rule_str)
+			# target_rule_grp = mr.extract_rec_from_str(target_rule_str)
 			if mr.rule_grp_is_one_in_two(glv_dict, gens_rule_grp, target_rule_grp):
 				b_success = True
 				break

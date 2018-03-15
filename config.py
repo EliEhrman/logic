@@ -12,6 +12,8 @@ tf.flags.DEFINE_bool('use_log_file', False,
 					 'send output to pylog.txt ')
 tf.flags.DEFINE_float('nn_lrn_rate', 0.03,
 					 'base learning rate for nn ')
+tf.flags.DEFINE_float('cont_nn_lrn_rate', 0.000003,
+					 'base learning rate for nn ')
 # tf.flags.DEFINE_string('save_dir', '/tmp/logicmodels',
 tf.flags.DEFINE_string('save_dir', '',
 						  'directory to save model to. If empty, dont save')
@@ -28,7 +30,7 @@ c_num_inputs = 3
 c_num_outputs = 3
 c_rsize = ((max_names*max_objects)**2) / 8
 if FLAGS.learn:
-	c_num_steps = 10000
+	c_num_steps = 100000
 else:
 	c_num_steps = 0
 c_eval_db_factor = 1 # fraction of database to consider
@@ -55,7 +57,7 @@ c_set_compress_cd_factor = 0.8
 c_cascade_level = 3 # should be at least 3
 c_cascade_max_phrases = 3 # should not be shorter than the longest rule of the oracle
 c_rule_cluster_thresh_levels = [1.0, 0.7, 0.2, -0.5] # [1.0, -0.5] #
-c_gg_graduate_len = 10
+c_gg_graduate_len = 100 # was 10
 c_gg_validate_thresh = 10 # number of points to accumulate before finding missing surprising
 c_gg_confirm_thresh = 25
 c_templ_learn_every_num_perms = 12
@@ -85,6 +87,12 @@ c_score_loser_penalty = 1
 c_score_winner_bonus = 5
 c_cont_not_parent_max = 10.0
 
+c_cont_lrn_batch_size = 1000
+c_cont_lrn_key_dim = 25
+c_cont_lrn_num_testers = 300
+c_cont_lrn_num_cd_winners = 10
+c_cont_lrn_stop_thresh = 0.335
+c_cont_file_version = 2
 
 # logger = None
 

@@ -1209,3 +1209,55 @@ Learning wd rules. No nonblock after block. New untried maturation.
 Checking in with the following comment:
 
 Add wd_admin. Deleting all finshed games.
+
+Thursday 15th March
+
+Thoughts:
+
+Simple nn/learning to arbitrate between rules
+
+Each rule translates to a key.
+
+Even simpler. Each rule has an index. Index is either 1 or 0 based on match or not.. That is the vector input
+
+Transform with simple matrix to a key. keys with success close to each other as are keys with failure
+
+Could be done with an extra stage that transforms rules into a slot on the input vector
+
+Can create new rules by replicating random clauses
+
+if a clause contains one l el with cd < 1.0, replicate it
+
+Two rules with the same clause, take the other clauses and put them both on. Try the following assumptions:
+1. If there are els with like<1.0 assume they are the  same
+2. As above but assume they are different
+3. For repeats use 2, for combines prefer 1
+4. If there are more than 1 of the like<1.0,. then try multiple variations, one the same one diffrent...
+
+Try the variations, see if they get any hits
+See if any are never unique. Do a cross of all rules
+
+Use natural selection as  a means of selecting generation candidates
+Keep away from middling scores and perfect scores
+
+
+​Once you have a goal and rules, you can use regular planning.
+
+​Say the goal is a successful move to Romania
+Iterate though rule list
+Take goal and fill in Romania into v7
+find from stored list examples where Romania is in the v7
+look at your potential moves to see if they can match the vars
+If we are looking one ahead - job done
+If two ahead look to see what is missing.
+For example you can find a couple of moves into romania
+Do you have armies there?
+Say you don't. So you create new goals of places you want to move to
+
+How do you create a rule two moves ahead?
+
+Implemented so far the simple matrix described above.
+
+Checking in with the following comment:
+
+Learning of prediction when multiple rules match working.

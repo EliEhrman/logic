@@ -6,7 +6,11 @@ import csv
 import learn
 import addlearn
 import els
+import makerecs as mr
+import compare_conts as cc
 import clrecgrp
+import rules
+# import utils
 import wdconfig
 
 # wdconfig.db_fnt = '~/tmp/wdlengrps.txt'
@@ -100,6 +104,22 @@ def load_len_grps(grp_data_list, db_len_grps, b_cont_blocking):
 		db_len_grps.append(len_grp)
 	return db_len_grps
 
+def add_success_to_targets(target_str_list):
+	target_rule_list = []
+	for target_rule_str in target_str_list:
+		target_rule_grp = mr.extract_rec_from_str(target_rule_str)
+		target_rule_grp += [[rules.rec_def_type.like, 'succeeded', 1.0]]
+		target_rule_grp = mr.make_rec_from_phrase_arr([target_rule_grp])
+		target_rule_list.append(target_rule_grp)
+
+	return  target_rule_list
+
+
+
+def set_target_gens():
+	target_rule_list = add_success_to_targets(wdconfig.c_target_gens)
+	clrecgrp.cl_templ_grp.c_target_gens = target_rule_list
+
 
 def sel_cont_and_len_grps(db_cont_mgr):
 	db_len_grps = []
@@ -188,6 +208,93 @@ def create_order_freq_tbl(orders_list, order_status_list):
 	save_tbl(failed_orders_freq, wdconfig.orders_failed_fnt)
 
 	return True
+
+def collect_cont_stats(init_pl, status_pl, orders_pl, results_pl, all_the_dicts, db_cont_mgr):
+	glv_dict, def_article_dict, cascade_dict = all_the_dicts
+	init_db , status_db, orders_db, results_db = \
+		els.make_rec_list(init_pl), els.make_rec_list(status_pl), els.make_rec_list(orders_pl), els.make_rec_list(results_pl),
+	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
+	full_db = init_db + status_db
+	num_orders = len(orders_db)
+	b_keep_working = True
+	cont_stats_mgr = db_cont_mgr.get_cont_stats_mgr()
+	cont_stats_list = cont_stats_mgr.get_cont_stats_list()
+
+	# curr_cont = db_cont_mgr.get_cont(i_active_cont)
+	for iorder in range(num_orders):
+		order_rec = orders_db.pop(0)
+		order = order_rec.phrase()
+		out_str = ''
+		out_str = els.print_phrase(order, order, out_str, def_article_dict)
+		print('Order for cont stats: ', out_str)
+		out_str = ''
+		out_str = els.print_phrase(results_pl[iorder], results_pl[iorder], out_str, def_article_dict)
+		print('Result of order: ', out_str)
+
+		b_target_success = False
+		b_match_cand = False
+		cont_match_list = []
+		for srule in wdconfig.c_target_gens:
+			target_rule = mr.extract_rec_from_str(srule)
+			# target_rule_rec = mr.make_rec_from_phrase_arr(target_rule)
+			# if not mr.does_match_rule(glv_dict, target_rule_rec, mr.make_rec_from_phrase_arr(order)):
+			if not mr.does_match_rule(glv_dict, target_rule, order):
+				continue
+
+			b_match_cand = True
+
+			target_rule += [[rules.rec_def_type.like, 'succeeded', 1.0]]
+			# target_rule_rec = mr.make_rec_from_phrase_arr(target_rule_grp)
+			# success_result = order + [[rules.rec_def_type.obj, 'succeeded']]
+			# target_rule = mr.extract_rec_from_str(srule)
+			# if mr.does_match_rule(glv_dict, target_rule, mr.make_rec_from_phrase_arr([results_pl[iorder]])):
+			if mr.does_match_rule(glv_dict, target_rule, results_pl[iorder]):
+				b_target_success = True
+				break
+
+		if b_match_cand:
+
+			# order_template = ['?', '?', 'in', '?', 'move', 'to', '?', '?']
+			# if not els.match_rec_to_templ(order, order_template):
+			# 	continue
+			# success_result = order + [[rules.rec_def_type.obj, 'succeeded']]
+			# b_success =  mr.match_rec_exact(success_result, results_pl[iorder])
+			cont_stats_mgr.add_match(b_target_success)
+
+			for istats, cont_stats in enumerate(cont_stats_list):
+				b_match,_ = learn.learn_one_story_step2(full_db + orders_db, [order], cascade_els, [results_pl[iorder]],
+													def_article_dict, [], [], glv_dict, sess=None, event_step_id=-1,
+													expected_but_not_found_list=[], level_depr=0, gg_cont=cont_stats.get_cont(),
+													b_blocking_depr=False, b_test_rule=True)
+				if istats == 0 and not b_match:
+					print('First rule failed. Why?')
+					b_match,_ = learn.learn_one_story_step2(full_db + orders_db, [order], cascade_els, [results_pl[iorder]],
+														def_article_dict, [], [], glv_dict, sess=None, event_step_id=-1,
+														expected_but_not_found_list=[], level_depr=0, gg_cont=cont_stats.get_cont(),
+														b_blocking_depr=False, b_test_rule=True)
+				cont_stats.add_match(b_match)
+				cont_match_list.append(b_match)
+
+			cont_stats_mgr.predict_success_rate(cont_match_list)
+
+		orders_db.append(order_rec)
+
+	return b_keep_working
+
+def compare_conts_learn(db_cont_mgr):
+	cont_stats_mgr = db_cont_mgr.get_cont_stats_mgr()
+	if cont_stats_mgr:
+		cont_stats_mgr.do_learn()
+		cont_stats_mgr.save(wdconfig.c_cont_stats_fnt)
+	return
+
+def init_cont_stats_from_file():
+	db_cont_mgr = addlearn.cl_cont_mgr()
+	b_load_done = db_cont_mgr.init_cont_stats_mgr_from_file(wdconfig.c_cont_stats_fnt)
+	if not b_load_done:
+		db_cont_mgr = None
+	return db_cont_mgr
+
 
 def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dicts, db_len_grps, db_cont_mgr, i_active_cont,
 						 el_set_arr, sess, learn_vars):

@@ -479,4 +479,117 @@ def modify_vec_for_success(vec):
 	vec = vec / en
 	return vec
 
+rtesters = []
+g_b_eval_compare_numrecs = -1
 
+def eval_compare_conts_learn(nd_W, nd_data, nd_matches, numrecs):
+	global g_b_eval_compare_numrecs
+	global rtesters
+
+	if g_b_eval_compare_numrecs != numrecs:
+		g_b_eval_compare_numrecs = numrecs
+		rtesters = random.sample(xrange(numrecs), config.c_cont_lrn_num_testers)
+
+	nd_keys = np.dot(nd_data, nd_W)
+	en = np.linalg.norm(nd_keys, axis=1)
+	nd_keys = nd_keys / en[:, None]
+
+	nd_test_keys = nd_keys[rtesters]
+
+	score = 0.0
+	num_scoring = 0.0
+	for tester in rtesters:
+		test_vec = nd_keys[tester]
+		cd = [[np.dot(test_vec, one_vec), ione] for ione, one_vec in enumerate(nd_keys)]
+		cands = sorted(cd, key=lambda x: x[0], reverse=True)[1:config.c_cont_lrn_num_cd_winners+1]
+		cd_winners = [cand[1] for cand in cands]
+		winner_matches = (nd_matches[cd_winners]).astype(np.float32)
+		prediction = np.average(winner_matches)
+		real_result = nd_matches[tester].astype(np.float32)
+		num_scoring += 1.0
+		score += abs(prediction - real_result)
+
+	score = 1.0 - (score/num_scoring)
+	print('Eval of cont learn:', score)
+	return score
+
+def do_compare_conts_learn(mgr, stat_list):
+	reclen = len(stat_list)
+	mlist = mgr.get_match_list()
+	mlist = [b == 'True'for b in mlist]
+	numrecs = len(mlist)
+	data = np.ndarray(shape=[reclen, numrecs], dtype=np.float32)
+	for icont, cont_stat in enumerate(stat_list):
+		data[icont, :] = [1.0 if b == 'True' else 0.0 for b in cont_stat.get_match_list()]
+	matches = np.ndarray(shape=[numrecs], dtype=np.bool)
+	matches[:] = mlist
+
+	data = np.transpose(data)
+	en = np.linalg.norm(data, axis=1)
+	nz = np.nonzero(en)
+	z = np.where(en == 0.0)
+	zero_matches = matches[z]
+	en, data, matches = en[nz], data[nz], matches[nz]
+	numrecs = data.shape[0]
+	data = data / en[:, None]
+
+	t_data = tf.constant(data, dtype=tf.float32)
+	t_matches = tf.constant(matches, dtype=tf.bool)
+
+	v_r1 = tf.Variable(tf.zeros([config.c_cont_lrn_batch_size], dtype=tf.int32), dtype=tf.int32)
+	op_r1_assign = tf.assign(v_r1, tf.random_uniform([config.c_cont_lrn_batch_size], dtype=tf.int32,
+													 minval=0, maxval=numrecs-1))
+	v_r2 = tf.Variable(tf.zeros([config.c_cont_lrn_batch_size], dtype=tf.int32), dtype=tf.int32)
+	op_r2_assign = tf.assign(v_r2, tf.random_uniform([config.c_cont_lrn_batch_size], dtype=tf.int32,
+													 minval=0, maxval=numrecs - 1))
+
+	t_m1 = tf.gather(t_matches, v_r1, name='t_m1')
+	t_m2 = tf.gather(t_matches, v_r2, name='t_m2')
+
+	weight_factor = 1.0 / tf.cast(reclen * config.c_cont_lrn_key_dim, dtype=tf.float32)
+	# t_shape = tf.constant([2], dtype=tf.int32)
+	with tf.variable_scope('cont_lrn', reuse=False):
+		# v_W = tf.Variable(tf.random_normal(shape=[num_inputs, c_key_dim], mean=0.0, stddev=weight_factor), dtype=tf.float32)
+		v_W = tf.get_variable('v_W', shape=[reclen, config.c_cont_lrn_key_dim], dtype=tf.float32,
+							  initializer=tf.random_normal_initializer(mean=0.0, stddev=weight_factor))
+
+	t_y = tf.nn.l2_normalize(tf.matmul(t_data, v_W), dim=1, name='t_y')
+
+	t_y1 = tf.gather(t_y, v_r1, name='t_y1')
+	t_y2 = tf.gather(t_y, v_r2, name='t_y2')
+
+	t_cdo = tf.where(tf.equal(t_m1, t_m2), tf.ones([config.c_cont_lrn_batch_size], dtype=tf.float32), tf.zeros([config.c_cont_lrn_batch_size], dtype=tf.float32), name='t_cdo')
+	t_cdy = tf.reduce_sum(tf.multiply(t_y1, t_y2), axis=1, name='t_cdy')
+	t_err = tf.reduce_mean((t_cdo - t_cdy) ** 2, name='t_err')
+	op_train_step = tf.train.AdamOptimizer(config.FLAGS.cont_nn_lrn_rate).minimize(t_err, name='op_train_step')
+
+	l_batch_assigns = [op_r1_assign, op_r2_assign]
+
+	sess = tf.Session()
+	sess.run(tf.global_variables_initializer())
+
+	eval_compare_conts_learn(sess.run(v_W), data, matches, numrecs)
+	losses = []
+
+	for step in range(config.c_num_steps):
+		sess.run(l_batch_assigns)
+		if step == 0:
+			errval = math.sqrt(sess.run(t_err))
+			logger.info('Starting error: %f', errval)
+		elif step % (config.c_num_steps / 100) == 0:
+			errval = np.mean(losses)
+			losses = []
+			logger.info('step: %d: error: %f', step, errval)
+			eval_compare_conts_learn(sess.run(v_W), data, matches, numrecs)
+			if errval < config.c_cont_lrn_stop_thresh:
+				break
+
+		outputs = sess.run([t_err, op_train_step])
+		losses.append(math.sqrt(outputs[0]))
+
+	mgr.set_W(sess.run(v_W))
+
+	sess.close()
+	learn_reset()
+
+	return

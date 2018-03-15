@@ -9,18 +9,17 @@ import csv
 import sys
 import os
 import collections
+from enum import Enum
 import embed
 import els
 import dmlearn
 import clrecgrp
+import compare_conts
 import wdconfig
 import wdlearn
 import wd_imagine
 import wd_admin
 
-
-c_rnd_bad_move = 0.6
-c_rnd_fleet_army_wrong = 0.4
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 
@@ -357,8 +356,10 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 					   orders_list, orders_status_list):
 	sql_get_unit_id = string.Template(
 		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
-	sql_make_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
+	sql_move_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
 										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+	sql_support_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Support move\', '
+										 'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 
 	for icountry in range(1, len(country_names_tbl)):
 		scountry = country_names_tbl[icountry]
@@ -366,6 +367,8 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 		unit_list = unit_owns_tbl.get(scountry, None)
 		if unit_list == None:
 			continue
+		move_details_tbl = []
+		random.shuffle(unit_list)
 		for unit_data in unit_list:
 			unit_terr_id = terr_id_tbl[unit_data[1]]
 			# sqlIDbyTerr = string.Template('SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
@@ -374,45 +377,108 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 			unit_id = cursor.fetchone()
 
 			nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
+			nt_move_details = collections.namedtuple('nt_order_details', 'country, sutype, fromName, toName')
+			e_move_type = Enum('e_move_type', 'none move support')
 
-			def create_move(sutype, this_can_pass_table, other_can_pass_table):
+			sutype, sfrom = unit_data
+			this_can_pass_tbl = army_can_pass_tbl if sutype == 'army' else fleet_can_pass_tbl
+			other_can_pass_tbl = army_can_pass_tbl if sutype == 'fleet' else fleet_can_pass_tbl
+
+			def create_move(move_details_tbl):
 				order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
 											   fromTerrID=unit_terr_id, toTerrID=None)
-				pass_list = this_can_pass_table.get(unit_data[1], None)
+				pass_list = this_can_pass_tbl.get(sfrom, None)
 				if pass_list == None:
 					print(sutype, 'stuck where it is not supposed to be.')
-					return False, None
-				if random.random() > c_rnd_bad_move:
-					dest_name = random.choice(pass_list)
+					return False, e_move_type.none, -1
+				b_dont_support = False
+				if random.random() >= wdconfig.c_rnd_bad_move:
+					for itry in range(20):
+						if itry > 18:
+							return False, e_move_type.none, -1
+						dest_name = random.choice(pass_list)
+						b_dest_blocked = False
+						for dest_unit_data in unit_list:
+							_, dest_from = dest_unit_data
+							if dest_name == dest_from: # There's a guy there already
+								b_dest_blocked = True
+								b_dest_is_moving = False
+								for one_move in move_details_tbl:
+									if one_move.fromName == dest_name:
+										b_dest_is_moving = True
+										b_dont_support = True
+										break # OK move but dont support
+								if b_dest_blocked:
+									break
+						if not b_dest_blocked or b_dest_is_moving:
+							break
+
 				else:
-					if random.random() > c_rnd_fleet_army_wrong:
-						dest_name = random.choice(terr_id_tbl.keys())
+					if random.random() > wdconfig.c_rnd_fleet_army_wrong:
+						# These while loops really make sure that this is a bad move
+						while True:
+							dest_name = random.choice(terr_id_tbl.keys())
+							if dest_name not in pass_list:
+								break
 					else:
-						other_pass_list = other_can_pass_table.get(unit_data[1], None)
+						other_pass_list = other_can_pass_tbl.get(sfrom, None)
 						if other_pass_list == None:
-							return False, None
-						dest_name = random.choice(other_pass_list)
+							return False, e_move_type.none, -1
+						for itry in range(20):
+							if itry > 18:
+								return False, e_move_type.none, -1
+							dest_name = random.choice(other_pass_list)
+							if dest_name not in pass_list:
+								break
+
 				dest_id = terr_id_tbl[dest_name]
-				dstr = scountry + ' move ' + sutype + ' from ' + unit_data[1] + ' to ' + dest_name
-				orders_list.append([sutype, 'in', unit_data[1], 'move', 'to', dest_name])
+				dstr = scountry + ' move ' + sutype + ' from ' + sfrom + ' to ' + dest_name
+				orders_list.append([sutype, 'in', sfrom, 'move', 'to', dest_name])
 				order_status = order_status._replace(toTerrID=dest_id)
+
 				print(dstr)
 				# The webdip engine does not guarantee that the order is valid, so we have to do this
 				if dest_name not in pass_list:
 					order_status = order_status._replace(status=False)
 				orders_status_list.append(order_status)
-				return order_status.status, dest_id
+				if order_status.status and not b_dont_support:
+					move_details_tbl.append(nt_move_details(country=scountry, sutype=sutype,
+															fromName=unit_data[1], toName=dest_name))
+				return order_status.status, e_move_type.move, dest_id
 
-			if unit_data[0] == 'army':
-				b_order_created, dest_id = create_move('army', army_can_pass_tbl, fleet_can_pass_tbl)
-			else:
-				b_order_created, dest_id = create_move('fleet', fleet_can_pass_tbl, army_can_pass_tbl)
+			def create_support(move_details):
+				pass_list = this_can_pass_tbl.get(sfrom, [])
+				if move_details.toName in pass_list:
+					orders_list.append([sutype, 'in', sfrom, 'support', 'move', 'from',  move_details.fromName, 'to', move_details.toName])
+					print(' '.join(orders_list[-1]))
+					dest_id, from_id = terr_id_tbl[move_details.toName], terr_id_tbl[move_details.fromName]
+					order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
+												   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
+					orders_status_list.append(order_status)
+					return True, e_move_type.support, dest_id, from_id
+				return False, e_move_type.none, -1, -1
+
+			b_order_created = False
+			if len(move_details_tbl) > 0:
+				for one_move in move_details_tbl:
+					b_order_created, move_type, dest_id, from_id = create_support(one_move)
+					if b_order_created:
+						break
+
+			if not b_order_created:
+				b_order_created, move_type, dest_id = create_move(move_details_tbl)
 
 			if b_order_created:
-				sql_order = sql_make_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
+				if move_type == e_move_type.support:
+					sql_order = sql_support_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
+															 gameID=str(gameID), fromTerrID=str(from_id))
+				elif move_type == e_move_type.move:
+					sql_order = sql_move_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
+														  gameID=str(gameID))
 				print (sql_order)
 				cursor.execute(sql_order)
 
+		# end oreders for one unit
 		sql_order = sql_complete_order.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
 		print(sql_order)
 		cursor.execute(sql_order)
@@ -467,6 +533,9 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	if results_db != None and len(results_db) > 0:
 		if wdconfig.c_b_save_orders:
 			b_keep_working = wdlearn.create_order_freq_tbl(old_orders_list, new_orders_status_list)
+		elif wdconfig.c_b_compare_conts:
+			b_keep_working = wdlearn.collect_cont_stats(init_db, old_status_db, old_orders_db, results_db,
+										 all_dicts, db_cont_mgr)
 		else:
 			b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
 										 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
@@ -636,11 +705,19 @@ def logic_init():
 	return [glv_dict, def_article_dict, cascade_dict]
 
 def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
-	dmlearn.learn_reset()
-
-	db_cont_mgr = wdlearn.load_cont_mgr()
+	db_cont_mgr = wdlearn.init_cont_stats_from_file()
+	# if db_cont_mgr:
+	# 	wdlearn.compare_conts_learn(db_cont_mgr)
+	if db_cont_mgr == None:
+		db_cont_mgr = wdlearn.load_cont_mgr()
 	if not wdconfig.c_b_add_to_db_len_grps:
 		db_len_grps, i_active_cont = [], -1
+		if db_cont_mgr.get_cont_stats_mgr() == None:
+			target_rule_list = wdlearn.add_success_to_targets(wdconfig.c_target_gens)
+
+			db_cont_mgr.init_cont_stats_mgr(wdconfig.c_cont_stats_init_thresh, target_rule_list,
+											all_dicts[0], # glv_dict - TBD avoid magic position
+											wdconfig.c_cont_stats_init_exclude_irrelevant)
 	else:
 		db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
 		if i_active_cont < 0:
@@ -650,6 +727,11 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 	sess = dmlearn.init_templ_learn()
 	gameID, b_can_continue = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
 	sess.close()
+	dmlearn.learn_reset()
+
+	if wdconfig.c_b_compare_conts:
+		wdlearn.compare_conts_learn(db_cont_mgr)
+
 	return gameID, b_can_continue
 
 def main():
@@ -658,7 +740,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 236 # Set to -1 to restart
+	gameID = 374 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
@@ -666,7 +748,8 @@ def main():
 	learn_vars = [event_step_id]
 	clrecgrp.cl_templ_grp.glv_dict = all_dicts[0]
 	clrecgrp.cl_gens_grp.glv_len = clrecgrp.cl_templ_grp.glv_len = len(all_dicts[0][wdconfig.c_sample_el])
-	clrecgrp.cl_templ_grp.c_target_gens = wdconfig.c_target_gens
+	wdlearn.set_target_gens()
+	# clrecgrp.cl_templ_grp.c_target_gens = wdconfig.c_target_gens
 	wdlearn.init_learn()
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	for iplay in range(wdconfig.c_num_plays):
