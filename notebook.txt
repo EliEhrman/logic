@@ -1261,3 +1261,119 @@ Implemented so far the simple matrix described above.
 Checking in with the following comment:
 
 Learning of prediction when multiple rules match working.
+
+From audio notes:
+Here are a few thoughts on how to proceed. The first step I want to do is to expand the current rules
+by mixing and matching different control components.
+Once we have that we should be able to move forward to improving the
+AI in general.
+The first step is that once we have good rules.
+Let's try to use those roles, together with the Monte Carlo
+loading of where we might succeed
+to take those potential successes and go for them and a search based tree method, maybe, including the probabilities of success.
+Once we have that we may have a decent AI
+that point we need to add convoys and then we have the game. The basic game working. Once we have that.
+The next stage is to add alliances: stating the alliances and also specific
+requests, such as help me support me over here, Don't go into this territory this as one component
+This is just informing.
+The other component is actually promising to do X
+where X is in response to a request to do X,
+we have to evaluate both.
+Then once you have that working
+at least on a technical level we want to incorporate that into the rules.
+
+Add a learning of very global results from like if I'm in a position like this and I'm an alliance like that.
+What are the chances of success and how can I change that to a better chance of success
+Okay, one last stage is to try to learn general rules based on what happens
+from now given what the situation was before.
+Earlier
+I wanted to simply, without variables, predict what will happen,
+but being able to do it with variables would be very cool.
+That's a totality would should make a pretty decent AI.
+
+Friday March 16th
+
+Recap of the order of building:
+
+Use these settings for initial building of wdlengrps.txt
+
+c_b_compare_conts = False
+c_b_save_orders = False
+c_b_add_to_db_len_grps = True # normally keep this and above one-True
+c_b_play_from_saved = False
+
+I used this setting from config to make sure the rule captures more distant territories:
+
+c_gg_graduate_len = 100 # was 10
+
+With that you have to increase the following:
+
+c_story_len = 350
+
+I wanted a long run so I used the following from wdconfig
+
+c_num_plays = 5300
+
+With story len set so high, it takes a long time to move along from initial but I still used the following:
+
+c_cont_not_parent_max = 10.0
+
+Now I need to clean the diplomacy tables so set
+
+c_admin_action = 'DeleteGames'
+
+Now you need to build the cont stats from the dblengrps.txt file.
+Remove the cont_stats.txt file
+set the following in config
+
+c_b_compare_conts = True
+c_b_save_orders = False
+c_b_add_to_db_len_grps = False # normally keep this and above one-True
+c_b_play_from_saved = False
+
+Just a note. If you want to create orders_success.txt and orders_failed.txt you need to set
+
+c_b_save_orders = True
+
+Lastly, there are two ways to create moves. The algorithmic, oracle method uses
+
+create_move_orders
+
+To call it make sure that
+
+c_b_play_from_saved = False
+
+otherwise it will call
+
+create_move_orders2
+
+This uses the saved orders files aand AI to generate the moves.
+
+Saturday 17th March
+
+Will eventually have to reorder the different phases:
+
+0. Generate examples from oracle-random player
+1. Create pgg
+2. Learn selection W and rule_grp
+3. Score against other templates
+4. Create cont
+5. Evaluate untried cont
+6. Add new db len grp to cont
+7. Compare stats of the best conts
+8. Delete useless and create mutations
+9. Incorporate into AI
+10. Create new play examples to learn from
+11. Return to step 1.
+
+Data should be saved into dedicated files in a directory for the module (eg adv, wd)
+Data should be gathered across runs so that rare cases get a chance but time is not wasted on done deals
+Allocate time for phases using clock time, so that you can keep returning and adding but no endless exhaustive searches
+
+Monday 19th March
+
+The code I'm checking in contains a first on-working version of the next feature
+
+Checking in with the comment:
+
+Rejection of rules and creation of mutations seems to be working but not useful.

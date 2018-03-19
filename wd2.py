@@ -24,13 +24,15 @@ import wd_admin
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 
 def get_game_name(cursor, gameID):
-	sqlGetGame = string.Template('select id, name from webdiplomacy.wD_Games where id = \'${gameID}\';')
+	sqlGetGame = string.Template('select id, name, phase from webdiplomacy.wD_Games where id = \'${gameID}\';')
 	sql = sqlGetGame.substitute(gameID=gameID)
 	cursor.execute(sql)
 	result = cursor.fetchone()
 	if result == None or result[0] != gameID:
-		return None
-	return result[1]
+		return None, False
+	if result[2] == 'Finished':
+		return result[1], True
+	return result[1], False
 
 def get_game_id(cursor, gname):
 	sqlGetGame = string.Template('select id, phase from webdiplomacy.wD_Games where name = \'${gname}\';')
@@ -318,7 +320,8 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 
 	orders_list, orders_db, success_list, icountry_list = \
-		wd_imagine.create_move_orders(	init_db, status_db, db_cont_mgr, country_names_tbl, unit_owns_tbl,
+		wd_imagine.create_move_orders(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
+										db_cont_mgr, country_names_tbl, unit_owns_tbl,
 										all_the_dicts, terr_owns_tbl, supply_tbl, wdconfig.c_num_montes,
 										wdconfig.c_preferred_nation, wdconfig.c_b_predict_success)
 
@@ -625,8 +628,8 @@ def create_dict_files(terr_names_fn):
 def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, b_create_dict_file=False):
 	b_can_continue = True
 
-	if gameID == -1:
-		gname = 't' + str(int(time.time()))[-6:]
+	# if gameID == -1:
+	# 	gname = 't' + str(int(time.time()))[-6:]
 
 	country_names_tbl = ['neutral', 'england', 'france', 'italy', 'germany', 'austria', 'turkey', 'russia']
 
@@ -646,8 +649,18 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				init(cursor, country_names_tbl)
 			init_db = els.convert_list_to_phrases(statement_list)
 
-			if gameID != -1:
-				gname = get_game_name(cursor, gameID)
+			# if gameID != -1:
+			b_not_found = True
+			while b_not_found:
+				gname, b_game_over = get_game_name(cursor, gameID)
+				if gname == None:
+					gname = 't' + str(int(time.time()))[-6:]
+					b_not_found = False
+				elif b_game_over:
+					gameID += 1
+					continue
+				else:
+					b_not_found = False
 
 			orders_status_list = []
 			status_db, orders_db, orders_list = [], [], []
@@ -705,7 +718,9 @@ def logic_init():
 	return [glv_dict, def_article_dict, cascade_dict]
 
 def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
-	db_cont_mgr = wdlearn.init_cont_stats_from_file()
+	db_cont_mgr = None
+	if wdconfig.c_b_compare_conts:
+		db_cont_mgr = wdlearn.init_cont_stats_from_file()
 	# if db_cont_mgr:
 	# 	wdlearn.compare_conts_learn(db_cont_mgr)
 	if db_cont_mgr == None:
@@ -740,7 +755,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 374 # Set to -1 to restart
+	gameID = 723 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

@@ -92,7 +92,11 @@ c_cont_lrn_key_dim = 25
 c_cont_lrn_num_testers = 300
 c_cont_lrn_num_cd_winners = 10
 c_cont_lrn_stop_thresh = 0.335
-c_cont_file_version = 2
+c_cont_file_version = 3
+c_cont_stats_min_predictions = 1000
+c_cont_inlist_fract_thresh = 0.95
+c_cont_score_ratio = 0.9
+c_cont_score_perfect_thresh = 0.01
 
 # logger = None
 

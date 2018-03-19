@@ -3,10 +3,12 @@ import sys
 from os.path import expanduser
 import csv
 import numpy as np
+import random
 
 import addlearn
 import config
 import dmlearn
+import makerecs as mr
 
 class cl_cont_stat(object):
 	def __init__(self, cont):
@@ -25,6 +27,10 @@ class cl_cont_stat(object):
 	def set_match_list(self, match_list):
 		self.__match_list = match_list
 
+	def remove_n_first_matches(self, n):
+		self.__match_list = self.__match_list[n:]
+
+
 
 class cl_cont_stats_mgr(object):
 	def __init__(self):
@@ -33,6 +39,8 @@ class cl_cont_stats_mgr(object):
 		self.__cont_stats_list = []
 		self.__match_list = []
 		self.__nd_W = None
+		self.__predictions_list = []
+		self.__rejected_rule_list = []
 
 	def get_W(self):
 		return self.__nd_W
@@ -55,6 +63,9 @@ class cl_cont_stats_mgr(object):
 	def add_match(self, bmatch):
 		self.__match_list.append(bmatch)
 
+	def add_prediction(self, prediction):
+		self.__predictions_list.append(prediction)
+
 	def get_match_list(self):
 		return self.__match_list
 
@@ -68,6 +79,11 @@ class cl_cont_stats_mgr(object):
 	def do_learn(self):
 		dmlearn.do_compare_conts_learn(self, self.__cont_stats_list)
 
+	def remove_n_first_matches(self, n):
+		self.__match_list = self.__match_list[n:]
+		for icont, cont_stat in enumerate(self.__cont_stats_list):
+			cont_stat.remove_n_first_matches(n)
+
 	def predict_success_rate(self, cont_match_list):
 		if self.__nd_W == None:
 			print('Error for predict_success_rate. W not initialized yet.')
@@ -75,11 +91,11 @@ class cl_cont_stats_mgr(object):
 
 		reclen = len(self.__cont_stats_list)
 		mlist = self.get_match_list()
-		mlist = [b == 'True' for b in mlist]
+		# mlist = [b == 'True' for b in mlist]
 		numrecs = len(mlist)
 		data = np.ndarray(shape=[reclen, numrecs], dtype=np.float32)
 		for icont, cont_stat in enumerate(self.__cont_stats_list):
-			data[icont, :] = [1.0 if b == 'True' else 0.0 for b in cont_stat.get_match_list()]
+			data[icont, :] = [1.0 if b else 0.0 for b in cont_stat.get_match_list()]
 		matches = np.ndarray(shape=[numrecs], dtype=np.bool)
 		matches[:] = mlist
 
@@ -127,13 +143,20 @@ class cl_cont_stats_mgr(object):
 		else:
 			num_rows_W = 0
 
-		csvr.writerow(['version:', config.c_cont_file_version, 'Num conts:', len(self.__cont_stats_list),
-					   'Num rows W', num_rows_W])
+		csvr.writerow(['version:', config.c_cont_file_version])
+		b_has_predictions_row = len(self.__predictions_list) > 0
+		csvr.writerow(['Num conts:', len(self.__cont_stats_list),
+					   'Num rows W', num_rows_W, 'Has predictions row', b_has_predictions_row,
+					   'Num rejected rules', len(self.__rejected_rule_list)])
 		csvr.writerow(self.__match_list)
+		if b_has_predictions_row:
+			csvr.writerow(self.__predictions_list)
 		for cont_stat in self.__cont_stats_list:
 			cont_stat.get_cont().save(csvr, b_write_grp_data=False)
 			csvr.writerow(cont_stat.get_match_list())
-
+		for rej in self.__rejected_rule_list:
+			srule = mr.gen_rec_str(rej)
+			csvr.writerow([srule])
 		for irow in range(num_rows_W):
 			csvr.writerow(self.__nd_W[irow])
 
@@ -144,16 +167,30 @@ class cl_cont_stats_mgr(object):
 		try:
 			with open(fn, 'rb') as fh:
 				csvr = csv.reader(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
-				_, version_str, _, num_conts, _, num_rows_W = next(csvr)
-				if version_str != str(config.c_cont_file_version):
+				_, version_str = next(csvr)
+				version_num = int(version_str)
+				if version_num == config.c_cont_file_version:
+					_, num_conts, _, num_rows_W, _, sb_has_predictions_row, _, s_num_rejected_rules = next(csvr)
+					num_rejected_rules = int(s_num_rejected_rules)
+				elif version_num == config.c_cont_file_version-1:
+					_, num_conts, _, num_rows_W, _, sb_has_predictions_row = next(csvr)
+					num_rejected_rules = 0
+				else:
 					raise IOError
-				self.__match_list = next(csvr)
+				b_has_predictions_row = sb_has_predictions_row == 'True'
+				self.__match_list = [sb == 'True' for sb in next(csvr)]
+				if b_has_predictions_row:
+					self.__predictions_list = [float(sv) for sv in next(csvr)]
 				for icont in range(int(num_conts)):
 					gg_cont = addlearn.cl_add_gg(b_from_load=True)
 					gg_cont.load(csvr, b_null=False)
 					cont_stat = cl_cont_stat(gg_cont)
-					cont_stat.set_match_list(next(csvr))
+					cont_stat.set_match_list([sb == 'True' for sb in next(csvr)])
 					self.__cont_stats_list.append(cont_stat)
+				for ireject in range(num_rejected_rules):
+					rej_row = next(csvr)
+					rej = mr.extract_rec_from_str(rej_row[0])
+					self.__rejected_rule_list.append(rej)
 				W = []
 				num_rows_W = int(num_rows_W)
 				for irow in range(num_rows_W):
@@ -167,6 +204,296 @@ class cl_cont_stats_mgr(object):
 
 		return True
 
+	def get_max_cont_id(self):
+		max_cont_id = -1
 
-def compare_conts():
-	return
+		for icont, cont_stat in enumerate(self.__cont_stats_list):
+			cont = cont_stat.get_cont()
+			cont_id = cont.get_id()
+			if cont_id > max_cont_id:
+				max_cont_id = cont_id
+
+		return max_cont_id
+
+	def analyze(self, db_cont_mgr):
+		num_predictions = len(self.__predictions_list)
+		if num_predictions < config.c_cont_stats_min_predictions:
+			return
+
+		num_matches = len(self.__match_list)
+		diff = num_matches - num_predictions
+		if diff > 0:
+			self.remove_n_first_matches(diff)
+
+		matches  = np.asarray([1.0 if b else 0.0 for b in self.get_match_list()], dtype=np.float32)
+		match_list_list = []
+		score_list = []
+		id_list, parent_id_list = [], []
+
+		for icont, cont_stat in enumerate(self.__cont_stats_list):
+			cont = cont_stat.get_cont()
+			print('Analysis for rule', icont, cont.get_rule_str(), 'blocking:', cont.is_blocking())
+			data = np.asarray([1.0 if b else 0.0 for b in cont_stat.get_match_list()], dtype=np.float32)
+			# nd_marker = np.asarray(cont_stat.get_match_list(), dtype=np.bool)
+			all_zeros = np.all(data == 0.0)
+			# if where_true[0].shape[0] > 0:
+			cont_id = cont.get_id()
+			id_list.append(cont_id)
+			parent_id_list.append(cont.get_parent_id())
+
+			if not all_zeros:
+				where_true = np.nonzero(data)
+				match_list_list.append(where_true[0].tolist())
+				matches_where_true = matches[where_true]
+				score = np.average(matches_where_true)
+				print('score', score)
+				score_list.append(score)
+			else:
+				match_list_list.append([])
+				score_list.append(-1.0)
+
+
+		def check_predict(bat, babove):
+			for pval in range(13):
+				plevel = float(pval - 1) / 10.0
+				if bat:
+					predictX = np.asarray([1.0 if v == plevel else 0.0
+										   for v in self.__predictions_list], dtype=np.float32)
+					prep = 'at'
+				else:
+					predictX = np.asarray([1.0 if (v > plevel if babove else v < plevel) else 0.0
+										   for v in self.__predictions_list], dtype=np.float32)
+					prep = 'above' if babove else 'below'
+				X_all_zero = np.all(predictX==0.0)
+				if X_all_zero:
+					print('No items to score at predict level', prep, plevel)
+				else:
+					where_p = np.nonzero(predictX)
+					match_where_p = matches[where_p]
+					print('Score for', where_p[0].shape[0], 'items at predict level', prep, plevel, 'is', np.average(match_where_p))
+
+		check_predict(True, True)
+		check_predict(False, True)
+		check_predict(False, False)
+
+		strss = ["\t"]
+		for i in range(len(match_list_list)):
+			strss[0] += str(i) + "\t"
+
+		delete_list = [False for ml in match_list_list]
+		equal_list_list = [[] for ml in match_list_list]
+		contains_list_list = [[] for ml in match_list_list]
+		for iml, ml in enumerate(match_list_list):
+			print('Analysis for match list', iml, 'length', len(ml))
+			if ml == []:
+				print('Marking cont', iml, 'for deletion due to zero match cases')
+				delete_list[iml] = True
+				continue
+			strs = str(iml) + '\t'
+			for iml2, ml2 in enumerate(match_list_list):
+				if delete_list[iml]:
+					break
+				if iml == iml2:
+					strs += '\t'
+					continue
+				print('Comparing cont', iml, 'to', iml2)
+				b_sibling = (parent_id_list[iml] == parent_id_list[iml2])
+				b_child = (parent_id_list[iml] == id_list[iml2])
+				inlist = [v for v in ml if v in ml2]
+				inlist_len = len(inlist)
+				print(len(inlist), 'of match list in', iml2 )
+				if b_sibling or b_child:
+					if inlist_len == len(ml2) and len(ml) == len(ml2):
+						print('cont', iml, 'seems identical to ', iml)
+						equal_list_list[iml].append(iml2)
+					else:
+						inlist_fract =  float(inlist_len) / float(len(ml))
+						if inlist_fract > config.c_cont_inlist_fract_thresh:
+							if score_list[iml2] < config.c_cont_score_perfect_thresh:
+								print('Marking cont', iml, 'for deletion because it is entirely included in cont', iml2,
+									  'and the enclosing cont has perfect or almost perfect score')
+								delete_list[iml] = True
+							elif (1.0 - score_list[iml2]) < config.c_cont_score_perfect_thresh:
+								print('Marking cont', iml, 'for deletion because it is entirely included in cont', iml2,
+									  'and the enclosing cont has perfect or almost perfect block')
+								delete_list[iml] = True
+							elif score_list[iml] < score_list[iml2]:
+								value_score = score_list[iml] / score_list[iml2]
+								print('Marking cont', iml, 'because it is entirely included in cont', iml2,
+									  'smaller with value score', value_score)
+								contains_list_list[iml].append([iml2, value_score] )
+							else:
+								value_score = (1.0 - score_list[iml]) / (1.0 - score_list[iml2])
+								print('Marking cont', iml, 'because it is entirely included in cont', iml2,
+									  'larger with value score', value_score)
+								contains_list_list[iml].append([iml2, value_score] )
+						#end if equal or subset
+				# end if sibling or child
+				strs += str(len(inlist)) + '\t'
+				if inlist != []:
+					nd_inlist = np.asarray(inlist, dtype=np.int)
+					matches_inlist = matches[nd_inlist]
+					score = np.average(matches_inlist)
+					print('inlist score ', score)
+				else:
+					print('No score for empty inlist')
+			strss.append(strs)
+
+		b_ipass_done = False
+		for ipass in range(10): # keep a limited number of passes to keep things sane
+			if b_ipass_done:
+				break
+			b_ipass_done = True
+			for icont, contains_list in enumerate(contains_list_list):
+				if contains_list == [] or delete_list[icont]:
+					continue
+				b_ipass_done = False
+				b_this_pass = True
+				for containing_data in contains_list:
+					icontaining, value_score = containing_data
+					if not delete_list[icontaining] and contains_list_list[icontaining] != []:
+						b_this_pass = False
+						break
+				if not b_this_pass:
+					continue
+
+				b_keep_alive = False
+				for icontaining in contains_list:
+					icontaining, value_score = containing_data
+					if value_score < config.c_cont_score_ratio:
+						b_keep_alive = True
+						break
+				if b_keep_alive:
+					contains_list_list[icont] = []
+				else:
+					delete_list[icont] = True
+
+
+
+
+
+		for s in strss:
+			print(s)
+
+		for iequal, equal_list in enumerate(equal_list_list):
+			if delete_list[iequal]:
+				continue
+			level = self.__cont_stats_list[iequal].get_cont().get_level()
+			max_level = level
+			peer_list = [iequal]
+			for ipeer in equal_list:
+				assert False, 'Never been tested'
+				if delete_list[ipeer]:
+					continue
+				new_level = self.__cont_stats_list[iequal].get_cont().get_level()
+				if new_level > max_level:
+					print('Removing cont', ipeer, 'since it is equal to ', iequal, 'but from a higher level')
+					delete_list[ipeer] = True
+					continue
+				if new_level < max_level:
+					print('Removing cont', iequal, 'which started this list, since it is equal to ', ipeer, 'but from a higher level')
+					delete_list[iequal] = True
+					peer_list = []
+					break
+				peer_list.append(ipeer)
+			isurvivor = random.choice(peer_list)
+			for ipeer in peer_list:
+				if ipeer != isurvivor:
+					delete_list[ipeer] = True
+
+		b_cont_list_changed = False
+		for idelete, bdelete in reversed(list(enumerate(delete_list))):
+			if not bdelete:
+				continue
+			self.__rejected_rule_list.append(self.__cont_stats_list[idelete].get_cont().get_rule())
+			db_cont_mgr.delete_cont_by_rule(self.__cont_stats_list[idelete].get_cont().get_rule())
+			del self.__cont_stats_list[idelete]
+			b_cont_list_changed = True
+
+		if b_cont_list_changed:
+			self.__predictions_list = []
+			self.remove_n_first_matches(len(self.__match_list))
+			self.__nd_W = None
+
+			# work on delete_list and equal_list_list
+
+		return
+
+
+			
+
+	def create_new_conts(self, db_cont_mgr):
+		num_predictions = len(self.__predictions_list)
+		if num_predictions < config.c_cont_stats_min_predictions:
+			return
+
+		cand_list = []
+		new_rule_list = []
+		for icont, cont_stat in enumerate(self.__cont_stats_list):
+			rule = cont_stat.get_cont().get_rule()
+			rule_arr = mr.create_start_end_listing(rule)
+			for rule_ends in rule_arr[1:]:
+				indef_likes = mr.get_indef_likes(rule, rule_ends)
+				if len(indef_likes) == 1:
+					cand_list += [[icont, rule_ends, indef_likes[0]]]
+		for imut in range(9):
+			icont, rule_ends, iindef = random.choice(cand_list)
+			cont = self.__cont_stats_list[icont].get_cont()
+			rule = cont.get_rule()
+			src_level = cont.get_level()
+			src_gens_rec = cont.get_gens_rec()
+			src_id = cont.get_id()
+			if random.random() < 0.5:
+				new_rule = mr.duplicate_piece(rule, rule_ends, iindef, rule, rule_ends, iindef,
+											  b_make_var=random.random() > 0.5)
+			else:
+				other_icont, other_rule_ends, other_iindef = random.choice(cand_list)
+				other_rule = self.__cont_stats_list[other_icont].get_cont().get_rule()
+				if not mr.identical_rule_part(rule, [0, rule_ends[0]-1], other_rule, [0, other_rule_ends[0]-1]):
+					continue
+				new_rule = mr.duplicate_piece(rule, rule_ends, iindef, other_rule, other_rule_ends, other_iindef,
+											  b_make_var=random.random() > 0.5)
+
+			b_not_new = False
+			for icont, cont_stat in enumerate(self.__cont_stats_list):
+				rule = cont_stat.get_cont().get_rule()
+				# In the following match we are ignoring the cd component of the like.
+				# For now, I think that doesn't matter too much
+				if mr.match_rec_exact(rule, new_rule):
+					b_not_new = True
+					break
+			if b_not_new:
+				continue
+			for rej in self.__rejected_rule_list:
+				if mr.match_rec_exact(rej, new_rule):
+					b_not_new = True
+					break
+			if b_not_new:
+				continue
+			for other_new in new_rule_list:
+				if mr.match_rec_exact(other_new[0], new_rule):
+					b_not_new = True
+					break
+			if b_not_new:
+				continue
+			# new_rule_list.append(new_rule)
+			new_rule_list.append([new_rule, src_level, src_gens_rec, src_id])
+
+		b_cont_list_changed = False
+		new_cont_list = []
+		for new_rule in new_rule_list:
+			b_cont_list_changed = True
+			new_cont = db_cont_mgr.new_cont_by_rule(new_rule, db_cont_mgr.status.mutant)
+			new_cont_list.append(new_cont)
+
+		if b_cont_list_changed:
+			self.__predictions_list = []
+			self.remove_n_first_matches(len(self.__match_list))
+			self.__nd_W = None
+
+		for new_cont in new_cont_list:
+			self.__cont_stats_list.append(cl_cont_stat(new_cont))
+
+		return
+
+

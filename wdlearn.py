@@ -275,7 +275,8 @@ def collect_cont_stats(init_pl, status_pl, orders_pl, results_pl, all_the_dicts,
 				cont_stats.add_match(b_match)
 				cont_match_list.append(b_match)
 
-			cont_stats_mgr.predict_success_rate(cont_match_list)
+			if cont_stats_mgr.get_W() != None:
+				cont_stats_mgr.add_prediction(cont_stats_mgr.predict_success_rate(cont_match_list))
 
 		orders_db.append(order_rec)
 

@@ -516,11 +516,11 @@ def eval_compare_conts_learn(nd_W, nd_data, nd_matches, numrecs):
 def do_compare_conts_learn(mgr, stat_list):
 	reclen = len(stat_list)
 	mlist = mgr.get_match_list()
-	mlist = [b == 'True'for b in mlist]
+	# mlist = [b == 'True'for b in mlist]
 	numrecs = len(mlist)
 	data = np.ndarray(shape=[reclen, numrecs], dtype=np.float32)
 	for icont, cont_stat in enumerate(stat_list):
-		data[icont, :] = [1.0 if b == 'True' else 0.0 for b in cont_stat.get_match_list()]
+		data[icont, :] = [1.0 if b else 0.0 for b in cont_stat.get_match_list()]
 	matches = np.ndarray(shape=[numrecs], dtype=np.bool)
 	matches[:] = mlist
 
@@ -570,7 +570,8 @@ def do_compare_conts_learn(mgr, stat_list):
 
 	eval_compare_conts_learn(sess.run(v_W), data, matches, numrecs)
 	losses = []
-
+	meta_losses = []
+	num_stalled = 0
 	for step in range(config.c_num_steps):
 		sess.run(l_batch_assigns)
 		if step == 0:
@@ -578,11 +579,21 @@ def do_compare_conts_learn(mgr, stat_list):
 			logger.info('Starting error: %f', errval)
 		elif step % (config.c_num_steps / 100) == 0:
 			errval = np.mean(losses)
+			meta_losses.append(errval)
 			losses = []
 			logger.info('step: %d: error: %f', step, errval)
 			eval_compare_conts_learn(sess.run(v_W), data, matches, numrecs)
-			if errval < config.c_cont_lrn_stop_thresh:
-				break
+			# if errval < config.c_cont_lrn_stop_thresh:
+			# 	break
+			if len(meta_losses) > 10:
+				meta_losses = meta_losses[1:]
+				meta_err = np.mean(meta_losses)
+				if errval > meta_err * 0.999:
+					num_stalled += 1
+				else:
+					num_stalled = 0
+				if num_stalled > 2:
+					break
 
 		outputs = sess.run([t_err, op_train_step])
 		losses.append(math.sqrt(outputs[0]))

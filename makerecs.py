@@ -439,6 +439,81 @@ def report_confirmers(db_len_grps, gg_confirmed_list, el_set_arr, def_article_di
 			gens_str = els.print_phrase(gens_rec, gens_rec, gens_str, def_article_dict, el_set_arr, glv_dict)
 			print('PRECONDS:', out_str, '\nGENS:', gens_str)
 
+def identical_rule_part(rule1, rule_ends1, rule2, rule_ends2):
+	start1, end1 = rule_ends1
+	start2, end2 = rule_ends2
+
+	len1 = end1 - start1
+	len2 = end2 - start2
+	if len1 != len2:
+		return False
+
+	for iel in range(len1):
+		el1 = rule1[start1 + iel]
+		el2 = rule2[start2 + iel]
+		if el1 != el2:
+			return False
+
+	return True
+
+
+def duplicate_piece(src_rule, rule_ends, iel_sel, src_other_rule, other_rule_ends, iel_sel_other, b_make_var):
+	rule = copy.deepcopy(src_rule)
+	other_rule = copy.deepcopy(src_other_rule)
+	start, end = rule_ends
+	other_start, other_end = other_rule_ends
+	piece = []
+	for iel, el in enumerate(other_rule):
+		if iel < other_start or iel > other_end:
+			continue
+		if b_make_var and iel == iel_sel_other:
+			piece += [[rules.rec_def_type.var, iel_sel]]
+		else:
+			piece += [el]
+	new_rule = rule[:end+1] + piece + rule[end+1:]
+	insert_len = len(piece)
+	for iel, el in enumerate(new_rule):
+		if iel <= end + insert_len:
+			continue
+		if el[0] == rules.rec_def_type.var and el[1] > end:
+			el[1] = el[1] + insert_len
+			assert el[1] <= len(new_rule), 'duplicate piece created a reference beyond the end of the rule'
+
+	return new_rule
+
+
+def get_indef_likes(rule, rule_ends):
+	start, end = rule_ends
+	indefs_list = []
+	for iel, el in enumerate(rule):
+		if iel < start or iel > end:
+			continue
+
+		if el[0] == rules.rec_def_type.like and el[2] < (1.0 - config.c_cd_epsilon):
+			indefs_list += [iel]
+
+	return indefs_list
+
+def create_start_end_listing(rule):
+	listing = []
+	el = rule[0]
+	if el[0] == rules.rec_def_type.conn and not el[1] == rules.conn_type.AND:
+		print('The purpose of this function is to process complex rules only')
+		return listing
+	start, end = -1, -1
+	b_inside = False
+	for iel, el in enumerate(rule):
+		if iel == 0:
+			continue
+
+		if not b_inside and el[0] == rules.rec_def_type.conn and el[1] == rules.conn_type.start:
+			b_inside = True
+			start = iel
+		elif b_inside and el[0] == rules.rec_def_type.conn and el[1] == rules.conn_type.end:
+			b_inside = False
+			end = iel
+			listing.append([start, end])
+	return listing
 
 
 def make_scvo_arr(scvo):

@@ -31,7 +31,7 @@ class cl_add_gg(object):
 		self.__id = cont_id
 		self.__parent_id = parent_id
 		self.__status = ''
-		self.__status_params = []
+		self.__status_params = [0.0, 0.0]
 
 
 	def update_stats(self, score, rule_str ):
@@ -186,7 +186,7 @@ class cl_cont_mgr(object):
 	# The difference between expands and perfect or blocks and perfect_blocks is that
 	# one is through tries and the other is just a perfect score on the gg score
 	status = Enum(['untried', 'initial', 'perfect', 'expands', 'perfect_block', 'blocks',
-				   'partial_expand', 'partial_block', 'irrelevant'])
+				   'partial_expand', 'partial_block', 'irrelevant', 'mutant'])
 	c_expands_min_tries = -1
 	c_expands_score_thresh = 0.0
 	c_expands_score_min_thresh = 0.0
@@ -221,10 +221,39 @@ class cl_cont_mgr(object):
 
 		self.__cont_stats_mgr.init_from_list(target_conts_list, thresh, exclude_list)
 
+	def delete_cont_by_rule(self, rule):
+		for icc, ccont in enumerate(self.__cont_list):
+			if ccont.is_null():
+				continue
+			cont_rule = ccont.get_rule()
+			# In the following match we are ignoring the cd component of the like.
+			# For now, I think that doesn't matter too much
+			if mr.match_rec_exact(rule, cont_rule):
+				print('db_cont_mgr: removing rule', icc)
+				del self.__cont_list[icc]
+				break
+
+	def new_cont_by_rule(self, rule_params, status):
+		rule, level, gens_rec, parent_id = rule_params
+		rule_str = mr.gen_rec_str(rule)
+		scvo = mr.gen_cvo_str(rule)
+		self.__max_cont_id += 1
+		new_cont = cl_add_gg(	b_from_load=False, templ_len=len(rule), scvo=scvo, gens_rec=gens_rec,
+								score=-1.0, rule_str=rule_str, level=level+1, b_blocking=False,
+								cont_id=self.__max_cont_id, parent_id=parent_id)
+		new_cont.set_status(status)
+		# self.add_cont(new_cont)
+		return new_cont
+
+
 	def init_cont_stats_mgr_from_file(self, fnt):
 		self.__cont_stats_mgr = cc.cl_cont_stats_mgr()
 		b_load_done = self.__cont_stats_mgr.load(fnt)
 		if b_load_done:
+			self.set_max_cont_id(self.__cont_stats_mgr.get_max_cont_id())
+
+			self.__cont_stats_mgr.analyze(self)
+			self.__cont_stats_mgr.create_new_conts(self)
 			stats_list = self.__cont_stats_mgr.get_cont_stats_list()
 			for cont_stat in stats_list:
 				self.add_cont(cont_stat.get_cont())
@@ -239,6 +268,9 @@ class cl_cont_mgr(object):
 	#
 	def get_max_cont_id(self):
 		return self.__max_cont_id
+
+	def set_max_cont_id(self, id):
+		self.__max_cont_id = id
 
 	def get_cont(self, icont):
 		return self.__cont_list[icont]
