@@ -1400,3 +1400,19 @@ Here are some phases:
 Checking in with:
 
 Classic AI using prediction of rules in cont stats working.
+
+The goal now is to improve to oracle so that we can start learning all rules including convoy
+
+Another phase:
+
+* No learning, using oracle to generate move
+    No reading from cont_stats.txt or wdlengrps. c_b_load_conts = False, c_b_load_cont_mgr = False
+    making orders, AI based on
+        Use the oracle. c_b_play_from_saved = False
+    in-play learning - just saving orders_success. c_b_save_orders = True
+    no learning of conts W. c_b_learn_conts_and_save = False
+    no save of new conts. c_b_learn_conts_and_save = False
+
+Checking in with the following comment:
+
+Convoy, hold and support hold introduced.
