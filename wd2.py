@@ -11,11 +11,13 @@ import os
 import collections
 from enum import Enum
 import embed
+import utils
 import els
 import dmlearn
 import clrecgrp
 import compare_conts
 import wdconfig
+from wdconfig import e_move_type
 import wdlearn
 import wd_imagine
 import wd_admin
@@ -308,36 +310,56 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 	db.commit()
 
 def create_move_orders2(db, cursor, gameID, sql_complete_order,
+						sql_get_unit_id, sql_move_order, sql_support_order,
 						unit_owns_tbl, terr_id_tbl,
 						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 						ref_orders_list, orders_status_list,
 						init_db, status_db, db_cont_mgr, all_the_dicts,
 						terr_owns_tbl, supply_tbl):
 	nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
-	sql_get_unit_id = string.Template(
-		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
-	sql_make_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
-										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 
 	orders_list, orders_db, success_list, icountry_list = \
-		wd_imagine.create_move_orders(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
+		wd_imagine.create_move_orders2(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
 										db_cont_mgr, country_names_tbl, unit_owns_tbl,
 										all_the_dicts, terr_owns_tbl, supply_tbl, wdconfig.c_num_montes,
 										wdconfig.c_preferred_nation, wdconfig.c_b_predict_success)
 
 	for iorder, order in enumerate(orders_list):
-		sutype, _,  src_name, _, _, dest_name = order
-		unit_terr_id = terr_id_tbl[src_name]
+		move_template = ['?', 'in', '?', 'move', 'to', '?']
+		support_template = ['?', 'in', '?', 'support', 'move', 'from', '?', 'to', '?']
+		if utils.match_list_for_blanks(l_with_blanks=move_template, l_to_match=order):
+			sutype, _, src_name, _, _, dest_name = order
+			unit_terr_id = terr_id_tbl[src_name]
+			move_type = e_move_type.move
+		elif utils.match_list_for_blanks(l_with_blanks=support_template, l_to_match=order):
+			sutype, _, supporting_name, _, _, _, src_name, _, dest_name = order
+			unit_terr_id = terr_id_tbl[supporting_name]
+			from_terr_id = terr_id_tbl[src_name]
+			move_type = e_move_type.support
+		else:
+			print('create_move_orders. Unknown move template')
+			move_type = e_move_type.none
+			continue
 		sql_get = sql_get_unit_id.substitute(gameID=str(gameID), terrID=str(unit_terr_id))
 		cursor.execute(sql_get)
 		unit_id = cursor.fetchone()
 		dest_id = terr_id_tbl[dest_name]
 		dstr = ' '.join(order)
-		order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
-									   fromTerrID=unit_terr_id, toTerrID=dest_id)
+		if move_type == e_move_type.move:
+			order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
+										   fromTerrID=unit_terr_id, toTerrID=dest_id)
+		elif move_type == e_move_type.support:
+			order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
+										   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
+
 		orders_status_list.append(order_status)
 		if success_list[iorder]:
-			sql_order = sql_make_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
+			if move_type == e_move_type.move:
+				sql_order = sql_move_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
+			elif move_type == e_move_type.support:
+				sql_order = sql_support_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
+														 gameID=str(gameID), fromTerrID=str(from_terr_id))
+
 			print(sql_order)
 			cursor.execute(sql_order)
 		print(dstr)
@@ -353,16 +375,11 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 
 
 
-def create_move_orders(db, cursor, gameID, sql_complete_order,
-					   unit_owns_tbl, terr_id_tbl,
-					   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-					   orders_list, orders_status_list):
-	sql_get_unit_id = string.Template(
-		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
-	sql_move_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
-										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
-	sql_support_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Support move\', '
-										 'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+def create_move_orders(	db, cursor, gameID, sql_complete_order,
+						sql_get_unit_id, sql_move_order, sql_support_order,
+						unit_owns_tbl, terr_id_tbl,
+						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+						orders_list, orders_status_list):
 
 	for icountry in range(1, len(country_names_tbl)):
 		scountry = country_names_tbl[icountry]
@@ -381,7 +398,7 @@ def create_move_orders(db, cursor, gameID, sql_complete_order,
 
 			nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
 			nt_move_details = collections.namedtuple('nt_order_details', 'country, sutype, fromName, toName')
-			e_move_type = Enum('e_move_type', 'none move support')
+			# e_move_type = Enum('e_move_type', 'none move support')
 
 			sutype, sfrom = unit_data
 			this_can_pass_tbl = army_can_pass_tbl if sutype == 'army' else fleet_can_pass_tbl
@@ -508,6 +525,14 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
+	sql_get_unit_id = string.Template(
+		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
+	sql_move_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
+										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+	sql_support_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Support move\', '
+										 'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+
+
 
 	gameID, game_phase = get_game_id(cursor, gname)
 	if gameID == None:
@@ -536,10 +561,10 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	if results_db != None and len(results_db) > 0:
 		if wdconfig.c_b_save_orders:
 			b_keep_working = wdlearn.create_order_freq_tbl(old_orders_list, new_orders_status_list)
-		elif wdconfig.c_b_compare_conts:
+		if wdconfig.c_b_collect_cont_stats:
 			b_keep_working = wdlearn.collect_cont_stats(init_db, old_status_db, old_orders_db, results_db,
 										 all_dicts, db_cont_mgr)
-		else:
+		if wdconfig.c_b_add_to_db_len_grps:
 			b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
 										 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
 		if not b_keep_working:
@@ -560,13 +585,15 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	elif game_phase == 'Diplomacy':
 		if wdconfig.c_b_play_from_saved:
 			create_move_orders2(db, cursor, gameID, sqlOrderComplete,
-							   unit_owns_tbl, terr_id_tbl,
-							   country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-							   orders_list, orders_status_list,
-							   init_db, status_db, db_cont_mgr, all_dicts,
+								sql_get_unit_id, sql_move_order, sql_support_order,
+								unit_owns_tbl, terr_id_tbl,
+								country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+								orders_list, orders_status_list,
+								init_db, status_db, db_cont_mgr, all_dicts,
 								terr_owns_tbl, supply_tbl)
 		else:
-			create_move_orders(db, cursor, gameID, sqlOrderComplete,
+			create_move_orders(	db, cursor, gameID, sqlOrderComplete,
+								sql_get_unit_id, sql_move_order, sql_support_order,
 								unit_owns_tbl, terr_id_tbl,
 								country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 								orders_list, orders_status_list)
@@ -719,13 +746,22 @@ def logic_init():
 
 def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 	db_cont_mgr = None
-	if wdconfig.c_b_compare_conts:
+	if wdconfig.c_b_load_cont_stats:
 		db_cont_mgr = wdlearn.init_cont_stats_from_file()
+		db_len_grps, i_active_cont = [], -1
 	# if db_cont_mgr:
 	# 	wdlearn.compare_conts_learn(db_cont_mgr)
-	if db_cont_mgr == None:
+	if wdconfig.c_b_load_cont_mgr:
+		assert db_cont_mgr == None, 'If load cont mgr is selected, it must not be loaded from cont stats'
 		db_cont_mgr = wdlearn.load_cont_mgr()
-	if not wdconfig.c_b_add_to_db_len_grps:
+
+	if wdconfig.c_b_add_to_db_len_grps:
+		assert wdconfig.c_b_load_cont_mgr and not wdconfig.c_b_load_cont_stats, 'Can only learn more db len grps if loaded cont mgr directly. Not from cont sats'
+		db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
+		if i_active_cont < 0:
+			return -1, False
+	elif wdconfig.c_b_init_cont_stats_from_cont_mgr:
+		assert wdconfig.c_b_load_cont_mgr, 'You cannot initialize cont stats without c_b_load_cont_mgr'
 		db_len_grps, i_active_cont = [], -1
 		if db_cont_mgr.get_cont_stats_mgr() == None:
 			target_rule_list = wdlearn.add_success_to_targets(wdconfig.c_target_gens)
@@ -733,10 +769,6 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 			db_cont_mgr.init_cont_stats_mgr(wdconfig.c_cont_stats_init_thresh, target_rule_list,
 											all_dicts[0], # glv_dict - TBD avoid magic position
 											wdconfig.c_cont_stats_init_exclude_irrelevant)
-	else:
-		db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
-		if i_active_cont < 0:
-			return -1, False
 
 		# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
@@ -744,8 +776,10 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 	sess.close()
 	dmlearn.learn_reset()
 
-	if wdconfig.c_b_compare_conts:
+	if wdconfig.c_b_learn_conts:
 		wdlearn.compare_conts_learn(db_cont_mgr)
+	if wdconfig.c_b_cont_stats_save:
+		wdlearn.cont_stats_save(db_cont_mgr, wdconfig.c_cont_stats_fnt)
 
 	return gameID, b_can_continue
 

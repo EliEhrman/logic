@@ -1,3 +1,5 @@
+from enum import Enum
+
 c_sample_el = 'army'
 c_cont_score_thresh = 0.95 # better than this, we don't bother trying to find more clauses
 c_cont_score_min = 0.1
@@ -15,10 +17,17 @@ orders_success_fnt = '~/tmp/orders_success.txt'
 orders_failed_fnt = '~/tmp/orders_failed.txt'
 db_fnt = '~/tmp/wdlengrps.txt'
 
-c_b_compare_conts = True
-c_b_save_orders = False
-c_b_add_to_db_len_grps = False # normally keep this and above one-True
-c_b_play_from_saved = False
+# c_b_compare_conts = False replaced by next few individual flags
+c_b_load_cont_stats = True # Loads cont stats from conts file and builds a cont for each one
+c_b_analyze_and_modify_conts = False # Analyses accuracy and usefulness of each cont and Decides which conts to keep and when to try and create new cont mutations
+c_b_learn_conts = False # At the end of game or play pahse (30 to 300 turns), Learns the W for success prediction
+c_b_cont_stats_save = False # saves all cont modification and W to file, including new stats
+c_b_collect_cont_stats = False # Adds to matches and predict statistic for all conts
+c_b_save_orders = True
+c_b_load_cont_mgr = False # loads cont manager and the conts from wdlengrps
+c_b_add_to_db_len_grps = False # Assumes c_b_load_cont_mgr, makes one cont active and loads its len grps. When it comes time to play, learns from
+c_b_init_cont_stats_from_cont_mgr = False # This is how you build cont stats the first time from cont groups
+c_b_play_from_saved = True # Means we use the saved orders_success file and use some AI to create move. Alternative is to use the oracle move creator
 c_use_rule_thresh = 0.99
 c_num_montes = 1
 c_include_pass_statements = False
@@ -35,3 +44,5 @@ c_admin_action = None # 'DeleteGames'
 c_cont_stats_init_thresh = 0.1
 c_cont_stats_init_exclude_irrelevant = True
 c_cont_stats_fnt = '~/tmp/cont_stats.txt'
+
+e_move_type = Enum('e_move_type', 'none move support')

@@ -1377,3 +1377,26 @@ The code I'm checking in contains a first on-working version of the next feature
 Checking in with the comment:
 
 Rejection of rules and creation of mutations seems to be working but not useful.
+
+Wednesday 21st March
+
+The wdconfig options for different phases are a bit of a mess.
+
+LEt's try and put some order into it.
+
+Here are some phases:
+
+* Conts stats and AI, no learning
+    Reading from cont_stats.txt. c_b_load_conts = True
+    building cont_stats. c_b_load_conts = True
+    No analysis or new conts. c_b_analyze_and_modify_conts = False
+    making orders, AI based on
+        reading from orders_success. c_b_play_from_saved = True
+        evaluating moves based on conts prediction. c_b_play_from_saved = True no other flag yet to decide which AI
+    in-play learning - just saving orders_success. c_b_save_orders = True
+    no learning of conts W. c_b_learn_conts_and_save = False
+    no save of new conts. c_b_learn_conts_and_save = False
+
+Checking in with:
+
+Classic AI using prediction of rules in cont stats working.

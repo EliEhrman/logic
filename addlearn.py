@@ -246,14 +246,14 @@ class cl_cont_mgr(object):
 		return new_cont
 
 
-	def init_cont_stats_mgr_from_file(self, fnt):
+	def init_cont_stats_mgr_from_file(self, fnt, b_analyze_and_modify_conts):
 		self.__cont_stats_mgr = cc.cl_cont_stats_mgr()
 		b_load_done = self.__cont_stats_mgr.load(fnt)
 		if b_load_done:
 			self.set_max_cont_id(self.__cont_stats_mgr.get_max_cont_id())
-
-			self.__cont_stats_mgr.analyze(self)
-			self.__cont_stats_mgr.create_new_conts(self)
+			if b_analyze_and_modify_conts:
+				self.__cont_stats_mgr.analyze(self)
+				self.__cont_stats_mgr.create_new_conts(self)
 			stats_list = self.__cont_stats_mgr.get_cont_stats_list()
 			for cont_stat in stats_list:
 				self.add_cont(cont_stat.get_cont())

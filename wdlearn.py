@@ -282,16 +282,23 @@ def collect_cont_stats(init_pl, status_pl, orders_pl, results_pl, all_the_dicts,
 
 	return b_keep_working
 
+# These two are not specific to wd and should move to compare_conts or add learn
 def compare_conts_learn(db_cont_mgr):
 	cont_stats_mgr = db_cont_mgr.get_cont_stats_mgr()
 	if cont_stats_mgr:
 		cont_stats_mgr.do_learn()
-		cont_stats_mgr.save(wdconfig.c_cont_stats_fnt)
+	return
+
+def cont_stats_save(db_cont_mgr, fnt):
+	cont_stats_mgr = db_cont_mgr.get_cont_stats_mgr()
+	if cont_stats_mgr:
+		cont_stats_mgr.save(fnt)
 	return
 
 def init_cont_stats_from_file():
 	db_cont_mgr = addlearn.cl_cont_mgr()
-	b_load_done = db_cont_mgr.init_cont_stats_mgr_from_file(wdconfig.c_cont_stats_fnt)
+	b_load_done = db_cont_mgr.init_cont_stats_mgr_from_file(wdconfig.c_cont_stats_fnt,
+															wdconfig.c_b_analyze_and_modify_conts)
 	if not b_load_done:
 		db_cont_mgr = None
 	return db_cont_mgr
