@@ -1416,3 +1416,9 @@ Another phase:
 Checking in with the following comment:
 
 Convoy, hold and support hold introduced.
+
+Thursday 22nd March
+
+Checking in with:
+
+Single human player against the oracle working.

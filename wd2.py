@@ -27,6 +27,92 @@ import wd_admin
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 
+def wait_to_play(db, cursor, gameID, l_humaans):
+	sqlGetStatus = string.Template('select userID, orderStatus from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
+	sql = sqlGetStatus.substitute(gameID=gameID)
+	# b_all_waiting = False
+	while True:
+		cursor.execute(sql)
+		results = cursor.fetchall()
+		l_humaan_country_ids = []
+		b_waiting_for_AI = False
+		for row in results:
+			for row in results:
+				if row[0] in l_humaans:
+					continue
+
+				if row[1] == '':
+					b_waiting_for_AI = True
+
+		if b_waiting_for_AI:
+			break
+
+		db.commit()
+		time.sleep(5.0)
+
+
+def get_humaan_countries(cursor, gameID, l_humaans):
+	sqlFindCountries = string.Template('select userID, countryID from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
+	sql = sqlFindCountries.substitute(gameID=gameID)
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	l_humaan_country_ids = []
+	for row in results:
+		if row[0] in l_humaans:
+			l_humaan_country_ids.append(row[1])
+
+	return l_humaan_country_ids
+
+def find_human_game(db, cursor):
+	sqlGetGames = 'select id, name, phase from webdiplomacy.wD_Games;'
+	sqlFindStarters = string.Template('select userID from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
+	sql = sqlGetGames
+	# sql = sqlGetGame.substitute(gameID=gameID)
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	b_found_game = False
+	for row in results:
+		if row == None:
+			continue
+		gameID, gname, phase = row
+		if gname[:len(wdconfig.c_gname_human_prefix)] != wdconfig.c_gname_human_prefix:
+			continue
+		if phase == 'Pre-game':
+			# sqlStarters = sqlFindStarters.substitute(gameID=gameID)
+			# cursor.execute(sqlStarters)
+			# resultsStarters = cursor.fetchall()
+			# for rowStarters in resultsStarters:
+			# 	uid = rowStarters[0]
+			# 	if uid in wdconfig.c_human_uids:
+			AddPlayers(db, cursor, gameID, l_except=wdconfig.c_human_uids)
+			b_found_game = True
+			break
+		elif phase == 'Finished':
+			continue
+		else:
+			b_found_game = True
+			break
+	if b_found_game:
+		return gameID, gname, wdconfig.c_human_uids
+
+	return -1, '', []
+
+	# gameID, gname, _ = result
+	# l_except = []
+	# sql = sqlFindStarters.substitute(gameID=gameID)
+	# cursor.execute(sql)
+	# results = cursor.fetchall()
+	# for row in results:
+	# 	l_except.append(row[0])
+	#
+	# if len(l_except) >= 7:
+	# 	return -1, '', []
+	#
+	# AddPlayers(db, cursor, gameID, l_except)
+	#
+	# return gameID, gname, l_except
+
+
 def get_game_name(cursor, gameID):
 	sqlGetGame = string.Template('select id, name, phase from webdiplomacy.wD_Games where id = \'${gameID}\';')
 	sql = sqlGetGame.substitute(gameID=gameID)
@@ -57,14 +143,20 @@ def get_phase(cursor, gameID):
 	return result[0]
 
 
-def AddPlayers(db, cursor, gameID):
+def AddPlayers(db, cursor, gameID, l_except=[]):
 	sqlAddPlayer = string.Template(
 		'INSERT INTO webdiplomacy.wD_Members SET userID = ${userid}, countryID = 0, bet = 10, '
 		'timeLoggedIn = 1516721310, gameID = ${gameID}, orderStatus = \'None,Completed,Ready\';')
 
 	for i in range(7):
-		sql = sqlAddPlayer.substitute(gameID=gameID, userid=str(i + 6))
+		uid = i + wdconfig.c_starting_user_id
+
+		if uid in l_except:
+			continue
+
+		sql = sqlAddPlayer.substitute(gameID=gameID, userid=str(uid))
 		cursor.execute(sql)
+
 	db.commit()
 
 
@@ -231,7 +323,7 @@ def create_terr_type_tbl(cursor, statement_list):
 		# print(' '.join(terr_stmt))
 	return terr_type_tbl
 
-def create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl, unit_owns_tbl, sqlOrderComplete):
+def create_retreat_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl, unit_owns_tbl, sqlOrderComplete):
 	sqlGetBuildOrders = string.Template('SELECT countryID, LOWER(type), id from webdiplomacy.wD_Orders where gameID = ${gameID};')
 	sqlBuildOrder = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'${scmd}\', '
 										 'toTerrID = ${toTerrID} WHERE id = ${id} ;')
@@ -264,6 +356,8 @@ def create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, su
 		# cursor.execute(sql)
 
 	for icountry in country_order_ids:
+		if icountry in l_humaan_countries:
+			continue
 		sql = sqlOrderComplete.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
 		print(sql)
 		cursor.execute(sql)
@@ -271,7 +365,7 @@ def create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, su
 	db.commit()
 
 
-def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
+def create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
 						unit_owns_tbl, terr_owns_tbl, sqlOrderComplete):
 	sqlGetBuildOrders = string.Template('SELECT countryID, LOWER(type), id from webdiplomacy.wD_Orders where gameID = ${gameID};')
 	sqlBuildOrder = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'${scmd}\', '
@@ -299,6 +393,8 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 	results = cursor.fetchall()
 	country_order_ids = set()
 	for row in results:
+		if row[0] in l_humaan_countries:
+			continue
 		scountry = country_names_tbl[row[0]]
 		country_order_ids.add(row[0])
 		if row[1] == 'build army':
@@ -324,13 +420,15 @@ def create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supp
 		cursor.execute(sql)
 
 	for icountry in country_order_ids:
+		if icountry in l_humaan_countries:
+			continue
 		sql = sqlOrderComplete.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
 		print(sql)
 		cursor.execute(sql)
 
 	db.commit()
 
-def create_move_orders2(db, cursor, gameID, sql_complete_order,
+def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_order,
 						sql_get_unit_id, l_sql_action_orders,
 						unit_owns_tbl, terr_id_tbl,
 						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
@@ -398,7 +496,7 @@ def create_move_orders2(db, cursor, gameID, sql_complete_order,
 
 
 
-def create_oracle_move_orders(db, cursor, gameID, sql_complete_order,
+def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_complete_order,
 							  sql_get_unit_id, l_sql_action_orders,
 							  unit_owns_tbl, terr_id_tbl, terr_type_tbl,
 							  country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
@@ -421,6 +519,8 @@ def create_oracle_move_orders(db, cursor, gameID, sql_complete_order,
 
 
 	for icountry in range(1, len(country_names_tbl)):
+		if icountry in l_humaan_countries:
+			continue
 		scountry = country_names_tbl[icountry]
 		print('Orders for ', scountry)
 		unit_list = unit_owns_tbl.get(scountry, None)
@@ -658,7 +758,8 @@ def create_results_db(orders_db, orders_status_list):
 
 	return results_db
 
-def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars, db, cursor, gname, country_names_tbl,
+def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
+				db, cursor, gname, l_humaans, country_names_tbl,
 				terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 				init_db, orders_status_list, old_status_db, old_orders_db, old_orders_list):
 	sqlOrderComplete = string.Template(
@@ -716,19 +817,21 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 
 	status_db = els.convert_list_to_phrases(statement_list)
 
+	l_humaan_countries = get_humaan_countries(cursor, gameID, l_humaans)
+
 	orders_list = []
 	orders_status_list[:] = [] # a hack so that the reference itself has the contents removed
 	if game_phase == 'Builds':
 		print('Creating build orders.')
-		create_build_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
+		create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
 							unit_owns_tbl, terr_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Retreats':
 		print('Creating retreat orders.')
-		create_retreat_orders(db, cursor, gameID, country_names_tbl, terr_id_tbl, supply_tbl,
+		create_retreat_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
 							  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
 		if wdconfig.c_b_play_from_saved:
-			create_move_orders2(db, cursor, gameID, sqlOrderComplete,
+			create_move_orders2(db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
 								sql_get_unit_id, l_sql_action_orders,
 								unit_owns_tbl, terr_id_tbl,
 								country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
@@ -736,7 +839,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 								init_db, status_db, db_cont_mgr, all_dicts,
 								terr_owns_tbl, supply_tbl)
 		else:
-			create_oracle_move_orders(	db, cursor, gameID, sqlOrderComplete,
+			create_oracle_move_orders(	db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
 										sql_get_unit_id, l_sql_action_orders,
 										unit_owns_tbl, terr_id_tbl, terr_type_tbl,
 										country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
@@ -823,17 +926,25 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 			init_db = els.convert_list_to_phrases(statement_list)
 
 			# if gameID != -1:
-			b_not_found = True
-			while b_not_found:
-				gname, b_game_over = get_game_name(cursor, gameID)
-				if gname == None:
-					gname = 't' + str(int(time.time()))[-6:]
-					b_not_found = False
-				elif b_game_over:
-					gameID += 1
-					continue
-				else:
-					b_not_found = False
+			l_humaans = []
+			if wdconfig.c_b_play_human:
+				while True:
+					gameID, gname, l_humaans = find_human_game(db, cursor)
+					if gameID != -1:
+						break
+					time.sleep(20.0)
+			else:
+				b_not_found = True
+				while b_not_found:
+					gname, b_game_over = get_game_name(cursor, gameID)
+					if gname == None:
+						gname = 't' + str(int(time.time()))[-6:]
+						b_not_found = False
+					elif b_game_over:
+						gameID += 1
+						continue
+					else:
+						b_not_found = False
 
 			orders_status_list = []
 			status_db, orders_db, orders_list = [], [], []
@@ -842,20 +953,6 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				if not b_keep_working:
 					return gameID, b_can_continue
 
-				if iturn > 0:
-					gameID, b_finished, status_db, orders_db, orders_list = \
-						play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
-									db, cursor, gname, country_names_tbl,
-									terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
-									fleet_can_pass_tbl, init_db, orders_status_list,
-									old_status_db=status_db, old_orders_db=orders_db,
-									old_orders_list=orders_list)
-					if b_finished:
-						print('Game Over!')
-						return -1, b_can_continue
-					elif status_db == []: # means turn finished early
-						b_keep_working = False
-					print('Next turn for game id:', gameID)
 				if gameID != -1:
 					process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
 					try:
@@ -863,6 +960,22 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 					except urllib2.HTTPError as err:
 						print('HTTP Exception: ', err)
 					time.sleep(0.2)
+
+				wait_to_play(db, cursor, gameID, l_humaans)
+
+				gameID, b_finished, status_db, orders_db, orders_list = \
+					play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
+								db, cursor, gname, l_humaans, country_names_tbl,
+								terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
+								fleet_can_pass_tbl, init_db, orders_status_list,
+								old_status_db=status_db, old_orders_db=orders_db,
+								old_orders_list=orders_list)
+				if b_finished:
+					print('Game Over!')
+					return -1, b_can_continue
+				elif status_db == []: # means turn finished early
+					b_keep_working = False
+				print('Next turn for game id:', gameID)
 
 	return gameID, b_can_continue
 
@@ -935,7 +1048,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 723 # Set to -1 to restart
+	gameID = 774 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

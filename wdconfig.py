@@ -45,6 +45,10 @@ c_rnd_fleet_army_wrong = 0.0
 c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
 
 c_admin_action = None # 'DeleteGames'
+c_b_play_human = True
+c_starting_user_id = 6
+c_human_uids = [7]
+c_gname_human_prefix = 'tplay'
 c_cont_stats_init_thresh = 0.1
 c_cont_stats_init_exclude_irrelevant = True
 c_cont_stats_fnt = '~/tmp/cont_stats.txt'
