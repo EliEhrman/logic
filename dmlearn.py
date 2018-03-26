@@ -1,4 +1,5 @@
 # Distance Metric Learning dmlearn.py
+from __future__ import print_function
 
 import math
 import os
@@ -92,11 +93,27 @@ def init_templ_learn():
 
 	return sess #, saver_dict, saver
 
+def create_db_from_W(nd_W, templ_perm_arr, igg_arr):
+	numrecs = len(igg_arr)
+	if numrecs < 1:
+		return None
+
+	if config.c_b_nbns:
+		new_arr = [modify_vec_for_success(templ_perm_arr[irec]) if igg_arr[irec] else templ_perm_arr[irec] for irec in range(numrecs)]
+		nd_perm_arr = np.stack(new_arr, axis=0)
+	else:
+		nd_perm_arr = np.stack(templ_perm_arr, axis=0)
+	# t_y = tf.nn.l2_normalize(tf.matmul(ph_input, v_W), dim=1, name='t_y_')
+	nd_y = np.matmul(nd_perm_arr, nd_W)
+	nd_norms = np.linalg.norm(nd_y, axis=1)
+	nd_db = nd_y / nd_norms[:, None]
+	return nd_db
+
 def do_gg_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
 	b_success = True
 	ph_input, v_W, t_y, op_train_step, t_err, v_r1, v_r2, op_r1, op_r2, ph_numrecs, ph_o = learn_params
 	numrecs = len(igg_arr)
-	print('numrecs:', numrecs, 'igg_arr:', igg_arr)
+	# print('numrecs:', numrecs, 'igg_arr:', igg_arr)
 	# time.sleep(1)
 	sess.run(tf.global_variables_initializer())
 	# new_arr = []
@@ -126,10 +143,11 @@ def do_gg_learn(sess, learn_params, perm_arr, igg_arr, b_must_learn):
 			print('lrn step ', step, err)
 			if err < config.c_gg_learn_good_thresh:
 				break
-			if err > config.c_gg_learn_give_up_thresh and step > give_up_count:
-				print('do_templ_learn: Giving up on learning!')
-				b_success = False
-				break
+			# if err > config.c_gg_learn_give_up_thresh and step > give_up_count:
+			# 	print('do_templ_learn: Giving up on learning!')
+			# 	assert False
+			# 	b_success = False
+			# 	break
 		nn_outputs = sess.run([t_err, op_train_step], feed_dict={ph_numrecs: numrecs, ph_input: nd_perm_arr, ph_o: igg_arr})
 		losses.append(nn_outputs[0])
 
@@ -319,12 +337,15 @@ def run_learning(sess, l_batch_assigns, t_err, saver, op_train_step):
 def run_eval(sess, t_top_cds, t_top_idxs):
 	return sess.run([t_top_cds, t_top_idxs])
 
+"""
+looks like no longer in use
 def get_templ_cds(perm_vec, nd_W, nd_db):
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
 	nd_cd = np.matmul(nd_db, perm_embed )
 	return nd_cd
+"""
 
 # The return value indicaates a match on the gg not whether the match succeeded in matching a result
 def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, thresh_cd,
@@ -337,7 +358,7 @@ def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, th
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
 	nd_cd = np.matmul(nd_db, perm_embed )
-	print('nd_cd', nd_cd)
+	# print('nd_cd', nd_cd)
 
 	max_match_cd, min_match_cd = 0.0, 1.0
 	for imatch, one_match in enumerate(igg_arr):
@@ -372,7 +393,7 @@ def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, th
 					event_result_score_list[iresult].append(gg_sig)
 					print('Adding score ', event_result_score_list[iresult][-1], 'for event ', event_result)
 				else:
-					print('Will not add score yet, until we get results for enough eids')
+					print('Will not add score yet, until we get results for enough eids for ', templ_scvo)
 				b_one_result_matched = True
 				if b_gg_confirmed and b_score_valid:
 					result_confirmed_list[iresult] = True
@@ -387,7 +408,8 @@ def get_gg_score(perm_rec, perm_vec, perm_phrases, nd_W, nd_db, igg, igg_arr, th
 
 	return True, True, [perm_phrases, expected_result]
 
-
+"""
+looks like he is not used
 def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_result_list, event_result_score_list, templ_len, templ_scvo):
 	perm_embed = np.matmul(perm_vec, nd_W)
 	en = np.linalg.norm(perm_embed)
@@ -412,7 +434,7 @@ def get_score(perm_rec, perm_vec, nd_W, nd_db, gg_list, igg_arr, eid_arr, event_
 					event_result_score_list[iresult].append([igg_sums[igg], templ_len, templ_scvo, igg])
 
 	return event_result_score_list
-
+"""
 """
 	# score = 0.0
 	success_set, fail_set = set(), set()
@@ -445,7 +467,7 @@ def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr, b_always_print=
 	en = np.linalg.norm(perm_embed)
 	perm_embed = perm_embed / en
 	nd_cd = np.matmul(nd_db, perm_embed )
-	if rnd_for_print < 0.2:
+	if rnd_for_print < 0.02:
 		print('#', templ_iperm, ': nd_cd', nd_cd)
 	# ind = np.argpartition(nd_cd, -config.c_num_k_eval)[-config.c_num_k_eval:]
 	max_match_cd, min_match_cd = 0.0, 1.0
@@ -457,7 +479,7 @@ def get_score_stats(templ_iperm, perm_vec, nd_W, nd_db, igg_arr, b_always_print=
 			if cd < min_match_cd:
 				min_match_cd = cd
 
-	if b_always_print or rnd_for_print < 0.2:
+	if b_always_print or rnd_for_print < 0.02:
 		print('min cd:', min_match_cd, 'max cd:', max_match_cd)
 	return min_match_cd
 

@@ -1387,7 +1387,7 @@ LEt's try and put some order into it.
 Here are some phases:
 
 * Conts stats and AI, no learning
-    Reading from cont_stats.txt. c_b_load_conts = True
+    Reading from cont_stats.txt. c_b_load_cont_stats = True
     building cont_stats. c_b_load_conts = True
     No analysis or new conts. c_b_analyze_and_modify_conts = False
     making orders, AI based on
@@ -1406,7 +1406,7 @@ The goal now is to improve to oracle so that we can start learning all rules inc
 Another phase:
 
 * No learning, using oracle to generate move
-    No reading from cont_stats.txt or wdlengrps. c_b_load_conts = False, c_b_load_cont_mgr = False
+    No reading from cont_stats.txt or wdlengrps. c_b_load_cont_stats = False, c_b_load_cont_mgr = False
     making orders, AI based on
         Use the oracle. c_b_play_from_saved = False
     in-play learning - just saving orders_success. c_b_save_orders = True
@@ -1422,3 +1422,41 @@ Thursday 22nd March
 Checking in with:
 
 Single human player against the oracle working.
+
+Used the following phase to play human vs AI
+
+c_admin_action = None # 'DeleteGames'
+c_b_play_human = True
+c_starting_user_id = 6
+c_human_uids = [7]
+c_gname_human_prefix = 'tplay'
+
+Another phase:
+* Learning the core len grps and conts
+    Reading from wdlengrps but no reading from cont_stats.txt. c_b_load_cont_stats = False, c_b_load_cont_mgr = True
+    making orders, AI based on
+        Use the oracle. c_b_play_from_saved = False
+    in-play learning - saving orders_success. c_b_save_orders = True
+    in-play learning - add to the db_len_grps, learn new conts c_b_add_to_db_len_grps = True
+    no learning of conts W. c_b_learn_conts_and_save = False
+    no save of new conts. c_b_learn_conts_and_save = False
+
+Monday 26th March
+
+I think the best strategy is to learn no more than level 2 using standatd db_len_grps. The combos can be learned using
+cont stats learning. I have worked very hard to let the initial group slowly build up the rarest cases because
+they can be tactically significant
+
+In retrospect it may have been better to build a good hand-crafted AI to learn from.
+
+Another phase:
+* Using the cont groups in wdlengrps to initialize the cont stats
+c_b_load_cont_mgr = True # loads cont manager and the conts from wdlengrps
+c_b_add_to_db_len_grps = False # Assumes c_b_load_cont_mgr, makes one cont active and loads its len grps. When it comes time to play, learns from
+c_b_init_cont_stats_from_cont_mgr = True # This is how you build cont stats the first time from cont groups
+
+Checking in with the comment:
+
+Learning wdlengrps to only level 2 and waiting patiently for the rare cases.
+
+

@@ -233,6 +233,8 @@ def place_vars_in_phrase(vars_dict, gens_rec):
 				result.append(new_el)
 			else:
 				result.append(el)
+		else:
+			result.append(el)
 
 	return result
 

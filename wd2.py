@@ -23,9 +23,27 @@ from wdconfig import e_move_type
 import wdlearn
 import wd_imagine
 import wd_admin
-
+import wd_classicAI
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
+
+def complete_game_init(db, cursor, gameID, l_humaan_countries):
+	if l_humaan_countries != None and l_humaan_countries != []:
+		print('function complete_game_init not designed for play against humans')
+		return
+
+	sqlGetStatus = string.Template('select userID, orderStatus from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
+	sql = sqlGetStatus.substitute(gameID=gameID)
+
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	l_present_uids = [row[0] for row in results]
+
+	if len(l_present_uids) >= 7:
+		print('cant help complete pre-game. All players present')
+		return
+
+	AddPlayers(db, cursor, gameID, l_except=l_present_uids)
 
 def wait_to_play(db, cursor, gameID, l_humaans):
 	sqlGetStatus = string.Template('select userID, orderStatus from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
@@ -237,7 +255,8 @@ def OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list):
 		if owns_list == None:
 			owns_tbl[country] = []
 		owns_tbl[country].append([row[1], row[2]])
-		statement_list.append([country, 'owns', row[1]])
+		if wdconfig.c_b_add_owns_to_phrases:
+			statement_list.append([country, 'owns', row[1]])
 		if row[2] == None:
 			statement_list.append([row[1], 'is', 'unoccupied'])
 		else:
@@ -397,6 +416,7 @@ def create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tb
 			continue
 		scountry = country_names_tbl[row[0]]
 		country_order_ids.add(row[0])
+		b_order_valid = False
 		if row[1] == 'build army':
 			build_opts_list = build_opts.get(scountry, None)
 			if build_opts_list == None:
@@ -408,16 +428,20 @@ def create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tb
 				scmd = 'Build Fleet'
 			dest_id = terr_id_tbl[build_loc[1]]
 			sql = sqlBuildOrder.substitute(scmd=scmd, toTerrID=dest_id, id=row[2] )
+			b_order_valid = True
 			dstr = scountry + ' ' + scmd + ' in ' + build_loc[1]
 		else:
-			owns_list = unit_owns_tbl[scountry]
-			destroy_data = random.choice(owns_list)
-			dest_id = terr_id_tbl[destroy_data[1]]
-			sql = sqlBuildOrder.substitute(scmd='Destroy', toTerrID=dest_id, id=row[2] )
-			dstr = scountry + ' destroy in ' + destroy_data[1]
-		print(dstr)
-		print(sql)
-		cursor.execute(sql)
+			owns_list = unit_owns_tbl.get(scountry, [])
+			if owns_list != []:
+				destroy_data = random.choice(owns_list)
+				dest_id = terr_id_tbl[destroy_data[1]]
+				sql = sqlBuildOrder.substitute(scmd='Destroy', toTerrID=dest_id, id=row[2] )
+				b_order_valid = True
+				dstr = scountry + ' destroy in ' + destroy_data[1]
+		if b_order_valid:
+			print(dstr)
+			print(sql)
+			cursor.execute(sql)
 
 	for icountry in country_order_ids:
 		if icountry in l_humaan_countries:
@@ -440,7 +464,7 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 	sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order = l_sql_action_orders
 
 	orders_list, orders_db, success_list, icountry_list = \
-		wd_imagine.create_move_orders2(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
+		wd_classicAI.create_move_orders2(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
 										db_cont_mgr, country_names_tbl, unit_owns_tbl,
 										all_the_dicts, terr_owns_tbl, supply_tbl, wdconfig.c_num_montes,
 										wdconfig.c_preferred_nation, wdconfig.c_b_predict_success)
@@ -598,7 +622,7 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 				orders_list.append([sutype, 'in', sfrom, 'move', 'to', dest_name])
 				order_status = order_status._replace(toTerrID=dest_id)
 
-				print(dstr)
+				# print(dstr)
 				# The webdip engine does not guarantee that the order is valid, so we have to do this
 				if dest_name not in pass_list:
 					order_status = order_status._replace(status=False)
@@ -719,7 +743,7 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 				if move_type == e_move_type.convoy:
 					sql_order = sql_convoy_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
 															 gameID=str(gameID), fromTerrID=str(from_id))
-					print (sql_order)
+					# print (sql_order)
 					cursor.execute(sql_order)
 					sql_order = sql_move_order.substitute(toTerrID=str(dest_id), unitID=str(convoyed_unit_id),
 														  gameID=str(gameID), bConvoyed='Yes')
@@ -734,12 +758,12 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 				elif move_type == e_move_type.move:
 					sql_order = sql_move_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
 														  gameID=str(gameID), bConvoyed='No')
-				print (sql_order)
+				# print (sql_order)
 				cursor.execute(sql_order)
 
 		# end oreders for one unit
 		sql_order = sql_complete_order.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
-		print(sql_order)
+		# print(sql_order)
 		cursor.execute(sql_order)
 
 	db.commit()
@@ -844,6 +868,8 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 										unit_owns_tbl, terr_id_tbl, terr_type_tbl,
 										country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 										orders_list, orders_status_list)
+	elif game_phase == 'Pre-game':
+		complete_game_init(db, cursor, gameID, l_humaan_countries)
 	elif game_phase == 'Finished':
 		return gameID, True, None, None, None
 	else:
@@ -902,6 +928,8 @@ def create_dict_files(terr_names_fn):
 			return
 
 def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, b_create_dict_file=False):
+	glv_dict, _, _ = all_dicts
+
 	b_can_continue = True
 
 	# if gameID == -1:
@@ -951,7 +979,8 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 			b_keep_working = True
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
-					return gameID, b_can_continue
+					# return gameID, b_can_continue
+					break
 
 				if gameID != -1:
 					process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
@@ -961,7 +990,8 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 						print('HTTP Exception: ', err)
 					time.sleep(0.2)
 
-				wait_to_play(db, cursor, gameID, l_humaans)
+				if wdconfig.c_b_play_human:
+					wait_to_play(db, cursor, gameID, l_humaans)
 
 				gameID, b_finished, status_db, orders_db, orders_list = \
 					play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
@@ -972,10 +1002,18 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 								old_orders_list=orders_list)
 				if b_finished:
 					print('Game Over!')
-					return -1, b_can_continue
+					gameID = -1
+					# return -1, b_can_continue
+					break
 				elif status_db == []: # means turn finished early
 					b_keep_working = False
 				print('Next turn for game id:', gameID)
+
+	if wdconfig.c_b_add_to_db_len_grps:
+		b_can_continue = wdlearn.create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont)
+		wdlearn.save_db_status(db_len_grps, db_cont_mgr)
+		# if not b_keep_working:
+		# 	break
 
 	return gameID, b_can_continue
 
@@ -1019,6 +1057,11 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 		db_len_grps, i_active_cont = wdlearn.sel_cont_and_len_grps(db_cont_mgr)
 		if i_active_cont < 0:
 			return -1, False
+		db_cont_mgr.load_perm_dict(wdconfig.perm_fnt)
+		max_eid = db_cont_mgr.apply_perm_dict_data(db_len_grps, i_active_cont)
+		db_cont_mgr.load_W_dict(wdconfig.W_fnt)
+		db_cont_mgr.apply_W_dict_data(db_len_grps, i_active_cont)
+		learn_vars[0] = max_eid
 	elif wdconfig.c_b_init_cont_stats_from_cont_mgr:
 		assert wdconfig.c_b_load_cont_mgr, 'You cannot initialize cont stats without c_b_load_cont_mgr'
 		db_len_grps, i_active_cont = [], -1
@@ -1048,7 +1091,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 774 # Set to -1 to restart
+	gameID = 925 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

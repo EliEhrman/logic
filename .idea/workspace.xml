@@ -2,11 +2,19 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c6b771a1-a10b-4216-9350-efe4ef2bc292" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/wd_classicAI.py" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change beforePath="$PROJECT_DIR$/addlearn.py" afterPath="$PROJECT_DIR$/addlearn.py" />
+      <change beforePath="$PROJECT_DIR$/clrecgrp.py" afterPath="$PROJECT_DIR$/clrecgrp.py" />
+      <change beforePath="$PROJECT_DIR$/config.py" afterPath="$PROJECT_DIR$/config.py" />
+      <change beforePath="$PROJECT_DIR$/dmlearn.py" afterPath="$PROJECT_DIR$/dmlearn.py" />
+      <change beforePath="$PROJECT_DIR$/makerecs.py" afterPath="$PROJECT_DIR$/makerecs.py" />
       <change beforePath="$PROJECT_DIR$/nlp_deps.txt" afterPath="$PROJECT_DIR$/nlp_deps.txt" />
       <change beforePath="$PROJECT_DIR$/notebook.txt" afterPath="$PROJECT_DIR$/notebook.txt" />
       <change beforePath="$PROJECT_DIR$/wd2.py" afterPath="$PROJECT_DIR$/wd2.py" />
+      <change beforePath="$PROJECT_DIR$/wd_imagine.py" afterPath="$PROJECT_DIR$/wd_imagine.py" />
       <change beforePath="$PROJECT_DIR$/wdconfig.py" afterPath="$PROJECT_DIR$/wdconfig.py" />
+      <change beforePath="$PROJECT_DIR$/wdlearn.py" afterPath="$PROJECT_DIR$/wdlearn.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -26,8 +34,8 @@
       <file leaf-file-name="wd2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wd2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="762">
-              <caret line="421" column="0" lean-forward="false" selection-start-line="421" selection-start-column="0" selection-end-line="421" selection-end-column="0" />
+            <state relative-caret-position="357">
+              <caret line="1035" column="0" lean-forward="true" selection-start-line="1035" selection-start-column="0" selection-end-line="1035" selection-end-column="0" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -35,51 +43,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="connections.py" pinned="false" current-in-tab="false">
-        <entry file="file:///usr/lib/python2.7/dist-packages/MySQLdb/connections.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="493">
-              <caret line="35" column="0" lean-forward="false" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="wd_orders.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/wd_orders.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="34">
-              <caret line="2" column="2" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="2" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="notebook.txt" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/notebook.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="794">
-              <caret line="1423" column="0" lean-forward="false" selection-start-line="1423" selection-start-column="0" selection-end-line="1423" selection-end-column="47" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="wdconfig.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wdconfig.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="633">
-              <caret line="50" column="29" lean-forward="false" selection-start-line="50" selection-start-column="29" selection-end-line="50" selection-end-column="29" />
+            <state relative-caret-position="289">
+              <caret line="36" column="0" lean-forward="true" selection-start-line="33" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="wd_admin.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/wd_admin.py">
+      <file leaf-file-name="clrecgrp.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/clrecgrp.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="17" column="0" lean-forward="false" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+            <state relative-caret-position="355">
+              <caret line="284" column="80" lean-forward="false" selection-start-line="284" selection-start-column="80" selection-end-line="284" selection-end-column="80" />
               <folding />
             </state>
           </provider>
@@ -88,18 +66,8 @@
       <file leaf-file-name="addlearn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/addlearn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4131">
-              <caret line="250" column="0" lean-forward="false" selection-start-line="250" selection-start-column="0" selection-end-line="250" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="wdlearn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/wdlearn.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6647">
-              <caret line="391" column="0" lean-forward="false" selection-start-line="391" selection-start-column="0" selection-end-line="391" selection-end-column="0" />
+            <state relative-caret-position="255">
+              <caret line="434" column="12" lean-forward="false" selection-start-line="434" selection-start-column="12" selection-end-line="434" selection-end-column="12" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -107,11 +75,33 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="learn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/learn.py">
+      <file leaf-file-name="wd_classicAI.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4420">
-              <caret line="272" column="19" lean-forward="false" selection-start-line="272" selection-start-column="19" selection-end-line="272" selection-end-column="19" />
+            <state relative-caret-position="2839">
+              <caret line="177" column="37" lean-forward="true" selection-start-line="177" selection-start-column="37" selection-end-line="177" selection-end-column="37" />
+              <folding>
+                <element signature="e#0#37#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="notebook.txt" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/notebook.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="478">
+              <caret line="1459" column="0" lean-forward="false" selection-start-line="1459" selection-start-column="0" selection-end-line="1459" selection-end-column="76" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="wd_imagine.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wd_imagine.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="17">
+              <caret line="1" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -120,11 +110,33 @@
       <file leaf-file-name="dmlearn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dmlearn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8483">
-              <caret line="503" column="60" lean-forward="false" selection-start-line="503" selection-start-column="25" selection-end-line="503" selection-end-column="60" />
+            <state relative-caret-position="374">
+              <caret line="22" column="18" lean-forward="true" selection-start-line="22" selection-start-column="18" selection-end-line="22" selection-end-column="18" />
               <folding>
-                <element signature="e#39#50#0" expanded="true" />
+                <element signature="e#38#75#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="wdlearn.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wdlearn.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="151">
+              <caret line="170" column="0" lean-forward="false" selection-start-line="170" selection-start-column="0" selection-end-line="170" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#37#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="config.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/config.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="559">
+              <caret line="72" column="27" lean-forward="false" selection-start-line="72" selection-start-column="27" selection-end-line="72" selection-end-column="27" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -140,42 +152,45 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>e_move_type</find>
-      <find>src_name</find>
-      <find>db_len_grps</find>
+      <find>unit_owns_tbl</find>
+      <find>untried_min_level</find>
+      <find>gra</find>
+      <find>no new</find>
+      <find>no_new_cont_count</find>
+      <find>set_status_params</find>
+      <find>matured</find>
+      <find>printout</find>
+      <find>calc</find>
+      <find>score</find>
+      <find>block_stage_match</find>
+      <find>blocked by</find>
+      <find>deep</find>
+      <find>this_stage_order_words</find>
+      <find>target_template</find>
+      <find>order_template</find>
+      <find>first_stage_order_words</find>
+      <find>first_stage_match_pattern</find>
+      <find>first_stage_iunit</find>
+      <find>c_cont_not_parent_max</find>
+      <find>endpoint</find>
+      <find>print</find>
       <find>sorted</find>
-      <find>= sorted(</find>
-      <find>create_support</find>
-      <find>coas</find>
-      <find>'move'</find>
-      <find>pa</find>
-      <find>add_pass_statements</find>
-      <find>statement_list</find>
-      <find>unit_list</find>
-      <find>sfrom</find>
-      <find>unocc</find>
-      <find>move_details</find>
-      <find>order_status</find>
-      <find>unit_terr_id</find>
-      <find>sql_convoy_order</find>
-      <find>sql_move_order</find>
-      <find>shuffle</find>
-      <find>move_details_tbl</find>
-      <find>nt_move_details</find>
-      <find>ho</find>
-      <find>sql_support_order</find>
-      <find>l_sql_action_orders</find>
-      <find>sql_hold_order</find>
-      <find>fetchall</find>
-      <find>orders_list</find>
-      <find>unit_id</find>
-      <find>country_order_ids</find>
+      <find>calcul</find>
+      <find>eids for</find>
+      <find>first_stage_success</find>
+      <find>b_score_valid</find>
+      <find>level</find>
+      <find>first_stage_order</find>
+      <find>30</find>
     </findStrings>
     <replaceStrings>
       <replace>curr_cont</replace>
       <replace>num_montes</replace>
       <replace>first_stage</replace>
     </replaceStrings>
+    <dirStrings>
+      <dir>$PROJECT_DIR$</dir>
+    </dirStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -194,21 +209,23 @@
         <option value="$PROJECT_DIR$/embed.py" />
         <option value="$PROJECT_DIR$/adv_main1.py" />
         <option value="$PROJECT_DIR$/adv_learn.py" />
-        <option value="$PROJECT_DIR$/clrecgrp.py" />
         <option value="$PROJECT_DIR$/learn.py" />
         <option value="$PROJECT_DIR$/wd_admin.py" />
         <option value="$PROJECT_DIR$/utils.py" />
         <option value="$PROJECT_DIR$/els.py" />
+        <option value="$PROJECT_DIR$/compare_conts.py" />
+        <option value="$PROJECT_DIR$/makerecs.py" />
+        <option value="$PROJECT_DIR$/../ham2/main.py" />
+        <option value="$PROJECT_DIR$/wdlearn.py" />
+        <option value="$PROJECT_DIR$/classicAI.py" />
+        <option value="$PROJECT_DIR$/addlearn.py" />
+        <option value="$PROJECT_DIR$/wd2.py" />
+        <option value="$PROJECT_DIR$/wd_imagine.py" />
+        <option value="$PROJECT_DIR$/wd_classicAI.py" />
+        <option value="$PROJECT_DIR$/clrecgrp.py" />
         <option value="$PROJECT_DIR$/dmlearn.py" />
         <option value="$PROJECT_DIR$/config.py" />
-        <option value="$PROJECT_DIR$/makerecs.py" />
-        <option value="$PROJECT_DIR$/compare_conts.py" />
-        <option value="$PROJECT_DIR$/wd_imagine.py" />
-        <option value="$PROJECT_DIR$/../ham2/main.py" />
-        <option value="$PROJECT_DIR$/addlearn.py" />
-        <option value="$PROJECT_DIR$/wdlearn.py" />
         <option value="$PROJECT_DIR$/wdconfig.py" />
-        <option value="$PROJECT_DIR$/wd2.py" />
         <option value="$PROJECT_DIR$/notebook.txt" />
       </list>
     </option>
@@ -253,8 +270,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="Scratches" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -628,7 +645,14 @@
       <option name="project" value="LOCAL" />
       <updated>1521657318154</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Single human player against the oracle working.">
+      <created>1521711663494</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1521711663494</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TodoView">
@@ -648,11 +672,11 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32543105" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32670158" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3275862" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3275862" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286638" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.14792576" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3297414" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.41487068" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.41379312" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -728,7 +752,8 @@
     <MESSAGE value="Rejection of rules and creation of mutations seems to be working but not useful." />
     <MESSAGE value="Classic AI using prediction of rules in cont stats working." />
     <MESSAGE value="Convoy, hold and support hold introduced." />
-    <option name="LAST_COMMIT_MESSAGE" value="Convoy, hold and support hold introduced." />
+    <MESSAGE value="Single human player against the oracle working." />
+    <option name="LAST_COMMIT_MESSAGE" value="Single human player against the oracle working." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -789,38 +814,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/makerecs.py</url>
-          <line>490</line>
+          <line>494</line>
           <option name="timeStamp" value="323" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
-          <line>342</line>
-          <option name="timeStamp" value="519" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wdlearn.py</url>
-          <line>54</line>
+          <line>66</line>
           <option name="timeStamp" value="556" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/makerecs.py</url>
-          <line>247</line>
+          <line>251</line>
           <option name="timeStamp" value="749" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/els.py</url>
           <line>304</line>
           <option name="timeStamp" value="753" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
-          <line>361</line>
-          <option name="timeStamp" value="803" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>305</line>
-          <option name="timeStamp" value="850" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/compare_conts.py</url>
@@ -839,12 +849,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/makerecs.py</url>
-          <line>565</line>
+          <line>569</line>
           <option name="timeStamp" value="961" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>364</line>
+          <line>414</line>
           <option name="timeStamp" value="970" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -928,11 +938,6 @@
           <option name="timeStamp" value="1081" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>389</line>
-          <option name="timeStamp" value="1086" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/compare_conts.py</url>
           <line>354</line>
           <option name="timeStamp" value="1095" />
@@ -943,97 +948,152 @@
           <option name="timeStamp" value="1096" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>365</line>
-          <option name="timeStamp" value="1102" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1038</line>
-          <option name="timeStamp" value="1197" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>250</line>
-          <option name="timeStamp" value="1200" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>254</line>
-          <option name="timeStamp" value="1201" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/addlearn.py</url>
-          <line>255</line>
-          <option name="timeStamp" value="1202" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1040</line>
-          <option name="timeStamp" value="1204" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wdlearn.py</url>
-          <line>273</line>
+          <line>285</line>
           <option name="timeStamp" value="1205" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1013</line>
-          <option name="timeStamp" value="1207" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1017</line>
-          <option name="timeStamp" value="1209" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1022</line>
-          <option name="timeStamp" value="1210" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1025</line>
-          <option name="timeStamp" value="1211" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>810</line>
-          <option name="timeStamp" value="1213" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>813</line>
-          <option name="timeStamp" value="1214" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>99</line>
-          <option name="timeStamp" value="1265" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>110</line>
+          <line>242</line>
           <option name="timeStamp" value="1267" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>159</line>
-          <option name="timeStamp" value="1268" />
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>390</line>
+          <option name="timeStamp" value="1345" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>809</line>
+          <option name="timeStamp" value="1368" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>185</line>
+          <option name="timeStamp" value="1370" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../ham2/main.py</url>
+          <line>195</line>
+          <option name="timeStamp" value="1388" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../ham2/main.py</url>
+          <line>206</line>
+          <option name="timeStamp" value="1389" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>197</line>
+          <option name="timeStamp" value="1401" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/addlearn.py</url>
+          <line>749</line>
+          <option name="timeStamp" value="1413" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>771</line>
+          <option name="timeStamp" value="1418" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>146</line>
-          <option name="timeStamp" value="1271" />
+          <line>1061</line>
+          <option name="timeStamp" value="1443" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>86</line>
-          <option name="timeStamp" value="1282" />
+          <url>file://$PROJECT_DIR$/addlearn.py</url>
+          <line>530</line>
+          <option name="timeStamp" value="1448" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/addlearn.py</url>
+          <line>409</line>
+          <option name="timeStamp" value="1457" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/addlearn.py</url>
+          <line>554</line>
+          <option name="timeStamp" value="1458" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>319</line>
+          <option name="timeStamp" value="1462" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/addlearn.py</url>
+          <line>558</line>
+          <option name="timeStamp" value="1466" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/addlearn.py</url>
+          <line>454</line>
+          <option name="timeStamp" value="1468" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/clrecgrp.py</url>
+          <line>486</line>
+          <option name="timeStamp" value="1469" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>76</line>
+          <option name="timeStamp" value="1470" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>173</line>
+          <option name="timeStamp" value="1471" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>208</line>
+          <option name="timeStamp" value="1472" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>270</line>
+          <option name="timeStamp" value="1473" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>256</line>
+          <option name="timeStamp" value="1474" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>243</line>
+          <option name="timeStamp" value="1475" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>141</line>
+          <option name="timeStamp" value="1476" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>98</line>
+          <option name="timeStamp" value="1477" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>15</line>
+          <option name="timeStamp" value="1478" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>24</line>
+          <option name="timeStamp" value="1479" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>34</line>
+          <option name="timeStamp" value="1480" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="1297" />
+      <option name="time" value="1481" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -1062,6 +1122,26 @@
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
+        <expression-string>len(nd_cd)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>perm_rec[0][0]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>perm_rec[0]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>perm_rec</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
         <expression-string>els.match_rec_to_templ(result_rec, target_template)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
@@ -1086,60 +1166,10 @@
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
-      <expression>
-        <expression-string>mr.make_rec_from_phrase_list([pos_order])</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>new_rule</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>el[1] + insert_len</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>len(new_rule)</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/plan.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/v4.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4344">
-          <caret line="198" column="0" lean-forward="false" selection-start-line="197" selection-start-column="0" selection-end-line="198" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/adv/actions.glv" />
-    <entry file="file://$PROJECT_DIR$/story.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-216">
-          <caret line="9" column="4" lean-forward="false" selection-start-line="9" selection-start-column="4" selection-end-line="9" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/adv_rules.py" />
-    <entry file="file://$PROJECT_DIR$/curriculum.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5616">
-          <caret line="248" column="35" lean-forward="false" selection-start-line="248" selection-start-column="35" selection-end-line="248" selection-end-column="35" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python2.7/dist-packages/tensorflow/python/framework/tensor_shape.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="768">
@@ -1158,13 +1188,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="170">
           <caret line="10" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python2.7/dist-packages/enum/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6613">
-          <caret line="389" column="0" lean-forward="false" selection-start-line="389" selection-start-column="0" selection-end-line="389" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -1243,9 +1266,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="175">
           <caret line="89" column="20" lean-forward="false" selection-start-line="89" selection-start-column="20" selection-end-line="89" selection-end-column="20" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1285,13 +1306,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1615">
-          <caret line="95" column="35" lean-forward="false" selection-start-line="95" selection-start-column="35" selection-end-line="95" selection-end-column="35" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/lib/python2.7/random.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4539">
@@ -1299,103 +1313,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/clrecgrp.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4369">
-          <caret line="275" column="24" lean-forward="false" selection-start-line="275" selection-start-column="24" selection-end-line="275" selection-end-column="24" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/compare_conts.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1989">
-          <caret line="117" column="0" lean-forward="false" selection-start-line="117" selection-start-column="0" selection-end-line="117" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#37#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/els.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3094">
-          <caret line="193" column="4" lean-forward="false" selection-start-line="193" selection-start-column="4" selection-end-line="193" selection-end-column="4" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/makerecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="11169">
-          <caret line="657" column="50" lean-forward="false" selection-start-line="657" selection-start-column="50" selection-end-line="657" selection-end-column="50" />
-          <folding>
-            <element signature="e#0#37#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../ham2/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="602">
-          <caret line="128" column="35" lean-forward="true" selection-start-line="128" selection-start-column="35" selection-end-line="128" selection-end-column="35" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1836">
           <caret line="113" column="51" lean-forward="false" selection-start-line="113" selection-start-column="26" selection-end-line="113" selection-end-column="51" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/wd_imagine.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="354" column="0" lean-forward="false" selection-start-line="354" selection-start-column="0" selection-end-line="354" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="183">
-          <caret line="1003" column="0" lean-forward="false" selection-start-line="1003" selection-start-column="0" selection-end-line="1003" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/learn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4420">
-          <caret line="272" column="19" lean-forward="false" selection-start-line="272" selection-start-column="19" selection-end-line="272" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/wdlearn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6647">
-          <caret line="391" column="0" lean-forward="false" selection-start-line="391" selection-start-column="0" selection-end-line="391" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/addlearn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4131">
-          <caret line="250" column="0" lean-forward="false" selection-start-line="250" selection-start-column="0" selection-end-line="250" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dmlearn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8483">
-          <caret line="503" column="60" lean-forward="false" selection-start-line="503" selection-start-column="25" selection-end-line="503" selection-end-column="60" />
-          <folding>
-            <element signature="e#39#50#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1425,7 +1346,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="34">
           <caret line="2" column="2" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="2" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1436,44 +1356,188 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/lib/python2.7/dist-packages/MySQLdb/connections.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="35" column="0" lean-forward="false" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file:///usr/lib/python2.7/dist-packages/MySQLdb/connections.py" />
     <entry file="file://$PROJECT_DIR$/wd_admin.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="17" column="0" lean-forward="false" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/els.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4556">
+          <caret line="279" column="4" lean-forward="false" selection-start-line="279" selection-start-column="4" selection-end-line="279" selection-end-column="4" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wdconfig.py">
+    <entry file="file://$PROJECT_DIR$/makerecs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="633">
-          <caret line="50" column="29" lean-forward="false" selection-start-line="50" selection-start-column="29" selection-end-line="50" selection-end-column="29" />
+        <state relative-caret-position="3689">
+          <caret line="236" column="12" lean-forward="false" selection-start-line="236" selection-start-column="12" selection-end-line="236" selection-end-column="12" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wd2.py">
+    <entry file="file://$PROJECT_DIR$/compare_conts.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="762">
-          <caret line="421" column="0" lean-forward="false" selection-start-line="421" selection-start-column="0" selection-end-line="421" selection-end-column="0" />
+        <state relative-caret-position="3179">
+          <caret line="197" column="0" lean-forward="false" selection-start-line="195" selection-start-column="0" selection-end-line="197" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/curriculum.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="14110">
+          <caret line="844" column="16" lean-forward="false" selection-start-line="844" selection-start-column="16" selection-end-line="844" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/tensorflow/python/client/session.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="1003" column="0" lean-forward="false" selection-start-line="1003" selection-start-column="0" selection-end-line="1003" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../ham2/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="431">
+          <caret line="205" column="0" lean-forward="false" selection-start-line="205" selection-start-column="0" selection-end-line="205" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/learn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="162">
+          <caret line="158" column="0" lean-forward="false" selection-start-line="158" selection-start-column="0" selection-end-line="158" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/enum/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="746" column="0" lean-forward="false" selection-start-line="746" selection-start-column="0" selection-end-line="746" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/python2.7/shutil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="162">
+          <caret line="81" column="0" lean-forward="false" selection-start-line="81" selection-start-column="0" selection-end-line="81" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/core/shape_base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="342" column="0" lean-forward="false" selection-start-line="342" selection-start-column="0" selection-end-line="342" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdlearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="151">
+          <caret line="170" column="0" lean-forward="false" selection-start-line="170" selection-start-column="0" selection-end-line="170" selection-end-column="0" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/classicAI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/addlearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="434" column="12" lean-forward="false" selection-start-line="434" selection-start-column="12" selection-end-line="434" selection-end-column="12" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="1035" column="0" lean-forward="true" selection-start-line="1035" selection-start-column="0" selection-end-line="1035" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd_imagine.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="1" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/dmlearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="22" column="18" lean-forward="true" selection-start-line="22" selection-start-column="18" selection-end-line="22" selection-end-column="18" />
+          <folding>
+            <element signature="e#38#75#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/clrecgrp.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="355">
+          <caret line="284" column="80" lean-forward="false" selection-start-line="284" selection-start-column="80" selection-end-line="284" selection-end-column="80" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="559">
+          <caret line="72" column="27" lean-forward="false" selection-start-line="72" selection-start-column="27" selection-end-line="72" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2839">
+          <caret line="177" column="37" lean-forward="true" selection-start-line="177" selection-start-column="37" selection-end-line="177" selection-end-column="37" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdconfig.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="36" column="0" lean-forward="true" selection-start-line="33" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="794">
-          <caret line="1423" column="0" lean-forward="false" selection-start-line="1423" selection-start-column="0" selection-end-line="1423" selection-end-column="47" />
+        <state relative-caret-position="478">
+          <caret line="1459" column="0" lean-forward="false" selection-start-line="1459" selection-start-column="0" selection-end-line="1459" selection-end-column="76" />
           <folding />
         </state>
       </provider>

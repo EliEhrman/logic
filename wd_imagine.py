@@ -1,6 +1,5 @@
 from __future__ import print_function
 import random
-import collections
 
 import wdconfig
 import wdlearn
@@ -156,7 +155,7 @@ def create_move_orders(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 
 	return orders_list, orders_db, success_list, icountry_list
 
-def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
+def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
 						country_names_tbl, unit_owns_tbl,
 						all_the_dicts, terr_owns_tbl, supply_tbl, num_montes, preferred_nation,
 						b_predict_success):

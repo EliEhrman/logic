@@ -1,11 +1,17 @@
 from __future__ import print_function
 import sys
+import os.path
+from os.path import expanduser
+from shutil import copyfile
+import csv
+import numpy as np
 
 import random
 import config
 import makerecs as mr
 import clrecgrp
 import compare_conts as cc
+import els
 
 class cl_add_gg(object):
 	def __init__(	self, b_from_load, templ_len=None, scvo=None, gens_rec=None,
@@ -32,6 +38,8 @@ class cl_add_gg(object):
 		self.__parent_id = parent_id
 		self.__status = ''
 		self.__status_params = [0.0, 0.0]
+		self.__l_perm_data = []
+		self.__l_Ws = []
 
 
 	def update_stats(self, score, rule_str ):
@@ -94,6 +102,18 @@ class cl_add_gg(object):
 
 	def set_status_params(self, new_params):
 		self.__status_params = new_params
+
+	def add_inactive_perm_data(self, perm_data):
+		self.__l_perm_data.append(perm_data)
+
+	def get_inactive_perm_data(self):
+		return self.__l_perm_data
+
+	def add_inactive_W_data(self, nd_W):
+		self.__l_Ws.append(nd_W)
+
+	def get_inactive_W_data(self):
+		return self.__l_Ws
 
 	def save(self, db_csvr, b_write_grp_data=True):
 		if self.__b_null_cont:
@@ -186,7 +206,7 @@ class cl_cont_mgr(object):
 	# The difference between expands and perfect or blocks and perfect_blocks is that
 	# one is through tries and the other is just a perfect score on the gg score
 	status = Enum(['untried', 'initial', 'perfect', 'expands', 'perfect_block', 'blocks',
-				   'partial_expand', 'partial_block', 'irrelevant', 'mutant'])
+				   'partial_expand', 'partial_block', 'irrelevant', 'mutant', 'endpoint'])
 	c_expands_min_tries = -1
 	c_expands_score_thresh = 0.0
 	c_expands_score_min_thresh = 0.0
@@ -197,7 +217,9 @@ class cl_cont_mgr(object):
 		self.__max_cont_id = 0
 		# self.__b_cont_stats_initialized = False
 		self.__cont_stats_mgr = None
-		print(self.status.untried)
+		self.__perm_dict = None
+		self.__W_dict = None
+		# print(self.status.untried)
 		return
 
 	def add_cont(self, gg_cont):
@@ -278,6 +300,7 @@ class cl_cont_mgr(object):
 	def get_cont_list(self):
 		return self.__cont_list
 
+
 	def new_cont(self, b_from_load, templ_len, scvo, gens_rec,
 					score, rule_str, level, b_blocking, parent_id, gg_src):
 		self.__max_cont_id += 1
@@ -335,6 +358,19 @@ class cl_cont_mgr(object):
 						continue
 					sel_type = 'partial'
 					print('Select cont. icc:', icc, 'status:', status, 'level', level)
+				elif status == self.status.initial:
+					b_can_initial = True
+					# no_new_cont_count = params[1]
+					# if no_new_cont_count >= config.c_cont_not_parent_max:
+					# 	print('icc initial:', icc, 'blocked by no new cont')
+					# 	if random.random() < 0.001:
+					# 		print('Resetting block of initial.')
+					# 		ccont.set_status_params([params[0], 0.0])
+					# 	continue
+					if b_can_untried:
+						print('icc initial:', icc, 'blocked by active untried')
+						continue
+					sel_type = 'initial'
 				elif status == self.status.untried:
 					b_can_untried = True
 					level = ccont.get_level()
@@ -342,17 +378,10 @@ class cl_cont_mgr(object):
 						print('icc untried:', icc, 'blocked by level', level)
 						continue
 					untried_min_level = level
-					if b_can_initial:
-						print('icc untried:', icc, 'blocked by active intial')
-						continue
+					# if b_can_initial:
+					# 	print('icc untried:', icc, 'blocked by active intial')
+					# 	continue
 					sel_type = 'untried'
-				elif status == self.status.initial:
-					no_new_cont_count = params[1]
-					if no_new_cont_count >= config.c_cont_not_parent_max:
-						print('icc initial:', icc, 'blocked by no new cont')
-						continue
-					b_can_initial = True
-					sel_type = 'initial'
 
 
 
@@ -367,7 +396,7 @@ class cl_cont_mgr(object):
 				params = ccont.get_status_params()
 				if status == self.status.perfect or status == self.status.perfect_block \
 						or status == self.status.irrelevant or status == self.status.blocks \
-						or status == self.status.expands:
+						or status == self.status.expands or status == self.status.endpoint:
 					print('Cont ignore icc', icc, 'status', status)
 					continue
 				score_bonus = 0.0
@@ -403,8 +432,8 @@ class cl_cont_mgr(object):
 					if sel_type != 'initial':
 						continue
 					no_new_cont_count = params[1]
-					if no_new_cont_count >= config.c_cont_not_parent_max:
-						continue
+					# if no_new_cont_count >= config.c_cont_not_parent_max:
+					# 	continue
 					score = ccont.get_initial_score()
 					score_bonus += params[0]
 					ccont.set_status_params([params[0] + config.c_select_cont_score_bonus, params[1]])
@@ -417,7 +446,7 @@ class cl_cont_mgr(object):
 					b_has_best_score_bonus = score_bonus > 0.0
 					print('cont best:', icc, 'best score', best_score)
 
-		# ibest = 24
+		# ibest = 9
 
 		if ibest >= 0:
 			for icc, ccont in enumerate(self.__cont_list):
@@ -522,15 +551,208 @@ class cl_cont_mgr(object):
 				elif  expands_score < self.c_expands_score_min_thresh:
 					parent_cont.set_status(self.status.irrelevant)
 				else:
-					parent_cont.set_status(self.status.partial_block if parent_cont.is_blocking() else self.status.partial_expand)
+					level = parent_cont.get_level()
+					if level < config.c_cont_max_level:
+						parent_cont.set_status(self.status.partial_block \
+											   if parent_cont.is_blocking() else self.status.partial_expand)
+					else:
+						parent_cont.set_status(self.status.endpoint)
 					parent_cont.set_score(expands_score/self.c_expands_score_thresh)
 					parent_cont.set_status_params([0.0, 0.0])
 
 				print('untried matured to status:', parent_cont.get_status())
-				return False
+				return True
 
 		# return True means I see no reason to stop learning from this cont
 		return True
+
+	def apply_perm_dict_data(self, db_len_grps, i_active_cont):
+		len_dict = dict()
+		for len_grp in db_len_grps:
+			len_dict[len_grp.len()] = len_grp
+
+		max_eid = -1
+		active_cont = self.__cont_list[i_active_cont]
+		l_perm_data = active_cont.get_inactive_perm_data()
+		for perm_data_k_and_d in l_perm_data:
+			kperm, vperm_data = perm_data_k_and_d
+			cont_id, templ_len, scvo = kperm
+			len_grp = len_dict.get(templ_len, None)
+			if len_grp == None:
+				continue
+			templ_grp = len_grp.find_templ(scvo)
+			if templ_grp == None:
+				continue
+			for perm_glob in vperm_data:
+				sperm, snum_results = perm_glob[:2]
+				num_results = int(snum_results)
+				result_list = perm_glob[2:2+num_results]
+				sblock, seid = perm_glob[-2:]
+				b_block, eid = sblock == 'True', int(seid)
+				if eid > max_eid:
+					max_eid = eid
+				perm_rec = mr.extract_rec_from_str(sperm)
+				perm_rec, vars_dict = els.build_vars_dict(perm_rec)
+				l_gens_recs, l_results = [], []
+				for sresult in result_list:
+					result_rec = mr.extract_rec_from_str(sresult)
+					l_results.append(result_rec)
+					result_rec = mr.make_rec_from_phrase_arr([result_rec])
+					result_rec = mr.place_vars_in_phrase(vars_dict, result_rec)
+					l_gens_recs.append(result_rec)
+				templ_grp.add_perm(perm_rec, l_gens_recs, l_results, b_block, eid, db_len_grps, b_perms_from_file=True)
+
+		return max_eid
+
+	def apply_W_dict_data(self, db_len_grps, i_active_cont):
+		len_dict = dict()
+		for len_grp in db_len_grps:
+			len_dict[len_grp.len()] = len_grp
+
+		active_cont = self.__cont_list[i_active_cont]
+		l_W_data = active_cont.get_inactive_W_data()
+		for k_and_d in l_W_data:
+			cont_id, templ_len, scvo, templ_igg, nd_W = k_and_d
+			len_grp = len_dict.get(templ_len, None)
+			if len_grp == None:
+				continue
+			templ_grp = len_grp.find_templ(scvo)
+			if templ_grp == None:
+				continue
+			templ_grp.set_W_from_file(templ_igg, nd_W)
+
+	def create_W_dict(self, db_len_grps):
+		self.__W_dict = dict()
+		for cont in self.__cont_list:
+			if cont.is_active():
+				active_dict = dict()
+				for len_grp in db_len_grps:
+					len_grp.add_to_W_dict(cont.get_id(), self.__W_dict)
+			else:
+				l_W_data = cont.get_inactive_W_data()
+				for k_and_d in l_W_data:
+					cont_id, len, scvo, templ_igg, nd_W = k_and_d
+					self.__W_dict[(cont_id, len, scvo, templ_igg)] = nd_W
+
+
+	def create_perm_dict(self, db_len_grps):
+		self.__perm_dict = dict()
+		for cont in self.__cont_list:
+			if cont.is_active():
+				active_dict = dict()
+				for len_grp in db_len_grps:
+					len_grp.add_to_perm_dict(cont.get_id(), active_dict)
+
+				for kperm, vperm_data in active_dict.iteritems():
+					vperm_list, result_list_list, result_blocked_list, eid_list = vperm_data
+					perm_data = []
+					for iperm, perm in enumerate(vperm_list):
+						perm_rec = mr.replace_vars_in_phrase(perm, perm)
+						sperm = mr.gen_rec_str(perm_rec)
+						num_results = len(result_list_list[iperm])
+						l_save = []
+						l_save += [sperm, num_results]
+						for result in result_list_list[iperm]:
+							result_rec = mr.replace_vars_in_phrase(perm, result)
+							sresult = mr.gen_rec_str(result_rec)
+							l_save.append(sresult)
+						l_save += [result_blocked_list[iperm], eid_list[iperm]]
+						perm_data.append(l_save)
+					self.__perm_dict[kperm] = perm_data
+			else: # not an active cont
+				l_perm_data = cont.get_inactive_perm_data()
+				for perm_data_k_and_d in l_perm_data:
+					kperm, vperm_data = perm_data_k_and_d
+					self.__perm_dict[tuple(kperm)] = vperm_data
+
+	def save_W_dict(self, fnt):
+		fn = expanduser(fnt)
+		if os.path.isfile(fn):
+			copyfile(fn, fn + '.bak')
+		fh = open(fn, 'wb')
+		csvw = csv.writer(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+		csvw.writerow(['Version', 1])
+		csvw.writerow(['Num ggs', len(self.__W_dict)])
+		for kgg, nd_W in self.__W_dict.iteritems():
+			# vperm_list, result_list_list, result_blocked_list, eid_list = vperm_data
+			num_rows_W = nd_W.shape[0]
+			csvw.writerow(list(kgg) + [num_rows_W])
+			for irow in range(num_rows_W):
+				csvw.writerow(nd_W[irow])
+		fh.close()
+
+
+	def save_perm_dict(self, fnt):
+		fn = expanduser(fnt)
+		if os.path.isfile(fn):
+			copyfile(fn, fn + '.bak')
+		fh = open(fn, 'wb')
+		csvw = csv.writer(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+		csvw.writerow(['Version', 1])
+		csvw.writerow(['Num templ grps', len(self.__perm_dict)])
+		for kperm, vperm_data in self.__perm_dict.iteritems():
+			# vperm_list, result_list_list, result_blocked_list, eid_list = vperm_data
+			csvw.writerow(list(kperm) + [len(vperm_data)])
+			l_save = []
+			for iperm, perm in enumerate(vperm_data):
+				csvw.writerow(perm)
+
+		fh.close()
+
+	def load_perm_dict(self, fnt):
+		cont_dict = {}
+		for cont in self.__cont_list:
+			cont_dict[cont.get_id()] = cont
+
+		fn = expanduser(fnt)
+		try:
+			with open(fn, 'rb') as fh:
+				csvr = csv.reader(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+
+				_, sversion = next(csvr)
+				_, snum_templ_grps = next(csvr)
+				for igrp in range(int(snum_templ_grps)):
+					scont_id, slen, scvo, snum_data_items = next(csvr)
+					perm_key = [int(scont_id), int(slen), scvo]
+					perm_data = []
+					for idata in range(int(snum_data_items)):
+						perm_data.append(next(csvr))
+					cont = cont_dict.get(int(scont_id), None)
+					if cont == None:
+						continue
+					cont.add_inactive_perm_data([perm_key, perm_data])
+
+
+		except IOError:
+			print('Could not open perm dict file!')
+
+	def load_W_dict(self, fnt):
+		cont_dict = {}
+		for cont in self.__cont_list:
+			cont_dict[cont.get_id()] = cont
+
+		fn = expanduser(fnt)
+		try:
+			with open(fn, 'rb') as fh:
+				csvr = csv.reader(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+
+				_, sversion = next(csvr)
+				_, snum_ggs = next(csvr)
+				for igg in range(int(snum_ggs)):
+					scont_id, slen, scvo, s_templ_igg, snum_W_rows = next(csvr)
+					W = []
+					for irow in range(int(snum_W_rows)):
+						W.append([float(v) for v in next(csvr)])
+					nd_W = np.array(W, dtype=np.float32)
+
+					cont = cont_dict.get(int(scont_id), None)
+					if cont == None:
+						continue
+					cont.add_inactive_W_data([int(scont_id), int(slen), scvo, int(s_templ_igg), nd_W])
+
+
+		except IOError:
+			print('Could not open W dict file!')
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['db cont mgr', 'num conts', len(self.__cont_list), 'max cont id', self.__max_cont_id])

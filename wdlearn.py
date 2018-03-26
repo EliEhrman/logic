@@ -1,6 +1,8 @@
 from __future__ import print_function
 import sys
+import os.path
 from os.path import expanduser
+from shutil import copyfile
 import copy
 import csv
 import learn
@@ -28,6 +30,8 @@ def init_learn():
 
 def save_db_status(db_len_grps, db_cont_mgr):
 	db_fn = expanduser(wdconfig.db_fnt)
+	if os.path.isfile(db_fn):
+		copyfile(db_fn, db_fn+'.bak')
 	db_fh = open(db_fn, 'wb')
 	db_csvr = csv.writer(db_fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
 	def save_a_len_grps(which_len_grps):
@@ -36,6 +40,10 @@ def save_db_status(db_len_grps, db_cont_mgr):
 		for len_grp in which_len_grps:
 			len_grp.save(db_csvr)
 	# cont_list_size = 0 if gg_cont_list == None else len(gg_cont_list)
+	db_cont_mgr.create_perm_dict(db_len_grps)
+	db_cont_mgr.save_perm_dict(wdconfig.perm_fnt)
+	db_cont_mgr.create_W_dict(db_len_grps)
+	db_cont_mgr.save_W_dict(wdconfig.W_fnt)
 	db_csvr.writerow(['version', c_len_grps_version])
 	db_cont_mgr.save(db_csvr)
 	for cont in db_cont_mgr.get_cont_list():
@@ -87,7 +95,7 @@ def load_cont_mgr():
 		print('Could not open db_len_grps file! Starting from scratch.')
 	except:
 		print('Unexpected error:', sys.exc_info()[0])
-		raise
+		# raise
 
 	return db_cont_mgr
 
@@ -388,11 +396,11 @@ def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dict
 		# 							   null_expected_list, b_blocking=True)
 		orders_db.append(order)
 
-		if iorder % 10 == 0:
-			b_keep_working = create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont)
-			save_db_status(db_len_grps, db_cont_mgr)
-			if not b_keep_working:
-				break
+		# if iorder % 10 == 0:
+		# 	b_keep_working = create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont)
+		# 	save_db_status(db_len_grps, db_cont_mgr)
+		# 	if not b_keep_working:
+		# 		break
 			# save_len_grps(db_len_grps, blocked_len_grps)
 
 	learn_vars[0] = event_step_id

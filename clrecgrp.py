@@ -176,6 +176,9 @@ class cl_gens_grp(object):
 		if self.__igg == 0:
 			return False
 
+		if self.__b_lrn_success:
+			return False
+
 		if self.__num_perm_adds_till_next_learn > 0:
 			return False
 
@@ -270,7 +273,8 @@ class cl_gens_grp(object):
 
 		self.__eid_last_score = eid
 
-		print('Calculating score for igg:', self.__igg, 'match list:', self.__perm_match_list)
+		print('Calculating score for igg:', self.__igg, 'of templ grp', templ_scvo,
+			  'eid set len', len(self.__scoring_eid_set)) # , 'match list:', self.__perm_match_list)
 		b_hit, b_success, expected_but_not_found = \
 			dmlearn.get_gg_score(	preconds_rec, perm_vec, perm_phrases, self.__nd_W, self.__nd_db ,
 									self.__igg, self.__perm_match_list,
@@ -305,18 +309,34 @@ class cl_gens_grp(object):
 		return [templ_len, templ_scvo, self.__b_blocking, igg, self.__num_successes, self.__num_tests,
 				rule_str, self.__cont_id, self]
 
+	def add_to_W_dict(self, cont_id, templ_len, templ_scvo, W_dict):
+		if self.__b_lrn_success and self.__nd_W != None:
+			W_dict[(cont_id, templ_len, templ_scvo, self.__igg)] = self.__nd_W
+
+	def set_W_from_file(self, nd_W, templ_perm_vec_list):
+		self.__nd_W = nd_W
+		self.__nd_db = dmlearn.create_db_from_W(nd_W, templ_perm_vec_list, self.__perm_match_list)
+		if self.__nd_db == None:
+			self.__nd_W = None
+			self.__b_lrn_success = False
+			return
+
+		self.__b_lrn_success = True
+
 	def save(self, db_csvr):
 		db_csvr.writerow(['tgg', 'confirmed', self.__b_confirmed, 'gg id', self.__igg, 'num points', self.__num_points,
 						  'num successes', self.__num_successes, 'num tests', self.__num_tests,
-						  'penalty points', self.__penalty, 'rule grp', mr.gen_rec_str(self.__rule_grp),
+						  'penalty points', self.__penalty, 'cd thresh', self.__thresh_cd,
+						  'rule grp', mr.gen_rec_str(self.__rule_grp),
 						  'gens rec', mr.gen_rec_str(self.get_gens_rec()),
 						  'blocking', self.__b_blocking, 'cont id', self.__cont_id])
 
 	def load(self, db_csvr):
 		_, _, sb_confirmed, _, sigg, _, snum_points, _, snum_successes, _, snum_tests, \
-		_, spenalty, _, srule_rec, _, sgens_rec, _, sb_blocking, _, s_cont_id = get_next(db_csvr)
+		_, spenalty, _, s_thresh_cd, _, srule_rec, _, sgens_rec, _, sb_blocking, _, s_cont_id = get_next(db_csvr)
 		self.__b_confirmed, self.__igg, self.__num_points = sb_confirmed == 'True', int(sigg), int(snum_points)
 		self.__num_successes, self.__num_tests, self.__penalty = float(snum_successes), float(snum_tests), int(spenalty)
+		self.__thresh_cd = float(s_thresh_cd)
 		self.__gens_rec = mr.extract_rec_from_str(sgens_rec)
 		self.__rule_grp = mr.extract_rec_from_str(srule_rec)
 		self.__num_perm_adds_till_next_learn = config.c_gg_num_perms_till_learn_on_load
@@ -346,7 +366,13 @@ class cl_prov_gens_grp(cl_gens_grp):
 		self.__b_graduated = False
 		# self.__b_blocking = b_blocking
 
-	def add_perm(self, templ_iperm, eid, db_len_grps=None, templ_len=None, templ_b_cont_blocking=True):
+	def is_graduated(self):
+		return self.__b_graduated
+
+	def add_perm(self, templ_iperm, eid, db_len_grps=None, templ_len=None, templ_b_cont_blocking=True, b_perms_from_file=False):
+		if not b_perms_from_file and self.__b_graduated:
+			return False
+
 		b_success = super(cl_prov_gens_grp, self).add_perm(templ_iperm, eid)
 		if not b_success:
 			return False
@@ -455,17 +481,35 @@ class cl_templ_grp(object):
 		# self.__perm_ipgg_arr.append(ipgg)
 		return ipgg
 
-	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, perm_result_blocked, eid, db_len_grps=None):
-		if self.__scvo == 'cacsoooooocecsv02v03v07v05v06v04cece':
+	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, perm_result_blocked, eid,
+				 db_len_grps=None, b_perms_from_file=False ):
+		if self.__scvo == 'cacsoooooocecsv02v03ooov03v07cece':
 			print('stop here')
 
-		if self.__b_db_graduated:
+		if not b_perms_from_file and self.__b_db_graduated:
+			# sanity test
+			# for one_gg in self.__gg_list[1:]:
+			# 	if b_perms_from_file:
+			# 		continue
+			# 	assert one_gg.get_b_learn_success(), 'if a gg exists, it has learn success'
+
 			b_add_valid = False
-			for one_gg in self.__gg_list[1:]:
-				if utils.prob_for_penalty(one_gg.get_penalty()):
-					b_add_valid = True
-			if not b_add_valid:
+			b_needs_pgg = False
+			for igens, one_gens in enumerate(gens_rec_list):
+				perm_pgg, perm_ipgg = self.find_pgg(gens_rec=one_gens, b_blocking=perm_result_blocked)
+				if perm_pgg:
+					if not perm_pgg.is_graduated():
+						b_add_valid = True
+				else:
+					b_needs_pgg = True
+			if not b_add_valid and not b_needs_pgg:
 				return
+
+			# for one_gg in self.__gg_list[1:]:
+			# 	if utils.prob_for_penalty(one_gg.get_penalty()):
+			# 		b_add_valid = True
+			# if not b_add_valid:
+			# 	return
 
 		iperm = len(self.__perm_list)
 		self.__perm_list.append(preconds_rec)
@@ -492,7 +536,8 @@ class cl_templ_grp(object):
 			else:
 				b_pgg_needs_graduating = perm_pgg.add_perm(iperm, eid, db_len_grps=db_len_grps,
 														   templ_len=self.__templ_len,
-														   templ_b_cont_blocking=self.__b_cont_blocking)
+														   templ_b_cont_blocking=self.__b_cont_blocking,
+														   b_perms_from_file=b_perms_from_file)
 				# perm_templ.add_perm(preconds_rec=perm_preconds_list[iperm], gens_rec=perm_gens_list[iperm], igg=perm_igg)
 
 			# if igens == 0:
@@ -604,6 +649,8 @@ class cl_templ_grp(object):
 		self.__db_valid = True
 
 	def printout(self, def_article_dict):
+		return
+
 		if not self.__b_db_graduated:
 			return
 
@@ -619,7 +666,7 @@ class cl_templ_grp(object):
 				gg.print_stats(def_article_dict)
 		print('all perm recs:')
 		for irec, rec in enumerate(self.__perm_list):
-			if random.random() > 0.2:
+			if random.random() > 0.02:
 				continue
 			out_str = str(irec) + ' '
 			out_str = els.print_phrase(rec, rec, out_str, def_article_dict)
@@ -711,6 +758,20 @@ class cl_templ_grp(object):
 
 	def get_num_data_rows(self):
 		return 1 + len(self.__pgg_list) + len(self.__gg_list)
+
+	def add_to_perm_dict(self, cont_id, templ_len, perm_dict):
+		perm_dict[(cont_id, templ_len, self.__scvo)] = [self.__perm_list, self.__perm_result_list, self.__perm_result_blocked_list, self.__perm_eid_list]
+
+	def add_to_W_dict(self, cont_id, templ_len, W_dict):
+		for igg, gg in enumerate(self.__gg_list):
+			if gg.get_b_learn_success():
+				gg.add_to_W_dict(cont_id, templ_len, self.__scvo, W_dict)
+
+	def set_W_from_file(self, igg, nd_W):
+		if igg >= len(self.__gg_list):
+			return
+
+		self.__gg_list[igg].set_W_from_file(nd_W, self.__perm_vec_list)
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['templ grp', 'confirmed', self.__b_confirmed, 'graduated', self.__b_db_graduated,
@@ -813,6 +874,14 @@ class cl_len_grp(object):
 		for templ_grp in self.__templ_grp_list:
 			num_data_rows += templ_grp.get_num_data_rows()
 		return num_data_rows
+
+	def add_to_perm_dict(self, cont_id, perm_dict):
+		for templ_grp in self.__templ_grp_list:
+			templ_grp.add_to_perm_dict(cont_id, self.len(), perm_dict)
+
+	def add_to_W_dict(self, cont_id, W_dict):
+		for templ_grp in self.__templ_grp_list:
+			templ_grp.add_to_W_dict(cont_id, self.len(), W_dict)
 
 	def save(self, db_csvr):
 		db_csvr.writerow(['len grp', self.__len, 'num templates', len(self.__templ_grp_list)])
