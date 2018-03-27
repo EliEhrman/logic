@@ -215,7 +215,7 @@ class cl_cont_stats_mgr(object):
 
 		return max_cont_id
 
-	def analyze(self, db_cont_mgr):
+	def analyze(self, db_cont_mgr, b_modify):
 		num_predictions = len(self.__predictions_list)
 		if num_predictions < config.c_cont_stats_min_predictions:
 			return
@@ -279,6 +279,9 @@ class cl_cont_stats_mgr(object):
 		strss = ["\t"]
 		for i in range(len(match_list_list)):
 			strss[0] += str(i) + "\t"
+
+		if not b_modify:
+			return
 
 		delete_list = [False for ml in match_list_list]
 		equal_list_list = [[] for ml in match_list_list]

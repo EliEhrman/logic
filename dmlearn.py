@@ -610,7 +610,7 @@ def do_compare_conts_learn(mgr, stat_list):
 			if len(meta_losses) > 10:
 				meta_losses = meta_losses[1:]
 				meta_err = np.mean(meta_losses)
-				if errval > meta_err * 0.999:
+				if errval > meta_err * 0.99:
 					num_stalled += 1
 				else:
 					num_stalled = 0

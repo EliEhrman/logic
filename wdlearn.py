@@ -306,7 +306,7 @@ def cont_stats_save(db_cont_mgr, fnt):
 def init_cont_stats_from_file():
 	db_cont_mgr = addlearn.cl_cont_mgr()
 	b_load_done = db_cont_mgr.init_cont_stats_mgr_from_file(wdconfig.c_cont_stats_fnt,
-															wdconfig.c_b_analyze_and_modify_conts)
+															wdconfig.c_b_analyze_conts, wdconfig.c_b_modify_conts)
 	if not b_load_done:
 		db_cont_mgr = None
 	return db_cont_mgr

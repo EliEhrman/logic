@@ -1451,12 +1451,153 @@ In retrospect it may have been better to build a good hand-crafted AI to learn f
 
 Another phase:
 * Using the cont groups in wdlengrps to initialize the cont stats
+    no learning of cont stat probs
 c_b_load_cont_mgr = True # loads cont manager and the conts from wdlengrps
 c_b_add_to_db_len_grps = False # Assumes c_b_load_cont_mgr, makes one cont active and loads its len grps. When it comes time to play, learns from
 c_b_init_cont_stats_from_cont_mgr = True # This is how you build cont stats the first time from cont groups
+c_b_cont_stats_save = True # saves all cont modification and W to file, including new stats
+c_b_learn_conts = False # At the end of game or play pahse (30 to 300 turns), Learns the W for success prediction
 
 Checking in with the comment:
 
 Learning wdlengrps to only level 2 and waiting patiently for the rare cases.
+
+Another phase:
+* Load the cont stats and use them to learn
+    COllect cont stat statistics
+    Learn cont stats probs
+    Play using the oracle
+    Don't analyze or modify the conts list (later becomes analyze without modify)
+c_b_load_cont_stats = True # Loads cont stats from conts file and builds a cont for each one
+c_b_load_cont_mgr = False # loads cont manager and the conts from wdlengrps
+c_b_analyze_and_modify_conts = False # Analyses accuracy and usefulness of each cont and Decides which conts to keep and when to try and create new cont mutations
+c_b_collect_cont_stats = True # Adds to matches and predict statistic for all conts
+c_b_init_cont_stats_from_cont_mgr = False # This is how you build cont stats the first time from cont groups
+c_b_cont_stats_save = True # saves all cont modification and W to file, including new stats
+c_b_learn_conts = True # At the end of game or play pahse (30 to 300 turns), Learns the W for success prediction
+
+modified the last a little:
+
+c_b_analyze_conts = True # Analyses accuracy and usefulness of each cont
+c_b_modify_conts = False # if c_b_analyze_conts is True, Decides which conts to keep and when to try and create new cont mutations
+
+So this phase basically learns the stats for cont stats and even does some analysis but does not modify them.
+
+This config can be used, without the learning to run the AI
+
+Another phase:
+* Load the cont stats and use them to play!
+    Don't COllect cont stat statistics
+    Don't Learn cont stats probs
+    Play using the classic AI
+    Don't analyze or modify the conts list
+c_b_load_cont_stats = True # Loads cont stats from conts file and builds a cont for each one
+c_b_load_cont_mgr = False # loads cont manager and the conts from wdlengrps
+c_b_collect_cont_stats = False # Adds to matches and predict statistic for all conts
+c_b_init_cont_stats_from_cont_mgr = False # This is how you build cont stats the first time from cont groups
+c_b_cont_stats_save = False # saves all cont modification and W to file, including new stats
+c_b_learn_conts = False # At the end of game or play pahse (30 to 300 turns), Learns the W for success prediction
+c_b_analyze_conts = False # Analyses accuracy and usefulness of each cont
+c_b_modify_conts = False # if c_b_analyze_conts is True, Decides which conts to keep and when to try and create new cont mutations
+c_b_play_from_saved = True # Means we use the saved orders_success file and use some AI to create move. Alternative is to use the oracle move creator
+
+Analysis so far
+
+Analysis for rule 0 c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e blocking: False
+score 0.679972
+Analysis for rule 1 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,l:warsaw:-0.5,v:5,v:6,v:7,c:e,c:e blocking: True
+score 0.184615
+Analysis for rule 2 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:russia:0.2,l:owns:1.0,v:2,v:3,v:7,c:e,c:e blocking: True
+score 0.405226
+Analysis for rule 3 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,l:warsaw:-0.5,l:support:1.0,v:5,l:from:1.0,v:4,v:6,v:7,c:e,c:e blocking: False
+score 0.959588
+Analysis for rule 4 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:fleet:1.0,v:3,l:black sea:-0.5,l:convoy:1.0,v:2,v:3,v:4,v:6,v:7,c:e,c:e blocking: False
+score 0.981553
+Analysis for rule 5 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:army:0.2,v:3,l:bulgaria:-0.5,v:5,v:6,v:7,c:e,c:e blocking: True
+score 0.178394
+Analysis for rule 6 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,v:7,l:hold:1.0,c:e,c:e blocking: True
+score 0.177305
+Analysis for rule 7 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:fleet:0.2,v:3,l:bulgaria:-0.5,l:support:1.0,v:5,l:from:1.0,v:4,v:6,v:7,c:e,c:e blocking: False
+score 0.952191
+Analysis for rule 8 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,v:7,v:5,v:6,v:4,c:e,c:e blocking: True
+score 0.0846154
+Analysis for rule 9 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:fleet:0.2,v:3,v:7,l:hold:1.0,c:e,c:e blocking: True
+score 0.246835
+Analysis for rule 10 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,v:7,l:support:1.0,v:5,l:from:1.0,l:warsaw:-0.5,v:6,l:warsaw:-0.5,c:e,c:e blocking: True
+score 0.197674
+Analysis for rule 11 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,l:warsaw:-0.5,l:support:1.0,v:5,l:from:1.0,l:warsaw:-0.5,v:6,v:7,c:e,c:e blocking: True
+score 0.15
+Analysis for rule 12 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,l:warsaw:-0.5,l:support:1.0,v:5,l:from:1.0,v:7,v:6,l:warsaw:-0.5,c:e,c:e blocking: False
+score 0.782609
+Analysis for rule 13 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,v:7,l:convoy:1.0,l:army:1.0,v:3,l:bulgaria:-0.5,v:6,l:bulgaria:-0.5,c:e,c:e blocking: True
+score 0.0282486
+Analysis for rule 14 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,v:2,v:3,l:warsaw:-0.5,l:support:1.0,l:hold:1.0,v:3,v:7,c:e,c:e blocking: True
+score 0.0921986
+Analysis for rule 15 c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:fleet:0.2,v:3,v:7,v:5,v:6,v:4,c:e,c:e blocking: True
+score 0.0714286
+No items to score at predict level at -0.1
+Score for 4321 items at predict level at 0.0 is 0.00185142
+Score for 3 items at predict level at 0.1 is 0.333333
+Score for 1 items at predict level at 0.2 is 1.0
+Score for 2 items at predict level at 0.3 is 0.0
+Score for 2 items at predict level at 0.4 is 0.5
+Score for 157 items at predict level at 0.5 is 0.636943
+Score for 6 items at predict level at 0.6 is 0.666667
+Score for 11 items at predict level at 0.7 is 0.545455
+Score for 1386 items at predict level at 0.8 is 0.590909
+Score for 1177 items at predict level at 0.9 is 0.938828
+Score for 9845 items at predict level at 1.0 is 0.960284
+No items to score at predict level at 1.1
+Score for 16911 items at predict level above -0.1 is 0.679972
+Score for 12590 items at predict level above 0.0 is 0.912709
+Score for 12587 items at predict level above 0.1 is 0.912847
+Score for 12586 items at predict level above 0.2 is 0.91284
+Score for 12584 items at predict level above 0.3 is 0.912985
+Score for 12582 items at predict level above 0.4 is 0.91305
+Score for 12425 items at predict level above 0.5 is 0.916539
+Score for 12419 items at predict level above 0.6 is 0.91666
+Score for 12408 items at predict level above 0.7 is 0.916989
+Score for 11022 items at predict level above 0.8 is 0.957993
+Score for 9845 items at predict level above 0.9 is 0.960284
+No items to score at predict level above 1.0
+No items to score at predict level above 1.1
+No items to score at predict level below -0.1
+No items to score at predict level below 0.0
+Score for 4321 items at predict level below 0.1 is 0.00185142
+Score for 4324 items at predict level below 0.2 is 0.00208141
+Score for 4325 items at predict level below 0.3 is 0.00231214
+Score for 4327 items at predict level below 0.4 is 0.00231107
+Score for 4329 items at predict level below 0.5 is 0.002541
+Score for 4486 items at predict level below 0.6 is 0.0247436
+Score for 4492 items at predict level below 0.7 is 0.0256011
+Score for 4503 items at predict level below 0.8 is 0.026871
+Score for 5889 items at predict level below 0.9 is 0.15962
+Score for 7066 items at predict level below 1.0 is 0.289414
+Score for 16911 items at predict level below 1.1 is 0.679972
+
+Tuesday 27th March
+
+Been trying defensive plus offensive AI (written but not debugged before last check in)
+
+Conclusions so far:
+
+1. Convoy is a disaster so far (need to change to being convoyed order so that it doesn't look like regular move)
+2. Learning from an Oracle has some interesting problems. The oracle only ever created a support if there was a move.
+    This encorages the AI to think that you can succeed in blocking a move with a supported opposing move even without the blocking move
+3. Limit the number of possible moves (even if only for performance)
+4. Look at the success before you move to the next stage
+5. Create new mutations even from different rules because you can control the variables that way
+6. It's crazy not to pre-multiply the DB of matches before the actual CD calculation
+7. Learn all the time. Use the AI to play, improve the db_len grps and collect cont stats
+
+I'm gonna push off the whole business of trying multiple options and picking the best
+or playing all the time  have while the human thinks
+That's only going to happen after the convoy stuff is sorted out
+
+Alliances, saying facts to each other and making requests is going to be pushed off even more,
+
+Checking in with the following:
+
+Offensive and Defensive classic AI code seems correct but no proof of working,
 
 

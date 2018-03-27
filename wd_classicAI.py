@@ -269,6 +269,10 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 				create_offensive(glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 								 target_name, country_orders_list, success_orders_freq,
 								 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
+			else:
+				create_defensive(glv_dict, cont_stats_mgr, unit_list, block_unit_list,
+								 target_name, country_orders_list, success_orders_freq,
+								 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 		# end loop over target names
 		for iunit, unit_data in enumerate(unit_list):
 			if not l_unit_avail[iunit]:
