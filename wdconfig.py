@@ -25,17 +25,17 @@ perm_fnt = '~/tmp/wdperms.txt'
 W_fnt = '~/tmp/wdWs.txt'
 
 # c_b_compare_conts = False replaced by next few individual flags
-c_b_load_cont_stats = True # Loads cont stats from conts file and builds a cont for each one
+c_b_load_cont_stats = False # Loads cont stats from conts file and builds a cont for each one
 c_b_analyze_conts = False # Analyses accuracy and usefulness of each cont
 c_b_modify_conts = False # if c_b_analyze_conts is True, Decides which conts to keep and when to try and create new cont mutations
 c_b_learn_conts = False # At the end of game or play pahse (30 to 300 turns), Learns the W for success prediction
 c_b_cont_stats_save = False # saves all cont modification and W to file, including new stats
 c_b_collect_cont_stats = False # Adds to matches and predict statistic for all conts
 c_b_save_orders = True
-c_b_load_cont_mgr = False # loads cont manager and the conts from wdlengrps
+c_b_load_cont_mgr = True # loads cont manager and the conts from wdlengrps
 c_b_add_to_db_len_grps = False # Assumes c_b_load_cont_mgr, makes one cont active and loads its len grps. When it comes time to play, learns from
 c_b_init_cont_stats_from_cont_mgr = False # This is how you build cont stats the first time from cont groups
-c_b_play_from_saved = True # Means we use the saved orders_success file and use some AI to create move. Alternative is to use the oracle move creator
+c_b_play_from_saved = False # Means we use the saved orders_success file and use some AI to create move. Alternative is to use the oracle move creator
 c_use_rule_thresh = 0.99
 c_num_montes = 1
 # c_include_pass_statements = False
@@ -46,7 +46,8 @@ c_rnd_fleet_army_wrong = 0.0
 
 
 # c_target_gens = ['c:s,l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmont:-0.5,l:succeeded:1.0,c:e']
-c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
+c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmont:-0.5',
+				 'l:army:1.0,l:in:1.0,l:munich:-0.5,l:convoy:1.0,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
 
 c_admin_action = None # 'DeleteGames'
 c_b_play_human = False
@@ -62,5 +63,6 @@ e_move_type = Enum('e_move_type', 'none move support convoy hold support_hold')
 c_oracle_support_prob = 0.5
 c_oracle_hold_prob = 0.3
 c_oracle_fleet_first_prob = 0.1
+c_oracle_convoy_err_prob = 0.3
 
 c_classic_AI_defensive_bias = 1.5

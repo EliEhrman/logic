@@ -683,16 +683,18 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 						i_unit_convoyed = i_other_unit
 						break
 					if convoy_src != '' and convoy_dest != '':
+						b_convoy_err = (random.random() < wdconfig.c_oracle_convoy_err_prob)
 						move_details_tbl.append(nt_move_details(country=scountry, sutype='army',
 																fromName=convoy_src, toName=convoy_dest,
 																bMove=True))
-						move_details_tbl.append(nt_move_details(country=scountry, sutype='fleet',
-																fromName=sfrom, toName=sfrom, bMove=False))
-						lcorder = ['fleet', 'in', sfrom, 'convoy', 'army', 'in', convoy_src, 'to', convoy_dest]
-						orders_list.append(lcorder)
-						lmorder  = ['army', 'in', convoy_src, 'move', 'to', convoy_dest]
+						if not b_convoy_err:
+							move_details_tbl.append(nt_move_details(country=scountry, sutype='fleet',
+																	fromName=sfrom, toName=sfrom, bMove=False))
+							lcorder = ['fleet', 'in', sfrom, 'convoy', 'army', 'in', convoy_src, 'to', convoy_dest]
+							orders_list.append(lcorder)
+							print(' '.join(lcorder))
+						lmorder  = ['army', 'in', convoy_src, 'convoy', 'move', 'to', convoy_dest]
 						orders_list.append(lmorder)
-						print(' '.join(lcorder))
 						l_units_avail[i_unit_convoyed] = False
 						sea_id, from_id, dest_id = terr_id_tbl[sfrom], terr_id_tbl[convoy_src], terr_id_tbl[convoy_dest]
 
@@ -704,12 +706,12 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 													   fromTerrID=from_id, toTerrID=dest_id)
 						orders_status_list.append(order_status)
 
-						order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
-													   fromTerrID=sea_id, toTerrID=sea_id)
-						orders_status_list.append(order_status)
-
-						return True, e_move_type.convoy, sea_id, from_id, dest_id, other_unit_id[0]
-				return False, e_move_type.none, -1, -1, -1, -1
+						if not b_convoy_err:
+							order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
+														   fromTerrID=sea_id, toTerrID=sea_id)
+							orders_status_list.append(order_status)
+						return True, e_move_type.convoy, b_convoy_err, sea_id, from_id, dest_id, other_unit_id[0]
+				return False, e_move_type.none, False, -1, -1, -1, -1
 
 			def create_hold(move_details):
 				order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
@@ -724,7 +726,7 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 				return True, e_move_type.hold
 
 			b_order_created = False
-			b_order_created, move_type, sea_id, from_id, dest_id, convoyed_unit_id = create_convoy(move_details_tbl)
+			b_order_created, move_type, b_convoy_err, sea_id, from_id, dest_id, convoyed_unit_id = create_convoy(move_details_tbl)
 
 			if not b_order_created and random.random() < wdconfig.c_oracle_hold_prob:
 				b_order_created, move_type = create_hold(move_details_tbl)
@@ -741,10 +743,13 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 			if b_order_created:
 				l_units_avail[iunit] = False
 				if move_type == e_move_type.convoy:
-					sql_order = sql_convoy_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
-															 gameID=str(gameID), fromTerrID=str(from_id))
+					if b_convoy_err:
+						l_units_avail[iunit] = True
+					else:
+						sql_order = sql_convoy_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
+																 gameID=str(gameID), fromTerrID=str(from_id))
 					# print (sql_order)
-					cursor.execute(sql_order)
+						cursor.execute(sql_order)
 					sql_order = sql_move_order.substitute(toTerrID=str(dest_id), unitID=str(convoyed_unit_id),
 														  gameID=str(gameID), bConvoyed='Yes')
 				elif move_type == e_move_type.hold:
@@ -1091,7 +1096,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 925 # Set to -1 to restart
+	gameID = 1101 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

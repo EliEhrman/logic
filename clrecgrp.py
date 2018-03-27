@@ -483,8 +483,8 @@ class cl_templ_grp(object):
 
 	def add_perm(self, preconds_rec, gens_rec_list, perm_result_list, perm_result_blocked, eid,
 				 db_len_grps=None, b_perms_from_file=False ):
-		if self.__scvo == 'cacsoooooocecsv02v03ooov03v07cece':
-			print('stop here')
+		# if self.__scvo == 'cacsoooooocecsv02v03ooov03v07cece':
+		# 	print('stop here')
 
 		if not b_perms_from_file and self.__b_db_graduated:
 			# sanity test

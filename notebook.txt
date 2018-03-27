@@ -1600,4 +1600,6 @@ Checking in with the following:
 
 Offensive and Defensive classic AI code seems correct but no proof of working,
 
+Minor check in with the following:
 
+convoy move separated out for wd.
