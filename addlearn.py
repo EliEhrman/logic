@@ -273,6 +273,7 @@ class cl_cont_mgr(object):
 		b_load_done = self.__cont_stats_mgr.load(fnt)
 		if b_load_done:
 			self.set_max_cont_id(self.__cont_stats_mgr.get_max_cont_id())
+			self.__cont_stats_mgr.prepare_dictance_keys()
 			if b_analyze_conts:
 				self.__cont_stats_mgr.analyze(self, b_modify_conts)
 				if b_modify_conts:

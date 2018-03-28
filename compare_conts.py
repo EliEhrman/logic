@@ -21,8 +21,14 @@ class cl_cont_stat(object):
 	def add_match(self, bmatch):
 		self.__match_list.append(bmatch)
 
+	def pop_match(self):
+		self.__match_list.pop()
+
 	def get_match_list(self):
 		return self.__match_list
+
+	def is_match_at_idx(self, idx):
+		return self.__match_list[idx]
 
 	def set_match_list(self, match_list):
 		self.__match_list = match_list
@@ -31,16 +37,91 @@ class cl_cont_stat(object):
 		self.__match_list = self.__match_list[n:]
 
 
+class cl_cont_stat_pattern(object):
+	def __init__(self, pattern):
+		self.__pattern = pattern
+		self.__idxs = []
+		self.__success = 0.0
+		self.__b_has_success = False
+		self.__len = 0
+
+	def add_idx(self, idx):
+		b_added = False
+		remove_idx = -1
+		if self.__len < config.c_cont_stat_pattern_max_len:
+			self.__idxs.append(idx)
+			self.__len += 1
+			b_added = True
+		else:
+			if random.random() < config.c_cont_stat_pattern_replace_prob:
+				remove_idx_idx = random.randint(0, self.__len-1)
+				# remove_idx = self.__idxs[remove_idx_idx]
+				# del self.__idxs[remove_idx]
+				remove_idx = self.__idxs.pop(remove_idx_idx)
+				self.__idxs.append(idx)
+				b_added = True
+			else:
+				b_added = False
+
+		return b_added, remove_idx
+
+	def calc_score(self, l_successes):
+		if self.__len < config.c_cont_stat_pattern_min_for_score:
+			return
+		l_this_scores = [1.0 if l_successes[an_idx] else 0.0 for an_idx in self.__idxs]
+		self.__success = np.mean(l_this_scores)
+		# if self.__idxs[0] == 2:
+		# 	print('gotit')
+		self.__b_has_success = True
+
+	def is_score_valid(self):
+		return self.__b_has_success
+
+	def get_success_score(self):
+		if not self.__b_has_success:
+			return -1.0
+
+		return self.__success
 
 class cl_cont_stats_mgr(object):
 	def __init__(self):
 		self.__stats_list = []
 		self.__b_cont_stats_initialized = False
 		self.__cont_stats_list = []
-		self.__match_list = []
+		self.__match_list = [] # match list means success list. Really got to fix this
 		self.__nd_W = None
 		self.__predictions_list = []
 		self.__rejected_rule_list = []
+		self.__nd_keys = None
+		self.__nd_matches = None
+		self.__nd_zero_matches = None
+		self.__pattern_dict = dict()
+		self.__removed_pattern_idxs = []
+
+	def add_match_pattern(self, match_pattern):
+		cs_pattern = self.__pattern_dict.get(tuple(match_pattern), None)
+		if cs_pattern == None:
+			cs_pattern = cl_cont_stat_pattern(match_pattern)
+			self.__pattern_dict[tuple(match_pattern)] = cs_pattern
+
+		b_added, remove_idx = cs_pattern.add_idx(len(self.__match_list))
+		if remove_idx >= 0:
+			self.__removed_pattern_idxs.append(remove_idx) # remove at save time
+		return b_added
+
+	def init_match_pattern_stats(self):
+		match_list = list(self.__match_list)
+		self.__match_list= []
+		for imatch, bmatch in enumerate(match_list):
+			match_pattern = []
+			for cont_stat in self.__cont_stats_list:
+				match_pattern.append(cont_stat.is_match_at_idx(imatch))
+
+			_ = self.add_match_pattern(match_pattern)
+			self.__match_list.append(bmatch)
+
+		for _, cs_pattern in self.__pattern_dict.iteritems():
+			cs_pattern.calc_score(self.__match_list)
 
 	def get_W(self):
 		return self.__nd_W
@@ -60,8 +141,16 @@ class cl_cont_stats_mgr(object):
 	def set_cont_stats_list(self, stats_list):
 		self.__cont_stats_list = stats_list
 
-	def add_match(self, bmatch):
-		self.__match_list.append(bmatch)
+	def add_match(self, bsuccess, match_pattern):
+		b_added = self.add_match_pattern(match_pattern)
+		if b_added:
+			self.__match_list.append(bsuccess)
+		else:
+			if self.__predictions_list != []:
+				self.__predictions_list.pop()
+			for cstat in self.__cont_stats_list:
+				cstat.pop_match()
+
 
 	def add_prediction(self, prediction):
 		self.__predictions_list.append(prediction)
@@ -84,10 +173,10 @@ class cl_cont_stats_mgr(object):
 		for icont, cont_stat in enumerate(self.__cont_stats_list):
 			cont_stat.remove_n_first_matches(n)
 
-	def predict_success_rate(self, cont_match_list):
+	def prepare_dictance_keys(self):
 		if self.__nd_W == None:
-			print('Error for predict_success_rate. W not initialized yet.')
-			return -1.0
+			print('Error for prepare_dictance_keys. W not initialized yet.')
+			return
 
 		reclen = len(self.__cont_stats_list)
 		mlist = self.get_match_list()
@@ -96,24 +185,58 @@ class cl_cont_stats_mgr(object):
 		data = np.ndarray(shape=[reclen, numrecs], dtype=np.float32)
 		for icont, cont_stat in enumerate(self.__cont_stats_list):
 			data[icont, :] = [1.0 if b else 0.0 for b in cont_stat.get_match_list()]
-		matches = np.ndarray(shape=[numrecs], dtype=np.bool)
-		matches[:] = mlist
+		self.__nd_matches = np.ndarray(shape=[numrecs], dtype=np.bool)
+		self.__nd_matches[:] = mlist
 
 		data = np.transpose(data)
 		en = np.linalg.norm(data, axis=1)
 		nz = np.nonzero(en)
 		z = np.where(en == 0.0)
-		zero_matches = matches[z].astype(np.float32)
-		en, data, matches = en[nz], data[nz], matches[nz]
+		self.__nd_zero_matches = self.__nd_matches[z].astype(np.float32)
+		en, data, matches = en[nz], data[nz], self.__nd_matches[nz]
 		numrecs = data.shape[0]
 		data = data / en[:, None]
+
+		nd_keys = np.dot(data, self.__nd_W)
+		en = np.linalg.norm(nd_keys, axis=1)
+		self.__nd_keys = nd_keys / en[:, None]
+
+
+	def predict_success_rate(self, cont_match_list):
+		if self.__nd_W == None or self.__nd_matches == None or self.__nd_keys == None:
+			print('Error for predict_success_rate. W not initialized yet.')
+			return -1.0
+
+		cs_pattern = self.__pattern_dict.get(tuple(cont_match_list), None)
+		if cs_pattern != None and cs_pattern.is_score_valid():
+			print('Success rate prediction based on exact match:', cs_pattern.get_success_score())
+			return cs_pattern.get_success_score()
+
+		reclen = len(self.__cont_stats_list)
+		# mlist = self.get_match_list()
+		# # mlist = [b == 'True' for b in mlist]
+		# numrecs = len(mlist)
+		# data = np.ndarray(shape=[reclen, numrecs], dtype=np.float32)
+		# for icont, cont_stat in enumerate(self.__cont_stats_list):
+		# 	data[icont, :] = [1.0 if b else 0.0 for b in cont_stat.get_match_list()]
+		# matches = np.ndarray(shape=[numrecs], dtype=np.bool)
+		# matches[:] = mlist
+		#
+		# data = np.transpose(data)
+		# en = np.linalg.norm(data, axis=1)
+		# nz = np.nonzero(en)
+		# z = np.where(en == 0.0)
+		# zero_matches = matches[z].astype(np.float32)
+		# en, data, matches = en[nz], data[nz], matches[nz]
+		# numrecs = data.shape[0]
+		# data = data / en[:, None]
 
 		query = np.ndarray(shape=[reclen], dtype=np.bool)
 		query[:] = cont_match_list
 		query = query.astype(np.float32)
 		en = np.linalg.norm(query, axis=0)
 		if abs(en) < 1.0e-5:
-			zero_rate = np.average(zero_matches)
+			zero_rate = np.average(self.__nd_zero_matches)
 			print('predict_success_rate prediction. zero match success', zero_rate)
 			return zero_rate
 		test_vec = query / en
@@ -121,20 +244,21 @@ class cl_cont_stats_mgr(object):
 		en = np.linalg.norm(test_vec, axis=0)
 		test_vec = test_vec / en
 
-		nd_keys = np.dot(data, self.__nd_W)
-		en = np.linalg.norm(nd_keys, axis=1)
-		nd_keys = nd_keys / en[:, None]
-
-		cd = [[np.dot(test_vec, one_vec), ione] for ione, one_vec in enumerate(nd_keys)]
-		cands = sorted(cd, key=lambda x: x[0], reverse=True)[1:config.c_cont_lrn_num_cd_winners+1]
-		cd_winners = [cand[1] for cand in cands]
-		winner_matches = (matches[cd_winners]).astype(np.float32)
+		# cd = [[np.dot(test_vec, one_vec), ione] for ione, one_vec in enumerate(self.__nd_keys)]
+		# cands = sorted(cd, key=lambda x: x[0], reverse=True)[1:config.c_cont_lrn_num_cd_winners+1]
+		# cd_winners = [cand[1] for cand in cands]
+		cd = np.dot(self.__nd_keys, test_vec)
+		cd_winners = np.argpartition(cd, -config.c_cont_lrn_num_cd_winners)[-config.c_cont_lrn_num_cd_winners:]
+		top_cds = cd[cd_winners]
+		winner_matches = (self.__nd_matches[cd_winners]).astype(np.float32)
 		prediction = np.average(winner_matches)
 		print('predict_success_rate prediction:', prediction)
 		return prediction
 
 
 	def save(self, fnt):
+		# clean up first
+
 		fn = expanduser(fnt)
 		fh = open(fn, 'wb')
 		csvr = csv.writer(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
@@ -148,12 +272,22 @@ class cl_cont_stats_mgr(object):
 		csvr.writerow(['Num conts:', len(self.__cont_stats_list),
 					   'Num rows W', num_rows_W, 'Has predictions row', b_has_predictions_row,
 					   'Num rejected rules', len(self.__rejected_rule_list)])
-		csvr.writerow(self.__match_list)
+		if b_has_predictions_row and len(self.__predictions_list) < len(self.__match_list):
+			diff = len(self.__match_list) - len(self.__predictions_list)
+			l_prediction_remove_idxs = [remove_idx - diff for remove_idx in self.__removed_pattern_idxs if remove_idx >= diff]
+		else:
+			l_prediction_remove_idxs = self.__removed_pattern_idxs
+		match_list = [bmatch for imatch, bmatch in enumerate(self.__match_list) if imatch not in self.__removed_pattern_idxs]
+		csvr.writerow(match_list)
 		if b_has_predictions_row:
-			csvr.writerow(self.__predictions_list)
+			predictions_list = [pred for ipred, pred in enumerate(self.__predictions_list)
+								if ipred not in l_prediction_remove_idxs]
+			csvr.writerow(predictions_list)
 		for cont_stat in self.__cont_stats_list:
 			cont_stat.get_cont().save(csvr, b_write_grp_data=False)
-			csvr.writerow(cont_stat.get_match_list())
+			cmatch_list = cont_stat.get_match_list()
+			cmatch_list = [bmatch for imatch, bmatch in enumerate(cmatch_list) if imatch not in self.__removed_pattern_idxs]
+			csvr.writerow(cmatch_list)
 		for rej in self.__rejected_rule_list:
 			srule = mr.gen_rec_str(rej)
 			csvr.writerow([srule])
@@ -198,6 +332,9 @@ class cl_cont_stats_mgr(object):
 
 				if num_rows_W > 0:
 					self.__nd_W = np.asarray(W, dtype=np.float32)
+
+			self.init_match_pattern_stats()
+
 		except IOError:
 			print('Could not open cont stats file!')
 			return False
@@ -225,6 +362,7 @@ class cl_cont_stats_mgr(object):
 		if diff > 0:
 			self.remove_n_first_matches(diff)
 
+		print('Performing analysis for', num_predictions, 'records')
 		matches  = np.asarray([1.0 if b else 0.0 for b in self.get_match_list()], dtype=np.float32)
 		match_list_list = []
 		score_list = []

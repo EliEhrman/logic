@@ -267,24 +267,24 @@ def collect_cont_stats(init_pl, status_pl, orders_pl, results_pl, all_the_dicts,
 			# 	continue
 			# success_result = order + [[rules.rec_def_type.obj, 'succeeded']]
 			# b_success =  mr.match_rec_exact(success_result, results_pl[iorder])
-			cont_stats_mgr.add_match(b_target_success)
 
 			for istats, cont_stats in enumerate(cont_stats_list):
 				b_match,_ = learn.learn_one_story_step2(full_db + orders_db, [order], cascade_els, [results_pl[iorder]],
 													def_article_dict, [], [], glv_dict, sess=None, event_step_id=-1,
 													expected_but_not_found_list=[], level_depr=0, gg_cont=cont_stats.get_cont(),
 													b_blocking_depr=False, b_test_rule=True)
-				if istats == 0 and not b_match:
-					print('First rule failed. Why?')
-					b_match,_ = learn.learn_one_story_step2(full_db + orders_db, [order], cascade_els, [results_pl[iorder]],
-														def_article_dict, [], [], glv_dict, sess=None, event_step_id=-1,
-														expected_but_not_found_list=[], level_depr=0, gg_cont=cont_stats.get_cont(),
-														b_blocking_depr=False, b_test_rule=True)
+				# if istats == 0 and not b_match:
+				# 	print('First rule failed. Why?')
+				# 	b_match,_ = learn.learn_one_story_step2(full_db + orders_db, [order], cascade_els, [results_pl[iorder]],
+				# 										def_article_dict, [], [], glv_dict, sess=None, event_step_id=-1,
+				# 										expected_but_not_found_list=[], level_depr=0, gg_cont=cont_stats.get_cont(),
+				# 										b_blocking_depr=False, b_test_rule=True)
 				cont_stats.add_match(b_match)
 				cont_match_list.append(b_match)
 
 			if cont_stats_mgr.get_W() != None:
 				cont_stats_mgr.add_prediction(cont_stats_mgr.predict_success_rate(cont_match_list))
+			cont_stats_mgr.add_match(b_target_success, cont_match_list)
 
 		orders_db.append(order_rec)
 

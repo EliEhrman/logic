@@ -540,6 +540,10 @@ def do_compare_conts_learn(mgr, stat_list):
 	mlist = mgr.get_match_list()
 	# mlist = [b == 'True'for b in mlist]
 	numrecs = len(mlist)
+	if numrecs < config.c_cont_lrn_num_testers:
+		print('do_compare_conts_learn: Too few recs to learn')
+		return
+
 	data = np.ndarray(shape=[reclen, numrecs], dtype=np.float32)
 	for icont, cont_stat in enumerate(stat_list):
 		data[icont, :] = [1.0 if b else 0.0 for b in cont_stat.get_match_list()]

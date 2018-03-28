@@ -93,11 +93,14 @@ c_cont_lrn_num_testers = 300
 c_cont_lrn_num_cd_winners = 10
 c_cont_lrn_stop_thresh = 0.335
 c_cont_file_version = 3
-c_cont_stats_min_predictions = 1000
+c_cont_stats_min_predictions = 500
 c_cont_inlist_fract_thresh = 0.95
 c_cont_score_ratio = 0.9
 c_cont_score_perfect_thresh = 0.01
 c_cont_max_level = 2
+c_cont_stat_pattern_max_len = 100
+c_cont_stat_pattern_replace_prob = 0.3
+c_cont_stat_pattern_min_for_score = 10
 
 # logger = None
 

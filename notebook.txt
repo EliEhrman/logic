@@ -1603,3 +1603,16 @@ Offensive and Defensive classic AI code seems correct but no proof of working,
 Minor check in with the following:
 
 convoy move separated out for wd.
+
+Wednesday 28th March
+
+Created a system for managing match lists in cont stats. A dictionary is kept of those
+events who have a specific set of matches across the const. If there are too many (currantly > 100)
+of that exact match, the event is either discarded or an event of that pattern is removed.
+Prediction score looks first of all for an exact match and only if that fails, does the CD
+
+The database of predictions is now precreated once at the load of the file and not for each query.
+
+Checking in with:
+
+Management of cont stat patterns working.

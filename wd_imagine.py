@@ -30,7 +30,7 @@ def get_moves(order_templ, success_orders_freq, max_len=1000):
 	return order_list
 
 def select_move(order_templ, success_orders_freq):
-	order_list = get_moves(order_templ, success_orders_freq)
+	order_list = get_moves([order_templ], success_orders_freq)
 
 	return random.choice(order_list)
 
@@ -203,7 +203,7 @@ def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, stat
 			continue
 		for unit_data in unit_list:
 			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = get_moves(order_template, success_orders_freq)
+			l_pos_orders = get_moves([order_template], success_orders_freq)
 			for poss_order in l_pos_orders:
 				dest_name = poss_order[5]
 				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
@@ -224,7 +224,7 @@ def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, stat
 				if not l_unit_avail[iunit]:
 					continue
 				order_template = [unit_data[0], 'in', unit_data[1]]
-				l_poss_orders = get_moves(order_template, success_orders_freq, max_len=len(order_template)-1)
+				l_poss_orders = get_moves([order_template], success_orders_freq, max_len=len(order_template)-1)
 				l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
 				for iorder, poss_order in enumerate(l_poss_order_phrases):
 					order_rec, _ = mr.make_rec_from_phrase_list([poss_order])
@@ -267,7 +267,7 @@ def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, stat
 
 				for opp_unit_data in opp_unit_list:
 					order_template = [opp_unit_data[0], 'in', opp_unit_data[1]]
-					l_poss_orders = get_moves(order_template, success_orders_freq, max_len=len(order_template)-1)
+					l_poss_orders = get_moves([order_template], success_orders_freq, max_len=len(order_template)-1)
 					l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
 					l_successes = []
 					for iorder, poss_order in enumerate(l_poss_order_phrases):
@@ -303,7 +303,7 @@ def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, stat
 				if not l_unit_avail[iunit]:
 					continue
 				order_template = [unit_data[0], 'in', unit_data[1]]
-				l_poss_orders = get_moves(order_template, success_orders_freq, max_len=len(order_template)-1)
+				l_poss_orders = get_moves([order_template], success_orders_freq, max_len=len(order_template)-1)
 				l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
 				for iorder, poss_order in enumerate(l_poss_order_phrases):
 					order_rec, _ = mr.make_rec_from_phrase_list([first_stage_order, poss_order])
@@ -340,7 +340,7 @@ def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, stat
 				continue
 
 			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = get_moves(order_template, success_orders_freq)
+			l_pos_orders = get_moves([order_template], success_orders_freq)
 
 			country_orders_list.append(random.choice(l_pos_orders))
 

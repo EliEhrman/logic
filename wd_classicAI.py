@@ -18,7 +18,7 @@ def sel_orders(	glv_dict, cont_stats_mgr, target_template, unit_list, success_or
 		if b_my_move and not l_unit_avail[iunit]:
 			continue
 		order_template = [unit_data[0], 'in', unit_data[1]]
-		l_poss_orders = wd_imagine.get_moves(order_template, success_orders_freq, max_len=len(order_template) - 1)
+		l_poss_orders = wd_imagine.get_moves([order_template], success_orders_freq, max_len=len(order_template) - 1)
 		l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
 		for iorder, poss_order in enumerate(l_poss_order_phrases):
 			if first_stage_order == None:
@@ -113,7 +113,7 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=True, b_offensive=False)
 
-	if not b_success:
+	if not b_success or block_stage_success >= first_stage_success:
 		return
 
 	b_success, r1_stage_success, _, r1_stage_match_pattern = \
@@ -122,7 +122,7 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   country_orders_list=[], first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=False, b_offensive=False)
 
-	if not b_success:
+	if not b_success or r1_stage_success <= block_stage_success:
 		return
 
 	b_success, r2_stage_success, _, r2_stage_match_pattern = \
@@ -156,7 +156,7 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   country_orders_list=[], first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=False, b_offensive=True)
 
-	if not b_success:
+	if not b_success or block_stage_success >= first_stage_success:
 		return
 
 	b_success, rejoiner_stage_success, _, _ = \
@@ -216,7 +216,7 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 		b_offensive = True
 		for unit_data in unit_list:
 			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves(order_template, success_orders_freq)
+			l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
 			for poss_order in l_pos_orders:
 				dest_name = poss_order[5]
 				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
@@ -242,7 +242,7 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 
 		for unit_data in block_unit_list:
 			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves(order_template, success_orders_freq)
+			l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
 			for poss_order in l_pos_orders:
 				dest_name = poss_order[5]
 				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
@@ -279,7 +279,7 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 				continue
 
 			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves(order_template, success_orders_freq)
+			l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
 
 			country_orders_list.append(random.choice(l_pos_orders))
 
