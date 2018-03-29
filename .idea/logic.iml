@@ -4,8 +4,6 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="Python 2.7.12 (/usr/bin/python2.7)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="test7" />
-    <orderEntry type="module" module-name="hamming" />
     <orderEntry type="module" module-name="ham2" />
     <orderEntry type="module" module-name="ham2" />
   </component>

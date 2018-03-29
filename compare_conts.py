@@ -395,7 +395,7 @@ class cl_cont_stats_mgr(object):
 			for pval in range(13):
 				plevel = float(pval - 1) / 10.0
 				if bat:
-					predictX = np.asarray([1.0 if v == plevel else 0.0
+					predictX = np.asarray([1.0 if (v > (plevel - 0.05) and v < (plevel + 0.05))  else 0.0
 										   for v in self.__predictions_list], dtype=np.float32)
 					prep = 'at'
 				else:

@@ -10,23 +10,31 @@ import makerecs as mr
 
 # def imagine_init
 
-def get_moves(order_templ, success_orders_freq, max_len=1000):
+def get_moves(l_order_templ, success_orders_freq, max_len=1000, max_num_moves=1000):
+	b_max_reached = False
 	order_list = []
 	for korder, vfreq in success_orders_freq.iteritems():
-		order = list(order_templ)
-		b_success = True
-		for iel, el in enumerate(korder):
-			if iel > max_len:
-				break
-			if order[iel] == '?':
-				order[iel] = el
-			else:
-				if order[iel] != el:
-					b_success = False
+		for one_templ in l_order_templ:
+			order = list(one_templ)
+			b_success = True
+			for iel, el in enumerate(korder):
+				if iel > max_len:
 					break
-		if b_success:
-			order_list.append(list(korder))
+				if order[iel] == '?':
+					order[iel] = el
+				else:
+					if order[iel] != el:
+						b_success = False
+						break
+			if b_success:
+				if len(order_list) >= max_num_moves:
+					b_max_reached = True
+					break
+				order_list.append(list(korder))
+		if b_max_reached:
+			break
 
+	random.shuffle(order_list)
 	return order_list
 
 def select_move(order_templ, success_orders_freq):

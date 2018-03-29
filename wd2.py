@@ -471,18 +471,38 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 
 	for iorder, order in enumerate(orders_list):
 		move_template = ['?', 'in', '?', 'move', 'to', '?']
+		convoy_move_template = ['?', 'in', '?', 'convoy', 'move', 'to', '?']
 		support_template = ['?', 'in', '?', 'support', 'move', 'from', '?', 'to', '?']
-		convoy_template = ['?', 'in', '?', 'support', 'move', 'from', '?', 'to', '?']
+		convoy_template = ['fleet', 'in', '?', 'convoy', 'army', 'in', '?', 'to', '?']
+		hold_template = ['?', 'in', '?', 'hold']
+		support_hold_template = ['?', 'in', '?', 'support', 'hold', 'in', '?']
 
 		if utils.match_list_for_blanks(l_with_blanks=move_template, l_to_match=order):
 			sutype, _, src_name, _, _, dest_name = order
 			unit_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.move
+		elif utils.match_list_for_blanks(l_with_blanks=hold_template, l_to_match=order):
+			sutype, _, src_name, _ = order
+			unit_terr_id = terr_id_tbl[src_name]
+			move_type = e_move_type.hold
+		elif utils.match_list_for_blanks(l_with_blanks=convoy_move_template, l_to_match=order):
+			sutype, _, src_name, _, _, _, dest_name = order
+			unit_terr_id = terr_id_tbl[src_name]
+			move_type = e_move_type.convoy_move
 		elif utils.match_list_for_blanks(l_with_blanks=support_template, l_to_match=order):
 			sutype, _, supporting_name, _, _, _, src_name, _, dest_name = order
 			unit_terr_id = terr_id_tbl[supporting_name]
 			from_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.support
+		elif utils.match_list_for_blanks(l_with_blanks=support_hold_template, l_to_match=order):
+			sutype, _, supporting_name, _, _, _, dest_name = order
+			unit_terr_id = terr_id_tbl[supporting_name]
+			move_type = e_move_type.support_hold
+		elif utils.match_list_for_blanks(l_with_blanks=convoy_template, l_to_match=order):
+			sutype, _, convoying_name, _, _, _, src_name, _, dest_name = order
+			unit_terr_id = terr_id_tbl[convoying_name]
+			from_terr_id = terr_id_tbl[src_name]
+			move_type = e_move_type.convoy
 		else:
 			print('create_move_orders. Unknown move template')
 			move_type = e_move_type.none
@@ -492,20 +512,33 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 		unit_id = cursor.fetchone()
 		dest_id = terr_id_tbl[dest_name]
 		dstr = ' '.join(order)
-		if move_type == e_move_type.move:
+		if move_type == e_move_type.move or move_type == e_move_type.convoy_move:
 			order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
 										   fromTerrID=unit_terr_id, toTerrID=dest_id)
-		elif move_type == e_move_type.support:
+		elif move_type == e_move_type.support or move_type == e_move_type.convoy \
+				or move_type == e_move_type.hold or move_type == e_move_type.support_hold:
 			order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
 										   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
 
 		orders_status_list.append(order_status)
 		if success_list[iorder]:
 			if move_type == e_move_type.move:
-				sql_order = sql_move_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]), gameID=str(gameID))
+				sql_order = sql_move_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
+														gameID=str(gameID), bConvoyed='No')
+			elif move_type == e_move_type.hold:
+				sql_order = sql_hold_order.substitute(unitID=str(unit_id[0]), gameID=str(gameID))
+			elif move_type == e_move_type.convoy_move:
+				sql_order = sql_move_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
+														gameID=str(gameID), bConvoyed='Yes')
 			elif move_type == e_move_type.support:
-				sql_order = sql_support_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
-														 gameID=str(gameID), fromTerrID=str(from_terr_id))
+				sql_order = sql_support_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
+															gameID=str(gameID), fromTerrID=str(from_terr_id))
+			elif move_type == e_move_type.support_hold:
+				sql_order = sql_support_hold_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
+															  gameID=str(gameID))
+			elif move_type == e_move_type.convoy:
+				sql_order = sql_convoy_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
+															gameID=str(gameID), fromTerrID=str(from_terr_id))
 
 			print(sql_order)
 			cursor.execute(sql_order)
@@ -1099,7 +1132,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1101 # Set to -1 to restart
+	gameID = 1168 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

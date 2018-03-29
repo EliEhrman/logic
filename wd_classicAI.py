@@ -10,11 +10,13 @@ import rules
 import makerecs as mr
 import wd_imagine
 
-def sel_orders(	glv_dict, cont_stats_mgr, target_template, unit_list, success_orders_freq,
-				num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail, country_orders_list,
+def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
+				num_rules, l_rules, l_lens, l_scvos, l_gens_recs, prev_stage_score, l_unit_avail, country_orders_list,
 				first_stage_order, prev_stage_match_pattern, b_my_move, b_offensive):
 	l_successes = []
 	for iunit, unit_data in enumerate(unit_list):
+		if len(l_successes) > wdconfig.c_classic_AI_max_successes:
+			break
 		if b_my_move and not l_unit_avail[iunit]:
 			continue
 		order_template = [unit_data[0], 'in', unit_data[1]]
@@ -38,7 +40,11 @@ def sel_orders(	glv_dict, cont_stats_mgr, target_template, unit_list, success_or
 				if not mr.does_match_rule(glv_dict, l_rules[irule], order_rec):
 					continue
 				result_rec = mr.replace_vars_in_phrase(order_rec, l_gens_recs[irule])
-				if not els.match_rec_to_templ(result_rec, target_template):
+				b_found = False
+				for target_template in l_target_templates:
+					if els.match_rec_to_templ(result_rec, target_template):
+						b_found = True
+				if not b_found:
 					continue
 				b_one_success = True
 				match_pattern[irule] = True
@@ -78,11 +84,27 @@ def sel_orders(	glv_dict, cont_stats_mgr, target_template, unit_list, success_or
 	this_stage_success, this_stage_order, this_stage_iunit, \
 	this_stage_match_pattern, this_stage_order_words = \
 		sorted(l_successes, key=lambda x: x[0], reverse=(b_my_move == b_offensive))[0]
+
 	if b_my_move:
-		l_unit_avail[this_stage_iunit] = False
-		country_orders_list.append(this_stage_order_words)
+		b_take_the_move = False
+		if prev_stage_score == None:
+			b_take_the_move = True
+			diff = 1.0
+		elif b_offensive and this_stage_success > prev_stage_score:
+			diff = this_stage_success - prev_stage_score
+			b_take_the_move = True
+		elif not b_offensive and this_stage_success < prev_stage_score:
+			diff = prev_stage_score - this_stage_success
+			b_take_the_move = True
+		if b_take_the_move and random.random() < diff:
+			l_unit_avail[this_stage_iunit] = False
+			country_orders_list.append(this_stage_order_words)
+			return True, this_stage_success, this_stage_order, this_stage_match_pattern
+		else:
+			return False, None, None, None
 
 	return True, this_stage_success, this_stage_order, this_stage_match_pattern
+
 
 def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 						target_name, country_orders_list, success_orders_freq,
@@ -96,11 +118,14 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 	# 		prev_owner = terr_owner_dict.get(dest_name, 'neutral')
 	# 		if dest_name in supply_set and prev_owner == scountry:
 	# 			s_poss_targets.add(dest_name)
-	target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
+	move_target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
+	convoy_target_template = ['?', '?', 'in', '?', 'convoy', 'move', 'to', target_name, 'succeeded', '?']
+	l_target_templates = [move_target_template, convoy_target_template]
 
 	b_success, first_stage_success, first_stage_order, first_stage_match_pattern = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, block_unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail=[],
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, block_unit_list, success_orders_freq,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=None, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=None,
 				   prev_stage_match_pattern=None, b_my_move=False, b_offensive=False)
 
@@ -108,8 +133,9 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		return
 
 	b_success, block_stage_success, _, block_stage_match_pattern = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail=l_unit_avail,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=first_stage_success, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=True, b_offensive=False)
 
@@ -117,8 +143,9 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		return
 
 	b_success, r1_stage_success, _, r1_stage_match_pattern = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, block_unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail=[],
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, block_unit_list, success_orders_freq,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=block_stage_success, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=False, b_offensive=False)
 
@@ -126,7 +153,7 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		return
 
 	b_success, r2_stage_success, _, r2_stage_match_pattern = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, unit_list, success_orders_freq,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
 				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=r1_stage_match_pattern, b_my_move=True, b_offensive=False)
@@ -139,20 +166,25 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 						target_name, country_orders_list, success_orders_freq,
 						num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail):
-	target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
+	# target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
+	move_target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
+	convoy_target_template = ['?', '?', 'in', '?', 'convoy', 'move', 'to', target_name, 'succeeded', '?']
+	l_target_templates = [move_target_template, convoy_target_template]
 
 	b_success, first_stage_success, first_stage_order, first_stage_match_pattern = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail,
-				   country_orders_list, first_stage_order=None,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=None, l_unit_avail = l_unit_avail,
+				   country_orders_list=country_orders_list, first_stage_order=None,
 				   prev_stage_match_pattern=None, b_my_move=True, b_offensive=True)
 
 	if not b_success:
 		return
 
 	b_success, block_stage_success, _, block_stage_match_pattern = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, block_unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail=[],
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, block_unit_list, success_orders_freq,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=first_stage_success, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=False, b_offensive=True)
 
@@ -160,9 +192,10 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		return
 
 	b_success, rejoiner_stage_success, _, _ = \
-		sel_orders(glv_dict, cont_stats_mgr, target_template, unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail,
-				   country_orders_list, first_stage_order=first_stage_order,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=block_stage_success, l_unit_avail=l_unit_avail,
+				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=True, b_offensive=True)
 
 
@@ -215,8 +248,9 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 
 		b_offensive = True
 		for unit_data in unit_list:
-			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
+			move_order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
+			convoy_order_template = [unit_data[0], 'in', unit_data[1], 'convoy', 'move', 'to', '?']
+			l_pos_orders = wd_imagine.get_moves([move_order_template, convoy_order_template], success_orders_freq)
 			for poss_order in l_pos_orders:
 				dest_name = poss_order[5]
 				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
@@ -239,6 +273,8 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 			if opp_unit_list == None:
 				continue
 			block_unit_list += opp_unit_list
+
+		random.shuffle(block_unit_list)
 
 		for unit_data in block_unit_list:
 			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']

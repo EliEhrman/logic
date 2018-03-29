@@ -35,7 +35,7 @@ c_b_save_orders = True
 c_b_load_cont_mgr = False # loads cont manager and the conts from wdlengrps
 c_b_add_to_db_len_grps = False # Assumes c_b_load_cont_mgr, makes one cont active and loads its len grps. When it comes time to play, learns from
 c_b_init_cont_stats_from_cont_mgr = False # This is how you build cont stats the first time from cont groups
-c_b_play_from_saved = False # Means we use the saved orders_success file and use some AI to create move. Alternative is to use the oracle move creator
+c_b_play_from_saved = True # Means we use the saved orders_success file and use some AI to create move. Alternative is to use the oracle move creator
 c_use_rule_thresh = 0.99
 c_num_montes = 1
 # c_include_pass_statements = False
@@ -58,11 +58,12 @@ c_cont_stats_init_thresh = 0.1
 c_cont_stats_init_exclude_irrelevant = True
 c_cont_stats_fnt = '~/tmp/cont_stats.txt'
 
-e_move_type = Enum('e_move_type', 'none move support convoy hold support_hold')
+e_move_type = Enum('e_move_type', 'none move support convoy hold support_hold convoy_move')
 
 c_oracle_support_prob = 0.5
 c_oracle_hold_prob = 0.3
 c_oracle_fleet_first_prob = 0.1
 c_oracle_convoy_err_prob = 0.3
 
-c_classic_AI_defensive_bias = 1.5
+c_classic_AI_defensive_bias = 1.2
+c_classic_AI_max_successes = 10
