@@ -1616,3 +1616,7 @@ The database of predictions is now precreated once at the load of the file and n
 Checking in with:
 
 Management of cont stat patterns working.
+
+Thursday 29th March
+
+Havong a lot of trouble with pycharm which upgraded itself without my knowledge and I did not import settings
