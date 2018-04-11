@@ -1,6 +1,8 @@
 from __future__ import print_function
 import sys
+import os.path
 from os.path import expanduser
+from shutil import copyfile
 import csv
 import numpy as np
 import random
@@ -260,6 +262,8 @@ class cl_cont_stats_mgr(object):
 		# clean up first
 
 		fn = expanduser(fnt)
+		if os.path.isfile(fn):
+			copyfile(fn, fn + '.bak')
 		fh = open(fn, 'wb')
 		csvr = csv.writer(fh, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
 		if self.__nd_W != None:

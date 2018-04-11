@@ -1620,3 +1620,11 @@ Management of cont stat patterns working.
 Thursday 29th March
 
 Havong a lot of trouble with pycharm which upgraded itself without my knowledge and I did not import settings
+
+Wednesday 11th April
+
+Looks like the first comment since after Pesach
+
+checking in with the following
+
+Added a layer above classic AI to protect wd sql from supports without moves. Classic AI technically working.

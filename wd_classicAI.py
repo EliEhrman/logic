@@ -130,7 +130,7 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   prev_stage_match_pattern=None, b_my_move=False, b_offensive=False)
 
 	if not b_success:
-		return
+		return 0.0
 
 	b_success, block_stage_success, _, block_stage_match_pattern = \
 		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
@@ -140,7 +140,7 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=True, b_offensive=False)
 
 	if not b_success or block_stage_success >= first_stage_success:
-		return
+		return -first_stage_success
 
 	b_success, r1_stage_success, _, r1_stage_match_pattern = \
 		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, block_unit_list, success_orders_freq,
@@ -150,16 +150,19 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=False, b_offensive=False)
 
 	if not b_success or r1_stage_success <= block_stage_success:
-		return
+		return -block_stage_success
 
 	b_success, r2_stage_success, _, r2_stage_match_pattern = \
 		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
-				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail=l_unit_avail,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+				   prev_stage_score=r1_stage_success, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=r1_stage_match_pattern, b_my_move=True, b_offensive=False)
 
 	if not b_success:
-		return
+		return -r1_stage_success
+
+	return r2_stage_success
 
 
 
@@ -179,7 +182,7 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   prev_stage_match_pattern=None, b_my_move=True, b_offensive=True)
 
 	if not b_success:
-		return
+		return 0.0
 
 	b_success, block_stage_success, _, block_stage_match_pattern = \
 		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, block_unit_list, success_orders_freq,
@@ -189,7 +192,7 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=False, b_offensive=True)
 
 	if not b_success or block_stage_success >= first_stage_success:
-		return
+		return first_stage_success
 
 	b_success, rejoiner_stage_success, _, _ = \
 		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, unit_list, success_orders_freq,
@@ -197,6 +200,11 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   prev_stage_score=block_stage_success, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=True, b_offensive=True)
+
+	if not b_success:
+		return block_stage_success
+
+	return rejoiner_stage_success
 
 
 def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
@@ -238,91 +246,108 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 	orders_list = []
 	icountry_list = []
 
+	l_country_options = [[] for _ in country_names_tbl]
+	for ioption_run in range(wdconfig.c_classic_AI_num_option_runs):
+		for icountry in range(1, len(country_names_tbl)):
+			b_has_success_score = False
+			success_score = 0.0
+			scountry = country_names_tbl[icountry]
+			print('Thinking for ', scountry)
+			s_poss_targets = set()
+			unit_list = unit_owns_tbl.get(scountry, None)
+			if unit_list == None:
+				continue
+
+			b_offensive = True
+			for unit_data in unit_list:
+				move_order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
+				convoy_order_template = [unit_data[0], 'in', unit_data[1], 'convoy', 'move', 'to', '?']
+				l_pos_orders = wd_imagine.get_moves([move_order_template, convoy_order_template], success_orders_freq)
+				for poss_order in l_pos_orders:
+					dest_name = poss_order[5]
+					prev_owner = terr_owner_dict.get(dest_name, 'neutral')
+					if dest_name in supply_set and scountry != prev_owner:
+						s_poss_targets.add(dest_name)
+
+			l_target_data = []
+			for a_target in s_poss_targets:
+				l_target_data.append([a_target, b_offensive])
+
+
+			b_offensive = False
+			s_poss_targets = set()
+			block_unit_list = []
+			for i_opp_country in range(1, len(country_names_tbl)):
+				if i_opp_country == icountry:
+					continue
+				sopp = country_names_tbl[i_opp_country]
+				opp_unit_list = unit_owns_tbl.get(sopp, None)
+				if opp_unit_list == None:
+					continue
+				block_unit_list += opp_unit_list
+
+			random.shuffle(block_unit_list)
+
+			for unit_data in block_unit_list:
+				order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
+				l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
+				for poss_order in l_pos_orders:
+					dest_name = poss_order[5]
+					prev_owner = terr_owner_dict.get(dest_name, 'neutral')
+					if dest_name in supply_set and prev_owner == scountry:
+						s_poss_targets.add(dest_name)
+
+
+			for a_target in s_poss_targets:
+				l_target_data.append([a_target, b_offensive])
+			# s_poss_targets.add([dest_name, b_offensive, random.random() * wdconfig.c_classic_AI_defensive_bias])
+
+			l_target_data = [target_data + [(1.0 if target_data[1]
+											 else wdconfig.c_classic_AI_defensive_bias) * random.random()]
+							 for target_data in l_target_data]
+			l_target_data = sorted(l_target_data, key=lambda x: x[2], reverse=True)
+
+			random.shuffle(unit_list)
+			del l_pos_orders, order_template, poss_order, dest_name, prev_owner
+			l_unit_avail = [True for udata in unit_list]
+			country_orders_list = []
+			for target_data in l_target_data:
+				target_name, b_offensive, _ = target_data
+				b_has_success_score = True
+				if b_offensive:
+					success_score += create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
+														target_name, country_orders_list, success_orders_freq,
+														num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
+				else:
+					success_score += create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
+														target_name, country_orders_list, success_orders_freq,
+														num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
+			# end loop over target names and data in l_target_data
+
+			# remaining units have been assigned no purpose, so they make a random move
+			for iunit, unit_data in enumerate(unit_list):
+				if not l_unit_avail[iunit]:
+					continue
+
+				order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
+				l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
+
+				country_orders_list.append(random.choice(l_pos_orders))
+
+			if country_orders_list != []:
+				l_country_options[icountry].append([country_orders_list, success_score if b_has_success_score else -1000.0])
+				# orders_list += country_orders_list
+				# icountry_list.append(icountry)
+
+		# end loop over each country for that option run
+	# end loop over num option runs
+
 	for icountry in range(1, len(country_names_tbl)):
-		scountry = country_names_tbl[icountry]
-		print('Thinking for ', scountry)
-		s_poss_targets = set()
-		unit_list = unit_owns_tbl.get(scountry, None)
-		if unit_list == None:
+		if l_country_options[icountry] == []:
 			continue
-
-		b_offensive = True
-		for unit_data in unit_list:
-			move_order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			convoy_order_template = [unit_data[0], 'in', unit_data[1], 'convoy', 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves([move_order_template, convoy_order_template], success_orders_freq)
-			for poss_order in l_pos_orders:
-				dest_name = poss_order[5]
-				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
-				if dest_name in supply_set and scountry != prev_owner:
-					s_poss_targets.add(dest_name)
-
-		l_target_data = []
-		for a_target in s_poss_targets:
-			l_target_data.append([a_target, b_offensive])
-
-
-		b_offensive = False
-		s_poss_targets = set()
-		block_unit_list = []
-		for i_opp_country in range(1, len(country_names_tbl)):
-			if i_opp_country == icountry:
-				continue
-			sopp = country_names_tbl[i_opp_country]
-			opp_unit_list = unit_owns_tbl.get(sopp, None)
-			if opp_unit_list == None:
-				continue
-			block_unit_list += opp_unit_list
-
-		random.shuffle(block_unit_list)
-
-		for unit_data in block_unit_list:
-			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
-			for poss_order in l_pos_orders:
-				dest_name = poss_order[5]
-				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
-				if dest_name in supply_set and prev_owner == scountry:
-					s_poss_targets.add(dest_name)
-
-
-		for a_target in s_poss_targets:
-			l_target_data.append([a_target, b_offensive])
-		# s_poss_targets.add([dest_name, b_offensive, random.random() * wdconfig.c_classic_AI_defensive_bias])
-
-		l_target_data = [target_data + [(1.0 if target_data[1]
-										 else wdconfig.c_classic_AI_defensive_bias) * random.random()]
-						 for target_data in l_target_data]
-		l_target_data = sorted(l_target_data, key=lambda x: x[2], reverse=True)
-
-		random.shuffle(unit_list)
-		del l_pos_orders, order_template, poss_order, dest_name, prev_owner
-		l_unit_avail = [True for udata in unit_list]
-		country_orders_list = []
-		for target_data in l_target_data:
-			target_name, b_offensive, _ = target_data
-			if b_offensive:
-				create_offensive(glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-								 target_name, country_orders_list, success_orders_freq,
-								 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
-			else:
-				create_defensive(glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-								 target_name, country_orders_list, success_orders_freq,
-								 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
-		# end loop over target names
-		for iunit, unit_data in enumerate(unit_list):
-			if not l_unit_avail[iunit]:
-				continue
-
-			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
-
-			country_orders_list.append(random.choice(l_pos_orders))
-
-		if country_orders_list != []:
-			orders_list += country_orders_list
-			icountry_list.append(icountry)
-
+		country_orders_list, success_score = sorted(l_country_options[icountry], key=lambda x: x[1], reverse=True)[0]
+		orders_list += country_orders_list
+		icountry_list.append(icountry)
 
 	orders_db = els.convert_list_to_phrases(orders_list)
 	success_list = [True for o in orders_list]

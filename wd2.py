@@ -143,13 +143,13 @@ def get_game_name(cursor, gameID):
 	return result[1], False
 
 def get_game_id(cursor, gname):
-	sqlGetGame = string.Template('select id, phase from webdiplomacy.wD_Games where name = \'${gname}\';')
+	sqlGetGame = string.Template('select id, phase, turn from webdiplomacy.wD_Games where name = \'${gname}\';')
 	sql = sqlGetGame.substitute(gname=gname)
 	cursor.execute(sql)
 	result = cursor.fetchone()
 	if result == None:
-		return None, None
-	return result[0], result[1]
+		return None, None, None
+	return result[0], result[1], int(result[2])
 
 
 def get_phase(cursor, gameID):
@@ -469,51 +469,98 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 										all_the_dicts, terr_owns_tbl, supply_tbl, wdconfig.c_num_montes,
 										wdconfig.c_preferred_nation, wdconfig.c_b_predict_success)
 
+	move_template = ['?', 'in', '?', 'move', 'to', '?']
+	convoy_move_template = ['?', 'in', '?', 'convoy', 'move', 'to', '?']
+	support_template = ['?', 'in', '?', 'support', 'move', 'from', '?', 'to', '?']
+	convoy_template = ['fleet', 'in', '?', 'convoy', 'army', 'in', '?', 'to', '?']
+	hold_template = ['?', 'in', '?', 'hold']
+	support_hold_template = ['?', 'in', '?', 'support', 'hold', 'in', '?']
+
+	move_set, convoy_move_set, hold_set, convoy_set = set(), set(), set(), set()
+	l_order_data = []
+
 	for iorder, order in enumerate(orders_list):
-		move_template = ['?', 'in', '?', 'move', 'to', '?']
-		convoy_move_template = ['?', 'in', '?', 'convoy', 'move', 'to', '?']
-		support_template = ['?', 'in', '?', 'support', 'move', 'from', '?', 'to', '?']
-		convoy_template = ['fleet', 'in', '?', 'convoy', 'army', 'in', '?', 'to', '?']
-		hold_template = ['?', 'in', '?', 'hold']
-		support_hold_template = ['?', 'in', '?', 'support', 'hold', 'in', '?']
 
 		if utils.match_list_for_blanks(l_with_blanks=move_template, l_to_match=order):
 			sutype, _, src_name, _, _, dest_name = order
 			unit_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.move
+			move_set.add((src_name, dest_name))
+			l_order_data.append([e_move_type.move, sutype, src_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=hold_template, l_to_match=order):
 			sutype, _, src_name, _ = order
 			unit_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.hold
+			hold_set.add(src_name)
+			l_order_data.append([e_move_type.hold, sutype, src_name])
 		elif utils.match_list_for_blanks(l_with_blanks=convoy_move_template, l_to_match=order):
 			sutype, _, src_name, _, _, _, dest_name = order
 			unit_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.convoy_move
+			convoy_move_set.add((src_name, dest_name))
+			l_order_data.append([e_move_type.convoy_move, sutype, src_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=support_template, l_to_match=order):
 			sutype, _, supporting_name, _, _, _, src_name, _, dest_name = order
 			unit_terr_id = terr_id_tbl[supporting_name]
-			from_terr_id = terr_id_tbl[src_name]
+			# from_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.support
+			hold_set.add(supporting_name)
+			l_order_data.append([e_move_type.support, sutype, supporting_name, src_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=support_hold_template, l_to_match=order):
 			sutype, _, supporting_name, _, _, _, dest_name = order
 			unit_terr_id = terr_id_tbl[supporting_name]
 			move_type = e_move_type.support_hold
+			hold_set.add(supporting_name)
+			l_order_data.append([e_move_type.support_hold, sutype, supporting_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=convoy_template, l_to_match=order):
 			sutype, _, convoying_name, _, _, _, src_name, _, dest_name = order
 			unit_terr_id = terr_id_tbl[convoying_name]
-			from_terr_id = terr_id_tbl[src_name]
+			# from_terr_id = terr_id_tbl[src_name]
 			move_type = e_move_type.convoy
+			hold_set.add(convoying_name)
+			convoy_set.add((src_name, dest_name))
+			l_order_data.append([e_move_type.convoy, sutype, convoying_name, src_name, dest_name])
 		else:
 			print('create_move_orders. Unknown move template')
 			move_type = e_move_type.none
 			continue
+
+	for i_order_data, order_data in enumerate(l_order_data):
+		b_do_sql = success_list[i_order_data]
+		move_type, sutype, acting_name = order_data[0:3]
+		if move_type == e_move_type.move:
+			src_name, dest_name = acting_name, order_data[-1]
+		elif move_type == e_move_type.hold:
+			dest_name = acting_name
+		elif move_type == e_move_type.convoy_move:
+			src_name, dest_name = acting_name, order_data[-1]
+			if (src_name, dest_name) not in convoy_set:
+				b_do_sql = False
+		elif move_type == e_move_type.support:
+			src_name, dest_name = order_data[3:]
+			if (src_name, dest_name) not in move_set:
+				b_do_sql = False
+		elif move_type == e_move_type.support_hold:
+			dest_name = order_data[-1]
+			if dest_name not in hold_set:
+				b_do_sql = False
+		elif move_type == e_move_type.convoy:
+			src_name, dest_name = order_data[3:]
+			if (src_name, dest_name) not in convoy_move_set:
+				b_do_sql = False
+
+		unit_terr_id = terr_id_tbl[acting_name]
+
 		sql_get = sql_get_unit_id.substitute(gameID=str(gameID), terrID=str(unit_terr_id))
 		cursor.execute(sql_get)
 		unit_id = cursor.fetchone()
 		dest_id = terr_id_tbl[dest_name]
-		dstr = ' '.join(order)
-		if move_type == e_move_type.move or move_type == e_move_type.convoy_move:
-			order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
+		src_id = terr_id_tbl[src_name]
+		if move_type == e_move_type.move:
+			order_status = nt_order_status(order_num=iorder, status=b_do_sql, unitID=unit_id[0],
+										   fromTerrID=unit_terr_id, toTerrID=dest_id)
+		elif move_type == e_move_type.convoy_move:
+			order_status = nt_order_status(order_num=iorder, status=b_do_sql, unitID=unit_id[0],
 										   fromTerrID=unit_terr_id, toTerrID=dest_id)
 		elif move_type == e_move_type.support or move_type == e_move_type.convoy \
 				or move_type == e_move_type.hold or move_type == e_move_type.support_hold:
@@ -521,7 +568,8 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 										   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
 
 		orders_status_list.append(order_status)
-		if success_list[iorder]:
+
+		if success_list[iorder] and b_do_sql:
 			if move_type == e_move_type.move:
 				sql_order = sql_move_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
 														gameID=str(gameID), bConvoyed='No')
@@ -532,16 +580,18 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 														gameID=str(gameID), bConvoyed='Yes')
 			elif move_type == e_move_type.support:
 				sql_order = sql_support_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
-															gameID=str(gameID), fromTerrID=str(from_terr_id))
+															gameID=str(gameID), fromTerrID=str(src_id))
 			elif move_type == e_move_type.support_hold:
 				sql_order = sql_support_hold_order.substitute(toTerrID=str(dest_id), unitID=str(unit_id[0]),
 															  gameID=str(gameID))
 			elif move_type == e_move_type.convoy:
 				sql_order = sql_convoy_order.substitute(	toTerrID=str(dest_id), unitID=str(unit_id[0]),
-															gameID=str(gameID), fromTerrID=str(from_terr_id))
+															gameID=str(gameID), fromTerrID=str(src_id))
 
 			print(sql_order)
 			cursor.execute(sql_order)
+
+		dstr = ' '.join(orders_list[i_order_data])
 		print(dstr)
 
 	for icountry in icountry_list:
@@ -826,7 +876,7 @@ def create_results_db(orders_db, orders_status_list):
 def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
 				db, cursor, gname, l_humaans, country_names_tbl,
 				terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-				init_db, orders_status_list, old_status_db, old_orders_db, old_orders_list):
+				init_db, old_orders_status_list, old_status_db, old_orders_db, old_orders_list):
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
@@ -844,15 +894,30 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 										 'WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 	l_sql_action_orders = [sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order]
 
-	gameID, game_phase = get_game_id(cursor, gname)
+	b_game_finished, b_orders_valid, b_reset_orders, b_stuck = False, False, False, False
+	gameID, game_phase, game_turn = get_game_id(cursor, gname)
 	if gameID == None:
 		CreateGame(db, cursor, gname)
-		gameID, game_phase = get_game_id(cursor, gname)
+		gameID, game_phase, game_turn = get_game_id(cursor, gname)
 		if gameID == None:
 			print('Failed to create game. Exiting!')
 			exit(1)
 		AddPlayers(db, cursor, gameID)
-		return gameID, False, None, None, None
+		print('New game created.')
+		b_reset_orders = True
+		return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
+
+	try:
+		if play_turn.turn == game_turn and play_turn.phase == game_phase:
+			print('Game stuck!')
+			b_game_finished, b_game_finished, b_stuck = False, False, True
+			return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
+	except AttributeError:
+		print('Naughty! You used a variable before we initialized it!')
+
+	play_turn.turn, play_turn.phase = game_turn, game_phase
+	print('Playing turn for game id:', gameID, 'phase:', game_phase, 'turn:', game_turn)
+
 
 	# gameID = 28
 
@@ -866,11 +931,11 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	statement_list = []
 
 	terr_owns_tbl = OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list)
-	unit_owns_tbl, new_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_status_list)
-	results_db = create_results_db(old_orders_db, new_orders_status_list)
+	unit_owns_tbl, updated_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, old_orders_status_list)
+	results_db = create_results_db(old_orders_db, updated_orders_status_list)
 	if results_db != None and len(results_db) > 0:
 		if wdconfig.c_b_save_orders:
-			b_keep_working = wdlearn.create_order_freq_tbl(old_orders_list, new_orders_status_list)
+			b_keep_working = wdlearn.create_order_freq_tbl(old_orders_list, updated_orders_status_list)
 		if wdconfig.c_b_collect_cont_stats:
 			b_keep_working = wdlearn.collect_cont_stats(init_db, old_status_db, old_orders_db, results_db,
 										 all_dicts, db_cont_mgr)
@@ -878,14 +943,17 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 			b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
 										 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
 		if not b_keep_working:
-			return gameID, False, [], [], []
+			b_game_finished, b_orders_valid, b_reset_orders = False, False, True
+			return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, [], [], [], []
 
 	status_db = els.convert_list_to_phrases(statement_list)
 
 	l_humaan_countries = get_humaan_countries(cursor, gameID, l_humaans)
 
 	orders_list = []
-	orders_status_list[:] = [] # a hack so that the reference itself has the contents removed
+	# Remebser how to do the following hack
+	# orders_status_list[:] = [] # a hack so that the reference itself has the contents removed
+	orders_status_list = []
 	if game_phase == 'Builds':
 		print('Creating build orders.')
 		create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
@@ -895,6 +963,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		create_retreat_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
 							  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
+		b_orders_valid = True
 		if wdconfig.c_b_play_from_saved:
 			create_move_orders2(db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
 								sql_get_unit_id, l_sql_action_orders,
@@ -909,19 +978,23 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 										unit_owns_tbl, terr_id_tbl, terr_type_tbl,
 										country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 										orders_list, orders_status_list)
+
 	elif game_phase == 'Pre-game':
 		complete_game_init(db, cursor, gameID, l_humaan_countries)
 	elif game_phase == 'Finished':
-		return gameID, True, None, None, None
+		b_game_finished, b_orders_valid, b_reset_orders = True, False, True
+		return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
 	else:
-		return gameID, False, None, None, None
+		b_game_finished, b_orders_valid, b_reset_orders = False, False, True
+		return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
 
 	orders_db = els.convert_list_to_phrases(orders_list)
 
 
 	time.sleep(0.2)
 
-	return gameID, False, status_db, orders_db, orders_list
+	b_game_finished, b_reset_orders = False, False
+	return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, orders_list, orders_status_list
 
 def init(cursor, country_names_tbl):
 	terr_id_tbl = dict()
@@ -1016,31 +1089,49 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 						b_not_found = False
 
 			orders_status_list = []
-			status_db, orders_db, orders_list = [], [], []
+			old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 			b_keep_working = True
+			num_stuck = 0
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
 					# return gameID, b_can_continue
 					break
 
 				if gameID != -1:
-					process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
 					try:
+						process_url = string.Template("http://localhost/board.php?gameID=${gameID}&process=Yes")
+						time.sleep(0.2)
 						response = urllib2.urlopen(process_url.substitute(gameID=gameID))
 					except urllib2.HTTPError as err:
 						print('HTTP Exception: ', err)
+					except Exception as e:
+						print(e)
+
 					time.sleep(0.2)
+				else:
+					print('Explain why!')
 
 				if wdconfig.c_b_play_human:
 					wait_to_play(db, cursor, gameID, l_humaans)
 
-				gameID, b_finished, status_db, orders_db, orders_list = \
+				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, orders_list, orders_status_list = \
 					play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
 								db, cursor, gname, l_humaans, country_names_tbl,
 								terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
-								fleet_can_pass_tbl, init_db, orders_status_list,
-								old_status_db=status_db, old_orders_db=orders_db,
-								old_orders_list=orders_list)
+								fleet_can_pass_tbl, init_db, old_orders_status_list,
+								old_status_db=old_status_db, old_orders_db=old_orders_db,
+								old_orders_list=old_orders_list)
+				if b_stuck:
+					time.sleep(1.0)
+					num_stuck += 1
+					if num_stuck > 100:
+						b_keep_working = False
+				if b_orders_valid:
+					old_status_db, old_orders_db, old_orders_list, old_orders_status_list \
+						= status_db, orders_db, orders_list, orders_status_list
+					num_stuck = 0
+				if b_reset_orders:
+					old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 				if b_finished:
 					print('Game Over!')
 					gameID = -1
@@ -1132,7 +1223,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1168 # Set to -1 to restart
+	gameID = 1170 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
