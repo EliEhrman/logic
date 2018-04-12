@@ -26,6 +26,8 @@ import wd_admin
 import wd_classicAI
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
+nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID, iref')
+
 
 def complete_game_init(db, cursor, gameID, l_humaan_countries):
 	if l_humaan_countries != None and l_humaan_countries != []:
@@ -222,18 +224,34 @@ def OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_statu
 		statement_list.append([country, 'owns', row[1], 'in', row[2]])
 		unit_dict[row[3]] = row[4]
 		# print(db_str)
+	if len(results) > 0:
+		del row, db_str, country, owns_list
 
-	new_orders_status_list = []
+	temp_orders_status_list = []
 	for order_status in orders_status_list:
 		uID, expected_terrID, status = order_status.unitID, order_status.toTerrID, order_status.status
 		if expected_terrID == None or not status:
-			new_orders_status_list.append(order_status)
+			temp_orders_status_list.append(order_status)
 			continue
 		terrID = unit_dict.get(uID, None)
 		if terrID == None or terrID != expected_terrID:
-			new_orders_status_list.append(order_status._replace(status=False))
+			temp_orders_status_list.append(order_status._replace(status=False))
 			continue
-		new_orders_status_list.append(order_status)
+		temp_orders_status_list.append(order_status)
+
+	if len(orders_status_list) > 0:
+		del order_status, uID, expected_terrID, status
+
+	new_orders_status_list = []
+	for temp_status in temp_orders_status_list:
+		iref = temp_status.iref
+		if iref < 0:
+			new_orders_status_list.append(temp_status)
+			continue
+		else:
+			new_status = temp_orders_status_list[iref].status
+			new_orders_status_list.append(temp_status._replace(status=new_status))
+
 
 	return owns_tbl, new_orders_status_list
 
@@ -459,7 +477,7 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 						ref_orders_list, orders_status_list,
 						init_db, status_db, db_cont_mgr, all_the_dicts,
 						terr_owns_tbl, supply_tbl):
-	nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
+	# nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
 
 	sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order = l_sql_action_orders
 
@@ -476,48 +494,48 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 	hold_template = ['?', 'in', '?', 'hold']
 	support_hold_template = ['?', 'in', '?', 'support', 'hold', 'in', '?']
 
-	move_set, convoy_move_set, hold_set, convoy_set = set(), set(), set(), set()
+	move_dict, convoy_move_dict, hold_dict, convoy_set = dict(), dict(), dict(), set()
 	l_order_data = []
 
 	for iorder, order in enumerate(orders_list):
 
 		if utils.match_list_for_blanks(l_with_blanks=move_template, l_to_match=order):
 			sutype, _, src_name, _, _, dest_name = order
-			unit_terr_id = terr_id_tbl[src_name]
-			move_type = e_move_type.move
-			move_set.add((src_name, dest_name))
+			# unit_terr_id = terr_id_tbl[src_name]
+			# move_type = e_move_type.move
+			move_dict[(src_name, dest_name)] = iorder
 			l_order_data.append([e_move_type.move, sutype, src_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=hold_template, l_to_match=order):
 			sutype, _, src_name, _ = order
-			unit_terr_id = terr_id_tbl[src_name]
-			move_type = e_move_type.hold
-			hold_set.add(src_name)
+			# unit_terr_id = terr_id_tbl[src_name]
+			# move_type = e_move_type.hold
+			hold_dict[src_name] = iorder
 			l_order_data.append([e_move_type.hold, sutype, src_name])
 		elif utils.match_list_for_blanks(l_with_blanks=convoy_move_template, l_to_match=order):
 			sutype, _, src_name, _, _, _, dest_name = order
-			unit_terr_id = terr_id_tbl[src_name]
-			move_type = e_move_type.convoy_move
-			convoy_move_set.add((src_name, dest_name))
+			# unit_terr_id = terr_id_tbl[src_name]
+			# move_type = e_move_type.convoy_move
+			convoy_move_dict[(src_name, dest_name)] = iorder
 			l_order_data.append([e_move_type.convoy_move, sutype, src_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=support_template, l_to_match=order):
 			sutype, _, supporting_name, _, _, _, src_name, _, dest_name = order
-			unit_terr_id = terr_id_tbl[supporting_name]
+			# unit_terr_id = terr_id_tbl[supporting_name]
 			# from_terr_id = terr_id_tbl[src_name]
-			move_type = e_move_type.support
-			hold_set.add(supporting_name)
+			# move_type = e_move_type.support
+			hold_dict[supporting_name] = iorder
 			l_order_data.append([e_move_type.support, sutype, supporting_name, src_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=support_hold_template, l_to_match=order):
 			sutype, _, supporting_name, _, _, _, dest_name = order
-			unit_terr_id = terr_id_tbl[supporting_name]
-			move_type = e_move_type.support_hold
-			hold_set.add(supporting_name)
+			# unit_terr_id = terr_id_tbl[supporting_name]
+			# move_type = e_move_type.support_hold
+			hold_dict[supporting_name] = iorder
 			l_order_data.append([e_move_type.support_hold, sutype, supporting_name, dest_name])
 		elif utils.match_list_for_blanks(l_with_blanks=convoy_template, l_to_match=order):
 			sutype, _, convoying_name, _, _, _, src_name, _, dest_name = order
-			unit_terr_id = terr_id_tbl[convoying_name]
+			# unit_terr_id = terr_id_tbl[convoying_name]
 			# from_terr_id = terr_id_tbl[src_name]
-			move_type = e_move_type.convoy
-			hold_set.add(convoying_name)
+			# move_type = e_move_type.convoy
+			hold_dict[convoying_name] = order
 			convoy_set.add((src_name, dest_name))
 			l_order_data.append([e_move_type.convoy, sutype, convoying_name, src_name, dest_name])
 		else:
@@ -538,15 +556,19 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 				b_do_sql = False
 		elif move_type == e_move_type.support:
 			src_name, dest_name = order_data[3:]
-			if (src_name, dest_name) not in move_set:
+			iref = move_dict.get((src_name, dest_name), -1)
+			if iref == -1:
 				b_do_sql = False
 		elif move_type == e_move_type.support_hold:
 			dest_name = order_data[-1]
-			if dest_name not in hold_set:
+			iref = hold_dict.get(dest_name, -1)
+			if iref == -1:
 				b_do_sql = False
 		elif move_type == e_move_type.convoy:
 			src_name, dest_name = order_data[3:]
-			if (src_name, dest_name) not in convoy_move_set:
+			# if (src_name, dest_name) not in convoy_move_set:
+			iref = convoy_move_dict.get((src_name, dest_name), -1)
+			if iref == -1:
 				b_do_sql = False
 
 		unit_terr_id = terr_id_tbl[acting_name]
@@ -558,14 +580,18 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 		src_id = terr_id_tbl[src_name]
 		if move_type == e_move_type.move:
 			order_status = nt_order_status(order_num=iorder, status=b_do_sql, unitID=unit_id[0],
-										   fromTerrID=unit_terr_id, toTerrID=dest_id)
+										   fromTerrID=unit_terr_id, toTerrID=dest_id, iref=-1)
 		elif move_type == e_move_type.convoy_move:
 			order_status = nt_order_status(order_num=iorder, status=b_do_sql, unitID=unit_id[0],
-										   fromTerrID=unit_terr_id, toTerrID=dest_id)
-		elif move_type == e_move_type.support or move_type == e_move_type.convoy \
-				or move_type == e_move_type.hold or move_type == e_move_type.support_hold:
+										   fromTerrID=unit_terr_id, toTerrID=dest_id, iref=-1)
+		elif move_type == e_move_type.hold:
 			order_status = nt_order_status(order_num=iorder, status=success_list[iorder], unitID=unit_id[0],
-										   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
+										   fromTerrID=unit_terr_id, toTerrID=unit_terr_id, iref=-1)
+		elif move_type == e_move_type.support or move_type == e_move_type.convoy \
+				or move_type == e_move_type.support_hold:
+			order_status = nt_order_status(order_num=iorder, status=(success_list[iorder] and iref >=0),
+										   unitID=unit_id[0], fromTerrID=unit_terr_id, toTerrID=unit_terr_id,
+										   iref = iref)
 
 		orders_status_list.append(order_status)
 
@@ -647,8 +673,7 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 			cursor.execute(sql_get)
 			unit_id = cursor.fetchone()
 
-			nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
-			nt_move_details = collections.namedtuple('nt_order_details', 'country, sutype, fromName, toName, bMove')
+			nt_move_details = collections.namedtuple('nt_order_details', 'country, sutype, fromName, toName, bMove, iorder')
 			# e_move_type = Enum('e_move_type', 'none move support')
 
 			sutype, sfrom = unit_data
@@ -657,7 +682,7 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 
 			def create_move(move_details_tbl):
 				order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
-											   fromTerrID=unit_terr_id, toTerrID=None)
+											   fromTerrID=unit_terr_id, toTerrID=None, iref=-1)
 				pass_list = this_can_pass_tbl.get(sfrom, None)
 				if pass_list == None:
 					print(sutype, 'stuck where it is not supposed to be.')
@@ -714,7 +739,8 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 				orders_status_list.append(order_status)
 				if order_status.status and not b_dont_support:
 					move_details_tbl.append(nt_move_details(country=scountry, sutype=sutype,
-															fromName=unit_data[1], toName=dest_name, bMove=True))
+															fromName=unit_data[1], toName=dest_name,
+															bMove=True, iorder=len(orders_list)-1))
 				return order_status.status, e_move_type.move, dest_id
 
 			def create_support(move_details_tbl, imove):
@@ -731,10 +757,12 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 					print(' '.join(lorder))
 					dest_id, from_id = terr_id_tbl[move_details.toName], terr_id_tbl[move_details.fromName]
 					order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
-												   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
+												   fromTerrID=unit_terr_id, toTerrID=unit_terr_id,
+												   iref=move_details.iorder)
 					orders_status_list.append(order_status)
 					move_details_tbl.append(nt_move_details(country=scountry, sutype=sutype,
-															fromName=sfrom, toName=sfrom, bMove=False))
+															fromName=sfrom, toName=sfrom,
+															bMove=False, iorder=len(orders_list)-1))
 					return True, move_type, dest_id, from_id
 				return False, e_move_type.none, -1, -1
 
@@ -771,13 +799,14 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 						b_convoy_err = (random.random() < wdconfig.c_oracle_convoy_err_prob)
 						if not b_convoy_err:
 							move_details_tbl.append(nt_move_details(country=scountry, sutype='fleet',
-																	fromName=sfrom, toName=sfrom, bMove=False))
+																	fromName=sfrom, toName=sfrom,
+																	bMove=False, iorder=len(orders_list)))
 							lcorder = ['fleet', 'in', sfrom, 'convoy', 'army', 'in', convoy_src, 'to', convoy_dest]
 							orders_list.append(lcorder)
 							print(' '.join(lcorder))
 						move_details_tbl.append(nt_move_details(country=scountry, sutype='army',
 																fromName=convoy_src, toName=convoy_dest,
-																bMove=True))
+																bMove=True, iorder=len(orders_list)))
 						lmorder  = ['army', 'in', convoy_src, 'convoy', 'move', 'to', convoy_dest]
 						orders_list.append(lmorder)
 						l_units_avail[i_unit_convoyed] = False
@@ -789,11 +818,13 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 
 						if not b_convoy_err:
 							order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
-														   fromTerrID=sea_id, toTerrID=sea_id)
+														   fromTerrID=sea_id, toTerrID=sea_id,
+														   iref=move_details_tbl[-1].iorder)
 							orders_status_list.append(order_status)
 
 						order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=other_unit_id[0],
-													   fromTerrID=from_id, toTerrID=dest_id)
+													   fromTerrID=from_id, toTerrID=dest_id,
+													   iref=-1)
 						orders_status_list.append(order_status)
 
 						return True, e_move_type.convoy, b_convoy_err, sea_id, from_id, dest_id, other_unit_id[0]
@@ -801,14 +832,15 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 
 			def create_hold(move_details):
 				order_status = nt_order_status(order_num=len(orders_list), status=True, unitID=unit_id[0],
-											   fromTerrID=unit_terr_id, toTerrID=unit_terr_id)
+											   fromTerrID=unit_terr_id, toTerrID=unit_terr_id,
+											   iref=-1)
 				orders_status_list.append(order_status)
 				lorder = [sutype, 'in', sfrom, 'hold']
 				orders_list.append(lorder)
 				print(' '.join(lorder))
 				move_details_tbl.append(nt_move_details(country=scountry, sutype=sutype,
 														fromName=sfrom, toName=sfrom,
-														bMove=False))
+														bMove=False, iorder=len(orders_list)-1))
 				return True, e_move_type.hold
 
 			b_order_created = False
@@ -934,6 +966,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	unit_owns_tbl, updated_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, old_orders_status_list)
 	results_db = create_results_db(old_orders_db, updated_orders_status_list)
 	if results_db != None and len(results_db) > 0:
+		b_reset_orders = True
 		if wdconfig.c_b_save_orders:
 			b_keep_working = wdlearn.create_order_freq_tbl(old_orders_list, updated_orders_status_list)
 		if wdconfig.c_b_collect_cont_stats:
@@ -943,7 +976,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 			b_keep_working = wdlearn.learn_orders_success(init_db, old_status_db, old_orders_db, results_db,
 										 all_dicts, db_len_grps, db_cont_mgr, i_active_cont,   el_set_arr, sess, learn_vars)
 		if not b_keep_working:
-			b_game_finished, b_orders_valid, b_reset_orders = False, False, True
+			b_game_finished, b_orders_valid, = False, False
 			return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, [], [], [], []
 
 	status_db = els.convert_list_to_phrases(statement_list)
@@ -985,6 +1018,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		b_game_finished, b_orders_valid, b_reset_orders = True, False, True
 		return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
 	else:
+		print('unknown phase:', game_phase)
 		b_game_finished, b_orders_valid, b_reset_orders = False, False, True
 		return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
 
@@ -993,7 +1027,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 
 	time.sleep(0.2)
 
-	b_game_finished, b_reset_orders = False, False
+	b_game_finished = False
 	return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, orders_list, orders_status_list
 
 def init(cursor, country_names_tbl):
@@ -1114,7 +1148,8 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				if wdconfig.c_b_play_human:
 					wait_to_play(db, cursor, gameID, l_humaans)
 
-				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, orders_list, orders_status_list = \
+				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, \
+				orders_list, orders_status_list = \
 					play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
 								db, cursor, gname, l_humaans, country_names_tbl,
 								terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
@@ -1126,12 +1161,15 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 					num_stuck += 1
 					if num_stuck > 100:
 						b_keep_working = False
+
+				if b_reset_orders:
+					old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
+
 				if b_orders_valid:
 					old_status_db, old_orders_db, old_orders_list, old_orders_status_list \
 						= status_db, orders_db, orders_list, orders_status_list
 					num_stuck = 0
-				if b_reset_orders:
-					old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
+
 				if b_finished:
 					print('Game Over!')
 					gameID = -1

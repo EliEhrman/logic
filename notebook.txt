@@ -1628,3 +1628,10 @@ Looks like the first comment since after Pesach
 checking in with the following
 
 Added a layer above classic AI to protect wd sql from supports without moves. Classic AI technically working.
+
+Thursday 12th April
+
+Checking in:
+
+Support and convoy orders now fail if their target does
+
