@@ -213,8 +213,8 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 						b_predict_success):
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
-	success_orders_freq = dict()
-	wdlearn.load_order_freq_tbl(success_orders_freq, wdconfig.orders_success_fnt)
+	success_orders_freq, success_order_id_dict, max_id = dict(), dict(), [-1]
+	wdlearn.load_order_freq_tbl(success_orders_freq, success_order_id_dict, max_id, wdconfig.orders_success_fnt)
 	if b_predict_success:
 		icc_list = db_cont_mgr.get_conts_above(wdconfig.c_use_rule_thresh)
 	full_db = init_db + status_db

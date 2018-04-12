@@ -498,7 +498,7 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 	l_order_data = []
 
 	for iorder, order in enumerate(orders_list):
-
+		print('orig order', ' '.join(order))
 		if utils.match_list_for_blanks(l_with_blanks=move_template, l_to_match=order):
 			sutype, _, src_name, _, _, dest_name = order
 			# unit_terr_id = terr_id_tbl[src_name]
@@ -535,7 +535,7 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 			# unit_terr_id = terr_id_tbl[convoying_name]
 			# from_terr_id = terr_id_tbl[src_name]
 			# move_type = e_move_type.convoy
-			hold_dict[convoying_name] = order
+			hold_dict[convoying_name] = iorder
 			convoy_set.add((src_name, dest_name))
 			l_order_data.append([e_move_type.convoy, sutype, convoying_name, src_name, dest_name])
 		else:
@@ -544,8 +544,10 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 			continue
 
 	for i_order_data, order_data in enumerate(l_order_data):
+		print('process order', ' '.join(orders_list[i_order_data]))
 		b_do_sql = success_list[i_order_data]
 		move_type, sutype, acting_name = order_data[0:3]
+		iref = -1
 		if move_type == e_move_type.move:
 			src_name, dest_name = acting_name, order_data[-1]
 		elif move_type == e_move_type.hold:
@@ -570,6 +572,9 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 			iref = convoy_move_dict.get((src_name, dest_name), -1)
 			if iref == -1:
 				b_do_sql = False
+
+		if iref >= 0:
+			print('target move finally happened!')
 
 		unit_terr_id = terr_id_tbl[acting_name]
 
@@ -732,7 +737,7 @@ def create_oracle_move_orders(db, cursor, gameID, l_humaan_countries, sql_comple
 				orders_list.append([sutype, 'in', sfrom, 'move', 'to', dest_name])
 				order_status = order_status._replace(toTerrID=dest_id)
 
-				# print(dstr)
+				print(dstr)
 				# The webdip engine does not guarantee that the order is valid, so we have to do this
 				if dest_name not in pass_list:
 					order_status = order_status._replace(status=False)
@@ -964,6 +969,9 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 
 	terr_owns_tbl = OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list)
 	unit_owns_tbl, updated_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, old_orders_status_list)
+	for iorder, order_status in enumerate(updated_orders_status_list):
+		print(' '.join(old_orders_list[iorder]), 'succeeded' if order_status.status else 'failed')
+
 	results_db = create_results_db(old_orders_db, updated_orders_status_list)
 	if results_db != None and len(results_db) > 0:
 		b_reset_orders = True
@@ -1142,8 +1150,8 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 						print(e)
 
 					time.sleep(0.2)
-				else:
-					print('Explain why!')
+				# else:
+				# 	print('Explain why!')
 
 				if wdconfig.c_b_play_human:
 					wait_to_play(db, cursor, gameID, l_humaans)
@@ -1157,6 +1165,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 								old_status_db=old_status_db, old_orders_db=old_orders_db,
 								old_orders_list=old_orders_list)
 				if b_stuck:
+					db.commit() # just in case
 					time.sleep(1.0)
 					num_stuck += 1
 					if num_stuck > 100:

@@ -1635,3 +1635,9 @@ Checking in:
 
 Support and convoy orders now fail if their target does
 
+Made sure that the changes apply to both calssic Ai and the oracle
+
+Checking in with:
+
+Order frequency stats working with colist stats.
+

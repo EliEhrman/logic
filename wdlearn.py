@@ -171,43 +171,107 @@ def create_new_conts(glv_dict, db_cont_mgr, db_len_grps, i_active_cont):
 													wdconfig.c_cont_score_min, wdconfig.c_cont_min_tests)
 	return b_keep_working
 
-def load_order_freq_tbl(freq_tbl, fnt):
+def load_order_freq_tbl(freq_tbl, id_dict, max_id, fnt):
 	try:
 		o_fn = expanduser(fnt)
 		with open(o_fn, 'rb') as o_fhr:
 			o_csvr = csv.reader(o_fhr, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
-			for row in o_csvr:
-				freq_tbl[tuple(row[1:])] = int(row[0])
+			_, _, version_str, _, snum_orders = next(o_csvr)
+			version = int(version_str)
+			if version != wdconfig.c_freq_stats_version:
+				raise IOError
+			for iorder in range(int(snum_orders)) :
+				row = next(o_csvr)
+				oid, co_dict = int(row[1]), dict()
+				if oid > max_id[0]:
+					max_id[0] = oid
+				freq_tbl[tuple(row[2:])] = (int(row[0]), oid, co_dict)
+				id_dict[oid] = tuple(row[2:])
+				l_co_oids = next(o_csvr)
+				for co_soid in l_co_oids:
+					co_oid, co_freq = co_soid.split(':')
+					co_dict[int(co_oid)] = int(co_freq)
+
 	except IOError:
+		print('Error. Cannot load order frequency stats.')
 		return
 
 
 def create_order_freq_tbl(orders_list, order_status_list):
 	success_orders_freq, failed_orders_freq = dict(), dict()
+	max_id = [-1]
+	success_id_dict, failed_id_dict = dict(), dict()
 
-	load_order_freq_tbl(success_orders_freq, wdconfig.orders_success_fnt)
-	load_order_freq_tbl(failed_orders_freq, wdconfig.orders_failed_fnt)
+	load_order_freq_tbl(success_orders_freq, success_id_dict, max_id, wdconfig.orders_success_fnt)
+	# load_order_freq_tbl(failed_orders_freq, wdconfig.orders_failed_fnt)
 
 
-	def add_to_tbl(freq_tbl, order):
-		freq = freq_tbl.get(order, -1)
-		if freq == -1:
-			freq_tbl[order] = 1
+	def add_to_tbl(freq_tbl, id_dict, order, max_id):
+		freq_data = freq_tbl.get(order, (-1, -1))
+		if freq_data[0] == -1:
+			max_id[0] += 1
+			freq_tbl[order] = (1, max_id[0], dict())
+			id_dict[max_id[0]] = order
 		else:
-			freq_tbl[order] = freq + 1
+			freq_tbl[order] = (freq_data[0] + 1, freq_data[1], freq_data[2])
 
+	def update_colist(freq_tbl, order, l_orders):
+		freq, id, colist_dict = freq_tbl[order]
+		# print('colist_dict:', colist_dict)
+		# co_ids = []
+		for i_co_order, co_order in enumerate(l_orders):
+			co_freq, co_id, co_colist_dict = freq_tbl[co_order]
+			if id == co_id:
+				continue
+			# co_ids.append(str(co_id))
+			old_num_co = colist_dict.get(co_id, -1)
+			if old_num_co == -1:
+				if freq < wdconfig.c_freq_stats_newbie_thresh:
+					colist_dict[co_id] = 1
+			else:
+				colist_dict[co_id] = old_num_co + 1
+		# print('co_ids:', ' '.join(co_ids))
+
+	def clean_colist(freq_tbl, order):
+		freq, id, colist_dict = freq_tbl[order]
+		if freq < wdconfig.c_freq_stats_mature_thresh:
+			return
+		new_colist_dict = dict()
+		for kid, vfreq in colist_dict.iteritems():
+			fract = float(vfreq) / float(freq)
+			if fract > wdconfig.c_freq_stats_drop_thresh:
+				new_colist_dict[kid] = vfreq
+		freq_tbl[order] = (freq, id, new_colist_dict)
+
+
+
+
+
+	l_success_orders, l_failed_orders = [], []
 	for iorder, order in enumerate(orders_list):
 		if order_status_list[iorder].status:
-			add_to_tbl(success_orders_freq, tuple(order))
+			add_to_tbl(success_orders_freq, success_id_dict, tuple(order), max_id)
+			l_success_orders.append(tuple(order))
 		else:
-			add_to_tbl(failed_orders_freq, tuple(order))
+			add_to_tbl(failed_orders_freq, failed_id_dict, tuple(order), max_id)
+			l_failed_orders.append(tuple(order))
+
+	if len(orders_list) > 0:
+		del iorder, order
+
+	for order in l_success_orders:
+		update_colist(success_orders_freq, order, l_success_orders)
+		clean_colist(success_orders_freq, order)
 
 	def save_tbl(freq_tbl, fnt):
 		o_fn = expanduser(fnt)
 		o_fhw = open(o_fn, 'wb')
 		o_csvw = csv.writer(o_fhw, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
-		for korder, vfreq in freq_tbl.iteritems():
-			row = [vfreq] + list(korder)
+		o_csvw.writerow(['frequency stats', 'version', wdconfig.c_freq_stats_version, 'num items', len(freq_tbl)])
+		for korder, vdata in freq_tbl.iteritems():
+			row = [vdata[0], vdata[1]] + list(korder)
+			o_csvw.writerow(row)
+			row = [str(kco) + ':' + str(vco) for kco, vco in vdata[2].iteritems()]
 			o_csvw.writerow(row)
 
 		o_fhw.close()
