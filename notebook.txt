@@ -1641,3 +1641,22 @@ Checking in with:
 
 Order frequency stats working with colist stats.
 
+to do:
+Integrate the colist stats with the classic AI so that it doesn't waste its time suporting moves that never happened.
+Re-integrate playing against the AI including using all the time avail
+Add (and remove) conts based on combination and mutation
+Go back and improve gevos
+Add alliances
+
+Using colist scores
+
+The current proposed plan is:
+1. If it an requirement without a reverse requirement, it must already be in the orders list
+2. If it is a req but also a reverse req (mutually req) then it must be in the avail
+3. High colist scores become the priority for follow on moves
+
+Monday 16th April
+
+Checking in with:
+
+AI using new frequency stats and convoy colist.

@@ -1270,7 +1270,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1170 # Set to -1 to restart
+	gameID = 1187 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

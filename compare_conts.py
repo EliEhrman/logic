@@ -211,7 +211,7 @@ class cl_cont_stats_mgr(object):
 
 		cs_pattern = self.__pattern_dict.get(tuple(cont_match_list), None)
 		if cs_pattern != None and cs_pattern.is_score_valid():
-			print('Success rate prediction based on exact match:', cs_pattern.get_success_score())
+			# print('Success rate prediction based on exact match:', cs_pattern.get_success_score())
 			return cs_pattern.get_success_score()
 
 		reclen = len(self.__cont_stats_list)
@@ -254,7 +254,7 @@ class cl_cont_stats_mgr(object):
 		top_cds = cd[cd_winners]
 		winner_matches = (self.__nd_matches[cd_winners]).astype(np.float32)
 		prediction = np.average(winner_matches)
-		print('predict_success_rate prediction:', prediction)
+		# print('predict_success_rate prediction:', prediction)
 		return prediction
 
 

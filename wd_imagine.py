@@ -1,5 +1,6 @@
 from __future__ import print_function
 import random
+import numpy as np
 
 import wdconfig
 import wdlearn
@@ -9,6 +10,35 @@ import rules
 import makerecs as mr
 
 # def imagine_init
+
+def get_colist_moves(order, freq_tbl, oid_dict, colist_req_thresh, colist_strong_thresh):
+	l_colist_orders = []
+	freq, id, colist_dict = freq_tbl[tuple(order)]
+	l_scores, l_oids = [], []
+	for koid, vco_freq in colist_dict.iteritems():
+		l_scores.append((vco_freq) / float(freq))
+		l_oids.append(koid)
+	l_ifiltered = [iscore for iscore, score in enumerate(l_scores) if score > colist_strong_thresh]
+	l_thresh_scores = [l_scores[iscore] for iscore in l_ifiltered]
+	l_thresh_oids = [l_oids[iscore] for iscore in l_ifiltered]
+	l_b_req = [score > colist_req_thresh for score in l_thresh_scores]
+	# l_sorted = np.argpartition(l_scores, -2)[-2:]
+	l_b_rev_req = [False for _ in l_thresh_oids]
+	for ithresh, oid in enumerate(l_thresh_oids):
+		if not l_b_req[ithresh]:
+			continue
+		rev_order = oid_dict[oid]
+		rev_freq, rev_id, rev_colist_dict = freq_tbl[tuple(rev_order)]
+		rev_rev_freq = rev_colist_dict.get(id, -1)
+		if rev_rev_freq == -1:
+			continue
+		rev_score = float(rev_rev_freq) / float(rev_freq)
+		if rev_score > colist_req_thresh:
+			l_b_rev_req[ithresh] = True
+
+	l_colist_orders = [oid_dict[oid] for oid in l_thresh_oids]
+
+	return l_colist_orders, l_b_req, l_b_rev_req
 
 def get_moves(l_order_templ, success_orders_freq, max_len=1000, max_num_moves=1000):
 	b_max_reached = False
