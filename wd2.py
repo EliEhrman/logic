@@ -51,24 +51,24 @@ def wait_to_play(db, cursor, gameID, l_humaans):
 	sqlGetStatus = string.Template('select userID, orderStatus from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
 	sql = sqlGetStatus.substitute(gameID=gameID)
 	# b_all_waiting = False
-	while True:
-		cursor.execute(sql)
-		results = cursor.fetchall()
-		l_humaan_country_ids = []
-		b_waiting_for_AI = False
-		for row in results:
-			for row in results:
-				if row[0] in l_humaans:
-					continue
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	l_humaan_country_ids = []
+	b_waiting_for_AI = True
+	for row in results:
+		if row[0] not in l_humaans:
+			continue
 
-				if row[1] == '':
-					b_waiting_for_AI = True
+		if row[1] != 'Saved,Completed,Ready' and row[1] != 'None':
+			b_waiting_for_AI = False
 
-		if b_waiting_for_AI:
-			break
+	# if b_waiting_for_AI:
+	# 	break
 
-		db.commit()
-		time.sleep(5.0)
+	db.commit()
+		# time.sleep(5.0)
+
+	return b_waiting_for_AI
 
 
 def get_humaan_countries(cursor, gameID, l_humaans):
@@ -476,16 +476,21 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 						ref_orders_list, orders_status_list,
 						init_db, status_db, db_cont_mgr, all_the_dicts,
-						terr_owns_tbl, supply_tbl):
+						terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_store):
 	# nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
 
 	sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order = l_sql_action_orders
 
 	orders_list, orders_db, success_list, icountry_list = \
 		wd_classicAI.create_move_orders2(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
-										db_cont_mgr, country_names_tbl, unit_owns_tbl,
-										all_the_dicts, terr_owns_tbl, supply_tbl, wdconfig.c_num_montes,
-										wdconfig.c_preferred_nation, wdconfig.c_b_predict_success)
+											db_cont_mgr, country_names_tbl, l_humaan_countries, unit_owns_tbl,
+											all_the_dicts, terr_owns_tbl, supply_tbl,
+											b_waiting_for_AI, game_store,
+											wdconfig.c_num_montes, wdconfig.c_preferred_nation,
+											wdconfig.c_b_predict_success)
+
+	if not b_waiting_for_AI:
+		return
 
 	move_template = ['?', 'in', '?', 'move', 'to', '?']
 	convoy_move_template = ['?', 'in', '?', 'convoy', 'move', 'to', '?']
@@ -913,7 +918,8 @@ def create_results_db(orders_db, orders_status_list):
 def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
 				db, cursor, gname, l_humaans, country_names_tbl,
 				terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-				init_db, old_orders_status_list, old_status_db, old_orders_db, old_orders_list):
+				init_db, old_orders_status_list, old_status_db, old_orders_db, old_orders_list,
+				b_waiting_for_AI, game_store):
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
@@ -945,14 +951,14 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
 
 	try:
-		if play_turn.turn == game_turn and play_turn.phase == game_phase:
+		if play_turn.turn == game_turn and play_turn.phase == game_phase and play_turn.b_done:
 			print('Game stuck!')
 			b_game_finished, b_game_finished, b_stuck = False, False, True
 			return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, None, None, None, None
 	except AttributeError:
 		print('Naughty! You used a variable before we initialized it!')
 
-	play_turn.turn, play_turn.phase = game_turn, game_phase
+	play_turn.turn, play_turn.phase, play_turn.b_done = game_turn, game_phase, True
 	print('Playing turn for game id:', gameID, 'phase:', game_phase, 'turn:', game_turn)
 
 
@@ -996,15 +1002,29 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	# orders_status_list[:] = [] # a hack so that the reference itself has the contents removed
 	orders_status_list = []
 	if game_phase == 'Builds':
-		print('Creating build orders.')
-		create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
-							unit_owns_tbl, terr_owns_tbl, sqlOrderComplete)
+		if not b_waiting_for_AI:
+			play_turn.b_done = False
+			b_orders_valid = False
+			time.sleep(2.0)
+		else:
+			print('Creating build orders.')
+			create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
+								unit_owns_tbl, terr_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Retreats':
-		print('Creating retreat orders.')
-		create_retreat_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
-							  unit_owns_tbl, sqlOrderComplete)
+		if not b_waiting_for_AI:
+			play_turn.b_done = False
+			b_orders_valid = False
+			time.sleep(2.0)
+		else:
+			print('Creating retreat orders.')
+			create_retreat_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
+								  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
-		b_orders_valid = True
+		if not b_waiting_for_AI:
+			play_turn.b_done = False
+			b_orders_valid = False
+		else:
+			b_orders_valid = True
 		if wdconfig.c_b_play_from_saved:
 			create_move_orders2(db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
 								sql_get_unit_id, l_sql_action_orders,
@@ -1012,13 +1032,16 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 								country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 								orders_list, orders_status_list,
 								init_db, status_db, db_cont_mgr, all_dicts,
-								terr_owns_tbl, supply_tbl)
+								terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_store)
 		else:
-			create_oracle_move_orders(	db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
-										sql_get_unit_id, l_sql_action_orders,
-										unit_owns_tbl, terr_id_tbl, terr_type_tbl,
-										country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-										orders_list, orders_status_list)
+			if b_waiting_for_AI:
+				create_oracle_move_orders(	db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
+											sql_get_unit_id, l_sql_action_orders,
+											unit_owns_tbl, terr_id_tbl, terr_type_tbl,
+											country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+											orders_list, orders_status_list)
+			else:
+				time.sleep(10.0)
 
 	elif game_phase == 'Pre-game':
 		complete_game_init(db, cursor, gameID, l_humaan_countries)
@@ -1117,6 +1140,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 					if gameID != -1:
 						break
 					time.sleep(20.0)
+					db.commit()
 			else:
 				b_not_found = True
 				while b_not_found:
@@ -1133,6 +1157,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 			orders_status_list = []
 			old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 			b_keep_working = True
+			game_store = []
 			num_stuck = 0
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
@@ -1153,8 +1178,9 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				# else:
 				# 	print('Explain why!')
 
+				b_waiting_for_AI = True
 				if wdconfig.c_b_play_human:
-					wait_to_play(db, cursor, gameID, l_humaans)
+					b_waiting_for_AI = wait_to_play(db, cursor, gameID, l_humaans)
 
 				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, \
 				orders_list, orders_status_list = \
@@ -1163,7 +1189,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 								terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
 								fleet_can_pass_tbl, init_db, old_orders_status_list,
 								old_status_db=old_status_db, old_orders_db=old_orders_db,
-								old_orders_list=old_orders_list)
+								old_orders_list=old_orders_list, b_waiting_for_AI=b_waiting_for_AI, game_store = game_store)
 				if b_stuck:
 					db.commit() # just in case
 					time.sleep(1.0)

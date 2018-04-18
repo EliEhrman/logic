@@ -4,7 +4,7 @@ c_sample_el = 'army'
 c_cont_score_thresh = 0.95 # better than this, we don't bother trying to find more clauses
 c_cont_score_min = 0.1
 c_cont_min_tests = 10
-c_num_turns_per_play = 100
+c_num_turns_per_play = 1000
 c_num_plays = 5300
 c_expands_min_tries = 30
 c_expands_score_thresh = 4.0
@@ -50,7 +50,7 @@ c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmo
 				 'l:army:1.0,l:in:1.0,l:munich:-0.5,l:convoy:1.0,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
 
 c_admin_action = None # 'DeleteGames'
-c_b_play_human = False
+c_b_play_human = True
 c_starting_user_id = 6
 c_human_uids = [7]
 c_gname_human_prefix = 'tplay'
@@ -73,3 +73,5 @@ c_freq_stats_newbie_thresh = 5
 c_freq_stats_mature_thresh = 10
 c_freq_stats_drop_thresh = 0.1
 c_freq_stats_version = 1
+
+c_num_game_store_options = 3

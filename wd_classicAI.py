@@ -333,9 +333,10 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 
 def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
-						country_names_tbl, unit_owns_tbl,
-						all_the_dicts, terr_owns_tbl, supply_tbl, num_montes, preferred_nation,
-						b_predict_success):
+						country_names_tbl, l_humaan_countries, unit_owns_tbl,
+						all_the_dicts, terr_owns_tbl, supply_tbl,
+						b_waiting_for_AI, game_store,
+						num_montes, preferred_nation, b_predict_success):
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
 	success_orders_freq, success_order_id_dict, max_id = dict(), dict(), [-1]
@@ -372,8 +373,14 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 	icountry_list = []
 
 	l_country_options = [[] for _ in country_names_tbl]
-	for ioption_run in range(wdconfig.c_classic_AI_num_option_runs):
+	# for ioption_run in range(wdconfig.c_classic_AI_num_option_runs):
+	if not b_waiting_for_AI or game_store == []:
+		if game_store == []:
+			game_store[:] = [[] for _ in country_names_tbl]
+
 		for icountry in range(1, len(country_names_tbl)):
+			if icountry in l_humaan_countries:
+				continue
 			b_has_success_score = False
 			success_score = 0.0
 			scountry = country_names_tbl[icountry]
@@ -464,20 +471,32 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 				country_orders_list.append(rnd_order)
 
 			if country_orders_list != []:
-				l_country_options[icountry].append([country_orders_list, success_score if b_has_success_score else -1000.0])
+				num_options_stored = len(game_store[icountry])
+				option_for_store = [country_orders_list, success_score if b_has_success_score else -1000.0]
+				if num_options_stored == wdconfig.c_num_game_store_options:
+					if option_for_store[1] > game_store[icountry][wdconfig.c_num_game_store_options-1][1]:
+						game_store[icountry][wdconfig.c_num_game_store_options - 1] = option_for_store
+						game_store[icountry] = sorted(game_store[icountry], key=lambda x: x[1], reverse=True)
+				else:
+					game_store[icountry].append(option_for_store)
+					game_store[icountry] = sorted(game_store[icountry], key=lambda x: x[1], reverse=True)
+
+				# l_country_options[icountry].append()
 				# orders_list += country_orders_list
 				# icountry_list.append(icountry)
 
 			print('Total success score for ', scountry, 'for this option run is', success_score)
 		# end loop over each country for that option run
-	# end loop over num option runs
+	# end if not b_waiting_for_AI or game_store = []
 
-	for icountry in range(1, len(country_names_tbl)):
-		if l_country_options[icountry] == []:
-			continue
-		country_orders_list, success_score = sorted(l_country_options[icountry], key=lambda x: x[1], reverse=True)[0]
-		orders_list += country_orders_list
-		icountry_list.append(icountry)
+	if b_waiting_for_AI:
+		for icountry in range(1, len(country_names_tbl)):
+			if len(game_store[icountry]) == 0 or game_store[icountry][0] == []:
+				continue
+			country_orders_list, success_score = game_store[icountry][0]
+			orders_list += country_orders_list
+			icountry_list.append(icountry)
+		game_store[:] = [] # delete the contents t=not the ref
 
 	orders_db = els.convert_list_to_phrases(orders_list)
 	success_list = [True for o in orders_list]

@@ -3,11 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="c6b771a1-a10b-4216-9350-efe4ef2bc292" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compare_conts.py" beforeDir="false" afterPath="$PROJECT_DIR$/compare_conts.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebook.txt" beforeDir="false" afterPath="$PROJECT_DIR$/notebook.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wd2.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wd_classicAI.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_classicAI.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wd_imagine.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_imagine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wdconfig.py" beforeDir="false" afterPath="$PROJECT_DIR$/wdconfig.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -27,8 +26,8 @@
       <file leaf-file-name="wd2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wd2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="164">
-              <caret line="634" selection-start-line="634" selection-end-line="634" />
+            <state relative-caret-position="153">
+              <caret line="1137" selection-start-line="1137" selection-end-line="1137" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -39,8 +38,8 @@
       <file leaf-file-name="wd_classicAI.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="68">
-              <caret line="14" selection-start-line="14" selection-end-line="14" />
+            <state relative-caret-position="283">
+              <caret line="498" selection-start-line="498" selection-end-line="498" />
             </state>
           </provider>
         </entry>
@@ -48,8 +47,8 @@
       <file leaf-file-name="compare_conts.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/compare_conts.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="257" column="25" lean-forward="true" selection-start-line="257" selection-start-column="25" selection-end-line="257" selection-end-column="25" />
+            <state relative-caret-position="4165">
+              <caret line="257" column="25" selection-start-line="257" selection-start-column="25" selection-end-line="257" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -57,7 +56,7 @@
       <file leaf-file-name="makerecs.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/makerecs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="381">
+            <state relative-caret-position="6409">
               <caret line="396" column="4" selection-start-line="396" selection-start-column="4" selection-end-line="396" selection-end-column="4" />
             </state>
           </provider>
@@ -66,7 +65,7 @@
       <file leaf-file-name="els.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/els.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="368">
+            <state relative-caret-position="3196">
               <caret line="199" column="4" selection-start-line="199" selection-start-column="4" selection-end-line="199" selection-end-column="4" />
             </state>
           </provider>
@@ -75,8 +74,8 @@
       <file leaf-file-name="wdconfig.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wdconfig.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="37" column="37" lean-forward="true" selection-start-line="37" selection-start-column="37" selection-end-line="37" selection-end-column="37" />
+            <state relative-caret-position="1292">
+              <caret line="76" column="24" selection-start-line="76" selection-end-line="76" selection-end-column="24" />
             </state>
           </provider>
         </entry>
@@ -85,7 +84,7 @@
         <entry file="file://$PROJECT_DIR$/notebook.txt">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="483">
-              <caret line="1661" selection-start-line="1661" selection-end-line="1661" selection-end-column="47" />
+              <caret line="1686" column="37" lean-forward="true" selection-start-line="1686" selection-end-line="1686" selection-end-column="37" />
             </state>
           </provider>
         </entry>
@@ -101,12 +100,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>toTerrID</find>
-      <find>collections.namedtuple('nt_order_status'</find>
-      <find>from_terr_id</find>
-      <find>success_orders_freq</find>
-      <find>.namedtuple('nt_order_status'</find>
-      <find>nt_order_status</find>
       <find>nt_move_details</find>
       <find>b_dont_support</find>
       <find>next</find>
@@ -130,7 +123,13 @@
       <find>b_req_failed</find>
       <find>l_scvos</find>
       <find>convoy_target_template</find>
+      <find>humaan</find>
+      <find>Game ov</find>
+      <find>hac</find>
+      <find>sleep</find>
       <find>Adding a</find>
+      <find>humaa</find>
+      <find>l_humaan_countries</find>
     </findStrings>
     <replaceStrings>
       <replace>curr_cont</replace>
@@ -173,14 +172,14 @@
         <option value="/devlink2/dev/ham2/evos.py" />
         <option value="/devlink2/dev/ham3/gevos.py" />
         <option value="$PROJECT_DIR$/wdlearn.py" />
-        <option value="$PROJECT_DIR$/wd2.py" />
-        <option value="$PROJECT_DIR$/wdconfig.py" />
         <option value="$PROJECT_DIR$/wd_imagine.py" />
         <option value="/devlink2/dev/ham3/evos.py" />
         <option value="/devlink2/dev/ham3/fgevos.py" />
         <option value="/devlink2/dev/ham3/randsel.py" />
         <option value="$PROJECT_DIR$/compare_conts.py" />
+        <option value="$PROJECT_DIR$/wdconfig.py" />
         <option value="$PROJECT_DIR$/wd_classicAI.py" />
+        <option value="$PROJECT_DIR$/wd2.py" />
         <option value="$PROJECT_DIR$/notebook.txt" />
       </list>
     </option>
@@ -666,7 +665,14 @@
       <option name="project" value="LOCAL" />
       <updated>1523547261416</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="AI using new frequency stats and convoy colist.">
+      <created>1523895210755</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1523895210755</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TodoView">
@@ -680,6 +686,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="64" y="-11" width="1857" height="1092" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4967742" visible="true" weight="0.16975982" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -702,21 +709,21 @@
     <layout-to-restore>
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17194323" />
       <window_info id="Structure" order="1" weight="0.14989059" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Version Control" order="10" weight="0.32879582" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3286638" />
-      <window_info anchor="bottom" id="Python Console" order="8" weight="0.32903227" />
-      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3286638" />
       <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.39895287" />
       <window_info anchor="bottom" id="Terminal" order="9" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.3286638" />
+      <window_info anchor="bottom" id="Version Control" order="10" weight="0.32879582" />
       <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Python Console" order="8" weight="0.32903227" />
     </layout-to-restore>
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -749,7 +756,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Blocking code running but no sig results." />
     <MESSAGE value="First version of step by step working." />
     <MESSAGE value="Version of blocking not working because applied to templ group" />
     <MESSAGE value="First signs of blocking working. No flexibility yet on conts." />
@@ -774,7 +780,8 @@
     <MESSAGE value="Added a layer above classic AI to protect wd sql from supports without moves. Classic AI technically working." />
     <MESSAGE value="Support and convoy orders now fail if their target does" />
     <MESSAGE value="Order frequency stats working with colist stats." />
-    <option name="LAST_COMMIT_MESSAGE" value="Order frequency stats working with colist stats." />
+    <MESSAGE value="AI using new frequency stats and convoy colist." />
+    <option name="LAST_COMMIT_MESSAGE" value="AI using new frequency stats and convoy colist." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -796,17 +803,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>541</line>
+          <line>546</line>
           <option name="timeStamp" value="1690" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1139</line>
+          <line>1164</line>
           <option name="timeStamp" value="1710" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1149</line>
+          <line>1174</line>
           <option name="timeStamp" value="1716" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -841,32 +848,32 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>986</line>
+          <line>992</line>
           <option name="timeStamp" value="1748" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1182</line>
+          <line>1208</line>
           <option name="timeStamp" value="1750" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>948</line>
+          <line>954</line>
           <option name="timeStamp" value="1751" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1169</line>
+          <line>1195</line>
           <option name="timeStamp" value="1752" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1028</line>
+          <line>1051</line>
           <option name="timeStamp" value="1828" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>936</line>
+          <line>942</line>
           <option name="timeStamp" value="1876" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -896,42 +903,58 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>634</line>
-          <option name="timeStamp" value="1988" />
+          <line>32</line>
+          <option name="timeStamp" value="2000" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>1137</line>
+          <option name="timeStamp" value="2005" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>1146</line>
+          <option name="timeStamp" value="2009" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>1141</line>
+          <option name="timeStamp" value="2010" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>1157</line>
+          <option name="timeStamp" value="2011" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>106</line>
+          <option name="timeStamp" value="2035" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>1139</line>
+          <option name="timeStamp" value="2037" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd2.py</url>
+          <line>494</line>
+          <option name="timeStamp" value="2039" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
-          <line>481</line>
-          <option name="timeStamp" value="1990" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
-          <line>14</line>
-          <option name="timeStamp" value="1991" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
-          <line>27</line>
-          <option name="timeStamp" value="1995" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
-          <line>33</line>
-          <option name="timeStamp" value="1999" />
+          <line>498</line>
+          <option name="timeStamp" value="2042" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="2000" />
+      <option name="time" value="2043" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="result_rec" />
-        <watch expression="l_poss_orders" />
-        <watch expression="order_rec" />
-        <watch expression="l_successes" />
-        <watch expression="l_scvos" />
+        <watch expression="game_store" />
       </configuration>
     </watches-manager>
   </component>
@@ -970,6 +993,31 @@
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
+        <expression-string>game_store[icountry][wdconfig.c_num_game_store_options-1][1]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>game_store[icountry][wdconfig.c_num_game_store_options-1][0]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>game_store[icountry][wdconfig.c_num_game_store_options-1]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>game_store[icountry][0]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>game_store[icountry]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
         <expression-string>success=0</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
@@ -986,31 +1034,6 @@
       </expression>
       <expression>
         <expression-string>l_unit_avail[i_colist_unit]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>l_successes[1][0] = 1.0</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>l_successes[1][0]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>l_successes[0][0]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>b_req_failed</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>b_req_failed=False</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -1250,9 +1273,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1054">
           <caret line="66" selection-start-line="66" selection-end-line="66" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1267,9 +1287,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="459">
           <caret line="36" selection-start-line="36" selection-end-line="36" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1322,63 +1339,57 @@
       </provider>
     </entry>
     <entry file="file:///devlink2/dev/ham3/fgevos.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/wdconfig.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="37" column="37" lean-forward="true" selection-start-line="37" selection-start-column="37" selection-end-line="37" selection-end-column="37" />
-        </state>
-      </provider>
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/makerecs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="381">
+        <state relative-caret-position="6409">
           <caret line="396" column="4" selection-start-line="396" selection-start-column="4" selection-end-line="396" selection-end-column="4" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/els.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="368">
+        <state relative-caret-position="3196">
           <caret line="199" column="4" selection-start-line="199" selection-start-column="4" selection-end-line="199" selection-end-column="4" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/compare_conts.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="257" column="25" lean-forward="true" selection-start-line="257" selection-start-column="25" selection-end-line="257" selection-end-column="25" />
+        <state relative-caret-position="4165">
+          <caret line="257" column="25" selection-start-line="257" selection-start-column="25" selection-end-line="257" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdconfig.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1292">
+          <caret line="76" column="24" selection-start-line="76" selection-end-line="76" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="283">
+          <caret line="498" selection-start-line="498" selection-end-line="498" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/wd2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="164">
-          <caret line="634" selection-start-line="634" selection-end-line="634" />
+        <state relative-caret-position="153">
+          <caret line="1137" selection-start-line="1137" selection-end-line="1137" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="483">
-          <caret line="1661" selection-start-line="1661" selection-end-line="1661" selection-end-column="47" />
+          <caret line="1686" column="37" lean-forward="true" selection-start-line="1686" selection-end-line="1686" selection-end-column="37" />
         </state>
       </provider>
     </entry>

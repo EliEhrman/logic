@@ -1660,3 +1660,28 @@ Monday 16th April
 Checking in with:
 
 AI using new frequency stats and convoy colist.
+
+Wednesday 18th April
+
+Added a system that explores options as lomg as the humaan player has not finished his move. The top three option for
+each country are chosen and when the human player has finished the top move is chosen and played. Next move.
+
+There are a lot of improvements that can still be made:
+
+1. The random moves are terrible. They should be added to the list of targets and played appropriately.
+2. Go to the next level. Try the effect of a set of moves on the next turn
+3. If there is nothing else to do, move towards juicy targets
+
+However, not going to do all that for now. The goal at this point is to demonstrate that we can learn the rules of a
+game and use them to play it sort of decently. That point has been made.
+
+The next is inter-player communication. I want to start with alliances. That we can add rules manually forbidding behavior.
+That we can start talking about promises, lies etc.
+
+What is worth considering adding in the near term is:
+
+Expanding the rule learning to combine successful elements to create higher-level rules.
+
+Checking in with:
+
+AI plays with as much time as it has.
