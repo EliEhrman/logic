@@ -8,6 +8,7 @@ import els
 import learn
 import rules
 import makerecs as mr
+import forbidden
 import wd_imagine
 
 def extra_orders(	glv_dict, cont_stats_mgr, num_rules, l_rules, l_lens, l_scvos, first_stage_order,
@@ -36,9 +37,10 @@ def extra_orders(	glv_dict, cont_stats_mgr, num_rules, l_rules, l_lens, l_scvos,
 	return match_pattern, success
 
 
-def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_freq, oid_dict,
+def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
 				num_rules, l_rules, l_lens, l_scvos, l_gens_recs, prev_stage_score, l_unit_avail, country_orders_list,
 				first_stage_order, prev_stage_match_pattern, b_my_move, b_offensive):
+	# success_orders_freq, oid_dict, success_unit_dict = success_orders_data
 	l_successes = []
 	for iunit, unit_data in enumerate(unit_list):
 		if len(l_successes) > wdconfig.c_classic_AI_max_successes:
@@ -46,13 +48,13 @@ def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses
 		if b_my_move and not l_unit_avail[iunit]:
 			continue
 		order_template = [unit_data[0], 'in', unit_data[1]]
-		l_poss_orders = wd_imagine.get_moves([order_template], success_orders_freq, max_len=len(order_template) - 1)
+		l_poss_orders = wd_imagine.get_moves(unit_data, [order_template], success_orders_data, max_len=len(order_template) - 1)
 		l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
 		for iorder, poss_order in enumerate(l_poss_order_phrases):
 			b_colist_extra = False
 			b_req_failed = False
 			l_req_colist, l_b_req, l_b_rev_req = \
-				wd_imagine.get_colist_moves(l_poss_orders[iorder], success_orders_freq, oid_dict,
+				wd_imagine.get_colist_moves(l_poss_orders[iorder], success_orders_data,
 											colist_req_thresh=0.3, colist_strong_thresh=0.2)
 			for i_b_req, b_req in enumerate(l_b_req):
 				if not b_req:
@@ -78,9 +80,11 @@ def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses
 						continue
 					templ = [req_unit[0], 'in', req_unit[1]]
 					if templ == req_order[0:3]:
-						b_req_failed = False
-						if b_my_move:
-							b_colist_extra, i_extra_colist_unit, extra_colist_order = True, i_req_unit, req_order
+						l_poss_req_orders = wd_imagine.get_moves(req_unit, [req_order], success_orders_data)
+						if l_poss_req_orders != []:
+							b_req_failed = False
+							if b_my_move:
+								b_colist_extra, i_extra_colist_unit, extra_colist_order = True, i_req_unit, req_order
 
 						break # out of this inner loop only
 				# The following should not really be commented out. See comment a few lines up
@@ -172,7 +176,7 @@ def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses
 		elif not b_offensive and this_stage_success < prev_stage_score:
 			diff = prev_stage_score - this_stage_success
 			b_take_the_move = True
-		if b_take_the_move and random.random() < diff:
+		if b_take_the_move and random.random() < (diff * 3):
 			l_unit_avail[this_stage_iunit] = False
 			country_orders_list.append(this_stage_order_words)
 			# return True, this_stage_success, this_stage_order, this_stage_match_pattern, this_stage_order_words
@@ -184,7 +188,7 @@ def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses
 
 
 def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-						target_name, country_orders_list, success_orders_freq, oid_dict,
+						target_name, country_orders_list, success_orders_data,
 						num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail):
 	# for unit_data in block_unit_list:
 	# 	threaten_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', target_name]
@@ -201,8 +205,8 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 	l_template_bonuses = [0.0, 1.0]
 
 	b_success, first_stage_success, first_stage_order, first_stage_match_pattern, first_stage_words, _, _, _ = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=None, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=None,
 				   prev_stage_match_pattern=None, b_my_move=False, b_offensive=False)
@@ -214,8 +218,8 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 	b_success, block_stage_success, _, block_stage_match_pattern, block_stage_words, \
 	b_colist_extra, i_extra_colist_unit, extra_colist_order = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=first_stage_success, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=True, b_offensive=False)
@@ -233,8 +237,8 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		print('Adding a required colist order:', ' '.join(extra_colist_order), 'est. success:', block_stage_success)
 
 	b_success, r1_stage_success, _, r1_stage_match_pattern, r1_stage_words, _, _, _ = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=block_stage_success, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=False, b_offensive=False)
@@ -246,8 +250,8 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 	b_success, r2_stage_success, _, r2_stage_match_pattern, r2_stage_words, \
 	b_colist_extra, i_extra_colist_unit, extra_colist_order = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=r1_stage_success, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=r1_stage_match_pattern, b_my_move=True, b_offensive=False)
@@ -269,7 +273,7 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 
 def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-						target_name, country_orders_list, success_orders_freq, oid_dict,
+						target_name, country_orders_list, success_orders_data,
 						 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail):
 	# target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
 	move_target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
@@ -279,8 +283,8 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 	b_success, first_stage_success, first_stage_order, first_stage_match_pattern, first_stage_words, \
 	b_colist_extra, i_extra_colist_unit, extra_colist_order = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=None, l_unit_avail = l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=None,
 				   prev_stage_match_pattern=None, b_my_move=True, b_offensive=True)
@@ -298,8 +302,8 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		print('Adding a required colist order:', ' '.join(extra_colist_order), 'est. success:', first_stage_success)
 
 	b_success, block_stage_success, _, block_stage_match_pattern, block_stage_words, _, _, _ = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=first_stage_success, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=first_stage_match_pattern, b_my_move=False, b_offensive=True)
@@ -311,8 +315,8 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 	b_success, rejoiner_stage_success, _, rejoiner_stage_match_pattern, rejoiner_stage_words, \
 	b_colist_extra, i_extra_colist_unit, extra_colist_order = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_freq,
-				   oid_dict, num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
+				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=block_stage_success, l_unit_avail=l_unit_avail,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=True, b_offensive=True)
@@ -339,11 +343,12 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 						num_montes, preferred_nation, b_predict_success):
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
-	success_orders_freq, success_order_id_dict, max_id = dict(), dict(), [-1]
-	wdlearn.load_order_freq_tbl(success_orders_freq, success_order_id_dict, max_id, wdconfig.orders_success_fnt)
+
 	if b_predict_success:
 		icc_list = db_cont_mgr.get_conts_above(wdconfig.c_use_rule_thresh)
-	full_db = init_db + status_db
+	full_db = els.make_rec_list(init_db + status_db)
+
+	l_f_rules = db_cont_mgr.get_forbidden_rules()
 
 	supply_set = set()
 	for kcountry, vterr_list in supply_tbl.iteritems():
@@ -374,7 +379,29 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 
 	l_country_options = [[] for _ in country_names_tbl]
 	# for ioption_run in range(wdconfig.c_classic_AI_num_option_runs):
-	if not b_waiting_for_AI or game_store == []:
+	num_option_iters = wdconfig.c_classic_AI_num_option_runs
+	if len(l_humaan_countries) > 0:
+		if not b_waiting_for_AI or game_store == []:
+			num_option_iters = 1
+		else:
+			num_option_iters = 0
+
+	if num_option_iters > 0:
+		l_all_units = []
+		for icountry in range(1, len(country_names_tbl)):
+			scountry = country_names_tbl[icountry]
+			unit_list = unit_owns_tbl.get(scountry, None)
+			if unit_list == None:
+				continue
+			for unit_data in unit_list:
+				l_all_units += [unit_data]
+
+		success_orders_freq, success_order_id_dict, success_unit_dict, max_id  = \
+			wdlearn.load_order_freq(l_all_units,
+									l_f_rules, full_db, cascade_els, glv_dict, wdconfig.orders_success_fnt)
+		success_orders_data = [success_orders_freq, success_order_id_dict, success_unit_dict]
+
+	for ioption_run in range(num_option_iters):
 		if game_store == []:
 			game_store[:] = [[] for _ in country_names_tbl]
 
@@ -386,20 +413,28 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 			scountry = country_names_tbl[icountry]
 			print('Thinking for ', scountry)
 			s_poss_targets = set()
+			s_poss_staging = set()
 			unit_list = unit_owns_tbl.get(scountry, None)
 			if unit_list == None:
 				continue
 
 			b_offensive = True
+
 			for unit_data in unit_list:
 				move_order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
 				convoy_order_template = [unit_data[0], 'in', unit_data[1], 'convoy', 'move', 'to', '?']
-				l_pos_orders = wd_imagine.get_moves([move_order_template, convoy_order_template], success_orders_freq)
+				l_pos_orders = wd_imagine.get_moves(unit_data, [move_order_template, convoy_order_template], success_orders_data)
 				for poss_order in l_pos_orders:
+					# if forbidden.test_move_forbidden(poss_order, l_f_rules, full_db, cascade_els, glv_dict):
+					# 	continue
 					dest_name = poss_order[5]
 					prev_owner = terr_owner_dict.get(dest_name, 'neutral')
 					if dest_name in supply_set and scountry != prev_owner:
 						s_poss_targets.add(dest_name)
+					else:
+						s_poss_staging.add(dest_name)
+
+			# s_poss_staging = [stage for stage in s_poss_staging if stage not in s_poss_targets]
 
 			l_target_data = []
 			for a_target in s_poss_targets:
@@ -422,8 +457,10 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 
 			for unit_data in block_unit_list:
 				order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-				l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
+				l_pos_orders = wd_imagine.get_moves(unit_data, [order_template], success_orders_data)
 				for poss_order in l_pos_orders:
+					# if forbidden.test_move_forbidden(poss_order, l_f_rules, full_db, cascade_els, glv_dict):
+					# 	continue
 					dest_name = poss_order[5]
 					prev_owner = terr_owner_dict.get(dest_name, 'neutral')
 					if dest_name in supply_set and prev_owner == scountry:
@@ -448,27 +485,35 @@ def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 				b_has_success_score = True
 				if b_offensive:
 					success_score += create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-														target_name, country_orders_list, success_orders_freq,
-														success_order_id_dict,
+														target_name, country_orders_list, success_orders_data,
 														num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 				else:
 					success_score += create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-														target_name, country_orders_list, success_orders_freq,
-														success_order_id_dict,
+														target_name, country_orders_list, success_orders_data,
 														num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 			# end loop over target names and data in l_target_data
+			if any(l_unit_avail):
+				print('Staging moves for:', scountry)
+			for stage_dest in s_poss_staging:
+				if not any(l_unit_avail):
+					break
+				b_has_success_score = True
+				success_score += wdconfig.c_classic_AI_stage_score_factor *\
+								 create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
+													stage_dest, country_orders_list, success_orders_data,
+													num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 
 			# remaining units have been assigned no purpose, so they make a random move
-			for iunit, unit_data in enumerate(unit_list):
-				if not l_unit_avail[iunit]:
-					continue
-
-				order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-				l_pos_orders = wd_imagine.get_moves([order_template], success_orders_freq)
-
-				rnd_order = random.choice(l_pos_orders)
-				print('random move:', ' '.join(rnd_order))
-				country_orders_list.append(rnd_order)
+			# for iunit, unit_data in enumerate(unit_list):
+			# 	if not l_unit_avail[iunit]:
+			# 		continue
+			#
+			# 	order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
+			# 	l_pos_orders = wd_imagine.get_moves([order_template], success_orders_data)
+			#
+			# 	rnd_order = random.choice(l_pos_orders)
+			# 	print('random move:', ' '.join(rnd_order))
+			# 	country_orders_list.append(rnd_order)
 
 			if country_orders_list != []:
 				num_options_stored = len(game_store[icountry])

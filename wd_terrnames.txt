@@ -79,3 +79,11 @@ st. petersburg (north coast)
 st. petersburg (south coast)
 bulgaria (north coast)
 bulgaria (south coast)
+neutral
+england
+france
+italy
+germany
+austria
+turkey
+russia

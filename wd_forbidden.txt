@@ -1,0 +1,5 @@
+version	1
+num forbidding rules	1
+c:a,c:s,l:army:0.2,l:in:1.0,l:warsaw:-0.5,l:move:1.0,l:to:1.0,l:bulgaria:-0.5,c:e,c:s,l:england:-0.5,l:owns:1.0,v:2,v:3,v:4,c:e,c:s,l:france:-0.5,v:11,v:7,c:e,c:s,v:10,l:allied:1.0,v:6,v:17,c:e,c:e
+
+

@@ -11,7 +11,8 @@ import makerecs as mr
 
 # def imagine_init
 
-def get_colist_moves(order, freq_tbl, oid_dict, colist_req_thresh, colist_strong_thresh):
+def get_colist_moves(order, freq_data, colist_req_thresh, colist_strong_thresh):
+	freq_tbl, oid_dict, unit_dict = freq_data
 	l_colist_orders = []
 	freq, id, colist_dict = freq_tbl[tuple(order)]
 	l_scores, l_oids = [], []
@@ -27,7 +28,9 @@ def get_colist_moves(order, freq_tbl, oid_dict, colist_req_thresh, colist_strong
 	for ithresh, oid in enumerate(l_thresh_oids):
 		if not l_b_req[ithresh]:
 			continue
-		rev_order = oid_dict[oid]
+		rev_order = oid_dict.get(oid, [])
+		if rev_order == []:
+			continue
 		rev_freq, rev_id, rev_colist_dict = freq_tbl[tuple(rev_order)]
 		rev_rev_freq = rev_colist_dict.get(id, -1)
 		if rev_rev_freq == -1:
@@ -40,10 +43,18 @@ def get_colist_moves(order, freq_tbl, oid_dict, colist_req_thresh, colist_strong
 
 	return l_colist_orders, l_b_req, l_b_rev_req
 
-def get_moves(l_order_templ, success_orders_freq, max_len=1000, max_num_moves=1000):
+def get_moves(unit_data, l_order_templ, success_orders_data, max_len=1000, max_num_moves=1000):
+	success_orders_freq, oid_dict, success_unit_dict = success_orders_data
+
 	b_max_reached = False
 	order_list = []
-	for korder, vfreq in success_orders_freq.iteritems():
+	l_all_poss_oids = success_unit_dict.get(tuple(unit_data), [])
+	if l_all_poss_oids == []:
+		return order_list
+
+	# for korder, vfreq in success_orders_freq.iteritems():
+	for poss_oid in l_all_poss_oids:
+		korder = oid_dict[poss_oid]
 		for one_templ in l_order_templ:
 			order = list(one_templ)
 			b_success = True
@@ -67,15 +78,15 @@ def get_moves(l_order_templ, success_orders_freq, max_len=1000, max_num_moves=10
 	random.shuffle(order_list)
 	return order_list
 
-def select_move(order_templ, success_orders_freq):
-	order_list = get_moves([order_templ], success_orders_freq)
+def select_move(unit_data, order_templ, success_orders_freq):
+	order_list = get_moves(unit_data, [order_templ], [success_orders_freq, dict(), dict()])
 
 	return random.choice(order_list)
 
-def create_move_orders(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
-						country_names_tbl, unit_owns_tbl,
-						all_the_dicts, terr_owns_tbl, supply_tbl, num_montes, preferred_nation,
-						b_predict_success):
+def create_move_orders_by_monte(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
+									country_names_tbl, unit_owns_tbl,
+									all_the_dicts, terr_owns_tbl, supply_tbl, num_montes, preferred_nation,
+									b_predict_success):
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
 	success_orders_freq = dict()
@@ -115,7 +126,7 @@ def create_move_orders(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 			icountry_list.append(icountry)
 			for unit_data in unit_list:
 				order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-				order = select_move(order_template, success_orders_freq)
+				order = select_move(unit_data, order_template, success_orders_freq)
 				orders_list.append(order)
 				order_country_list.append(country_names_tbl[icountry])
 
@@ -193,201 +204,4 @@ def create_move_orders(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_d
 
 	return orders_list, orders_db, success_list, icountry_list
 
-def create_move_orders2_old(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
-						country_names_tbl, unit_owns_tbl,
-						all_the_dicts, terr_owns_tbl, supply_tbl, num_montes, preferred_nation,
-						b_predict_success):
-	glv_dict, def_article_dict, cascade_dict = all_the_dicts
-	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
-	success_orders_freq = dict()
-	wdlearn.load_order_freq_tbl(success_orders_freq, wdconfig.orders_success_fnt)
-	if b_predict_success:
-		icc_list = db_cont_mgr.get_conts_above(wdconfig.c_use_rule_thresh)
-	full_db = init_db + status_db
-
-	supply_set = set()
-	for kcountry, vterr_list in supply_tbl.iteritems():
-		for terr_stat in vterr_list:
-			supply_set.add(terr_stat[1])
-
-	country_dict = dict()
-	for icountry, country_name in enumerate(country_names_tbl):
-		country_dict[country_name] = icountry
-
-	terr_owner_dict = dict()
-	for kcountry, vterr_list in 	terr_owns_tbl.iteritems():
-		for terr_data in vterr_list:
-			# icountry = country_dict[kcountry]
-			terr_owner_dict[terr_data[0]] = kcountry
-			# if terr_data[0] in supply_set:
-			# 	num_supplies_list[icountry] += 1
-
-	cont_stats_mgr = db_cont_mgr.get_cont_stats_mgr()
-	num_rules = len(cont_stats_mgr.get_cont_stats_list())
-	l_rules = [cont_stat.get_cont().get_rule() for cont_stat in cont_stats_mgr.get_cont_stats_list()]
-	l_scvos = [mr.gen_cvo_str(rule) for rule in l_rules]
-	l_lens = [mr.get_olen(scvo) for scvo in l_scvos]
-	l_gens_recs = [cont_stat.get_cont().get_gens_rec() for cont_stat in cont_stats_mgr.get_cont_stats_list()]
-
-	orders_list = []
-	icountry_list = []
-
-	for icountry in range(1, len(country_names_tbl)):
-		scountry = country_names_tbl[icountry]
-		print('Thinking for ', scountry)
-		l_poss_supplies = set()
-		unit_list = unit_owns_tbl.get(scountry, None)
-		if unit_list == None:
-			continue
-		for unit_data in unit_list:
-			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = get_moves([order_template], success_orders_freq)
-			for poss_order in l_pos_orders:
-				dest_name = poss_order[5]
-				prev_owner = terr_owner_dict.get(dest_name, 'neutral')
-				if dest_name in supply_set and scountry != prev_owner:
-					l_poss_supplies.add(dest_name)
-		# if len(l_poss_supplies) == 0:
-		# 	continue
-		random.shuffle(unit_list)
-		del l_pos_orders, order_template, poss_order, dest_name, prev_owner
-		l_unit_avail = [True for udata in unit_list]
-		country_orders_list = []
-		for target_name in l_poss_supplies:
-			# target_name = random.sample(l_poss_supplies, 1)[0]
-			target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
-			l_all_poss_orders = []
-			l_successes = []
-			for iunit, unit_data in enumerate(unit_list):
-				if not l_unit_avail[iunit]:
-					continue
-				order_template = [unit_data[0], 'in', unit_data[1]]
-				l_poss_orders = get_moves([order_template], success_orders_freq, max_len=len(order_template)-1)
-				l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
-				for iorder, poss_order in enumerate(l_poss_order_phrases):
-					order_rec, _ = mr.make_rec_from_phrase_list([poss_order])
-					order_scvo = mr.gen_cvo_str(order_rec)
-					order_len = mr.get_olen(order_scvo)
-					match_pattern = [False for i in range(num_rules)]
-					b_one_success = False
-					for irule, rule in enumerate(l_rules):
-						if order_len != l_lens[irule] or order_scvo != l_scvos[irule]:
-							continue
-						if not mr.does_match_rule(glv_dict, l_rules[irule], order_rec):
-							continue
-						result_rec = mr.replace_vars_in_phrase(order_rec, l_gens_recs[irule])
-						if not els.match_rec_to_templ(result_rec, target_template):
-							continue
-						b_one_success = True
-						match_pattern[irule] = True
-					if b_one_success:
-						success = cont_stats_mgr.predict_success_rate(match_pattern)
-						l_successes.append([success, poss_order, iunit, match_pattern, l_poss_orders[iorder]])
-			# end of loop over units who can reach the country
-			if l_successes == []:
-				continue
-			random.shuffle(l_successes)
-			first_stage_success, first_stage_order, first_stage_iunit, \
-			first_stage_match_pattern, first_stage_order_words = \
-				sorted(l_successes, key=lambda x: x[0], reverse=True)[0]
-			l_unit_avail[first_stage_iunit] = False
-			country_orders_list.append(first_stage_order_words)
-			# first_stage_order = l_poss_order_phrases[i_stage_order]
-
-			l_blocks = []
-			for i_opp_country in range(1, len(country_names_tbl)):
-				if i_opp_country == icountry:
-					continue
-				sopp = country_names_tbl[i_opp_country]
-				opp_unit_list = unit_owns_tbl.get(sopp, None)
-				if opp_unit_list == None:
-					continue
-
-				for opp_unit_data in opp_unit_list:
-					order_template = [opp_unit_data[0], 'in', opp_unit_data[1]]
-					l_poss_orders = get_moves([order_template], success_orders_freq, max_len=len(order_template)-1)
-					l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
-					l_successes = []
-					for iorder, poss_order in enumerate(l_poss_order_phrases):
-						order_rec, _ = mr.make_rec_from_phrase_list([first_stage_order, poss_order])
-						order_scvo = mr.gen_cvo_str(order_rec)
-						order_len = mr.get_olen(order_scvo)
-						# match_pattern = [False for i in range(num_rules)]
-						match_pattern = list(first_stage_match_pattern)
-						b_one_success = False
-						for irule, rule in enumerate(l_rules):
-							if order_len != l_lens[irule] or order_scvo != l_scvos[irule]:
-								continue
-							if not mr.does_match_rule(glv_dict, l_rules[irule], order_rec):
-								continue
-							result_rec = mr.replace_vars_in_phrase(order_rec, l_gens_recs[irule])
-							if not els.match_rec_to_templ(result_rec, target_template):
-								continue
-							b_one_success = True
-							match_pattern[irule] = True
-						if b_one_success:
-							success = cont_stats_mgr.predict_success_rate(match_pattern)
-							l_blocks.append([success, match_pattern])
-			# end loop over opposing countries
-			if l_blocks == []:
-				continue
-
-			random.shuffle(l_blocks)
-			block_stage_success, block_stage_match_pattern = \
-				sorted(l_blocks, key=lambda x: x[0], reverse=False)[0]
-
-			l_rejoiners = []
-			for iunit, unit_data in enumerate(unit_list):
-				if not l_unit_avail[iunit]:
-					continue
-				order_template = [unit_data[0], 'in', unit_data[1]]
-				l_poss_orders = get_moves([order_template], success_orders_freq, max_len=len(order_template)-1)
-				l_poss_order_phrases = els.convert_list_to_phrases(l_poss_orders)
-				for iorder, poss_order in enumerate(l_poss_order_phrases):
-					order_rec, _ = mr.make_rec_from_phrase_list([first_stage_order, poss_order])
-					order_scvo = mr.gen_cvo_str(order_rec)
-					order_len = mr.get_olen(order_scvo)
-					# match_pattern = [False for i in range(num_rules)]
-					match_pattern = list(block_stage_match_pattern)
-					b_one_success = False
-					for irule, rule in enumerate(l_rules):
-						if order_len != l_lens[irule] or order_scvo != l_scvos[irule]:
-							continue
-						if not mr.does_match_rule(glv_dict, l_rules[irule], order_rec):
-							continue
-						result_rec = mr.replace_vars_in_phrase(order_rec, l_gens_recs[irule])
-						if not els.match_rec_to_templ(result_rec, target_template):
-							continue
-						b_one_success = True
-						match_pattern[irule] = True
-					if b_one_success:
-						success = cont_stats_mgr.predict_success_rate(match_pattern)
-						l_rejoiners.append([success, l_poss_orders[iorder], iunit])
-
-			if l_rejoiners == []:
-				continue
-
-			random.shuffle(l_rejoiners)
-			rejoiner_success, rejoiner_stage_order, rejoiner_stage_iunit = \
-				sorted(l_rejoiners, key=lambda x: x[0], reverse=True)[0]
-			l_unit_avail[rejoiner_stage_iunit] = False
-			country_orders_list.append(rejoiner_stage_order)
-		# end loop over target names
-		for iunit, unit_data in enumerate(unit_list):
-			if not l_unit_avail[iunit]:
-				continue
-
-			order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			l_pos_orders = get_moves([order_template], success_orders_freq)
-
-			country_orders_list.append(random.choice(l_pos_orders))
-
-		if country_orders_list != []:
-			orders_list += country_orders_list
-			icountry_list.append(icountry)
-
-
-	orders_db = els.convert_list_to_phrases(orders_list)
-	success_list = [True for o in orders_list]
-	return orders_list, orders_db, success_list, icountry_list
 

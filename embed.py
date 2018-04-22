@@ -32,13 +32,14 @@ c_num_gloves = 400000 # 400000
 c_max_deps = 4
 c_dep_vec_factor = 0.1
 
-glove_fn = '../../data/glove/glove.6B.50d.txt'
+glove_fn = '/devlink2/data/glove/glove.6B.50d.txt'
 els_fn = 's.txt'
 els_glv_fn = 's.glv'
 parsed_fn = 's.txt.nlp'
 dep_names_fn = 'nlp_deps.txt'
 simple_els = ['countrie', 'name']
 parsed_els = ['object', 'action']
+wd_els = ['wd_terrname', 'wd_order']
 c_example_word  = 'the'
 
 g_word_vec_len = 0
@@ -190,9 +191,9 @@ def create_parsed_glv(el_name, word_dict, dep_enc, idx_enc):
 	els_fh.close()
 	els_glv_fh.close()
 
-def create_ext(simple_ext_names):
+def create_wd():
 	word_dict = load_word_dict()
-	for el_name in simple_ext_names:
+	for el_name in wd_els:
 		create_simple_glv(el_name, word_dict)
 
 def main():
@@ -214,4 +215,5 @@ def main():
 	print('done')
 
 if __name__ == "__main__":
+	# create_wd()
     main()

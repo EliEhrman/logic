@@ -1685,3 +1685,59 @@ Expanding the rule learning to combine successful elements to create higher-leve
 Checking in with:
 
 AI plays with as much time as it has.
+
+Got to do something about the AI not knowing that you have to hold a terr at the end of Fall
+
+Proposal for alliance random model
+
+Rnd number 0.0-1.0. Theshold, say, 6.0, 7.0 and 8.0.
+Over 8.0, offer alliance.
+Over 7.0, accept offer.
+Below 6.0, give notice of termination. 2 moves.
+After an offer has been made wait 4 turns before offer again
+After termination, wait 8 turns
+Rnd param stored for each country to each country, moves each turn by 0.1
+Clock marks time since:
+    notice of termination
+    offer made and rejected
+
+Proposal for better use of random moves
+1. Mark which countries created an offensive target
+2. The rest consider a random move. From there, look for either:
+    One of the defensive targets
+    One of the offensive targets
+    new offensive targets
+3. Score each random move
+4. Add the top n to the targets at a lower priority
+    n is a multiple of the original list creating random moves
+
+Friday 20th April
+
+Wow! How short sighed can you can.
+
+Information on embed, embed.py embedding producing glv files
+
+Contrary to prev comment, you do not run embed as is without arguments
+
+Well, without arguments, but you must modify the __name__ called. Calling main(), which should happen in the adv dir
+will do what you need for adv. Calling create_wd will do what you need for wd
+
+Saturday 21st April
+
+Made a change to the php code for messages
+File changed: board/chatbox.php
+public function output
+
+created a new table:
+
+wD_BoardMessages
+
+used the  MySQL workbench
+Created the table within the 'schema' webdiplomacy. I assume schema is the same as database
+Took the details from the first two fields from wD_ForumMessages and the gameID field from wD_Units
+
+Sunday 22nd April
+
+Checking in with the following comment:
+
+Inter-AI alliances working and displaying.

@@ -658,3 +658,5 @@ def make_perm_preconds_rec(rule_base, one_perm, story_db):
 
 	new_phrase_list, vars_dict = make_rec_from_phrase_list(phrase_list, b_force_AND=False)
 	return new_phrase_list, vars_dict, phrase_list
+
+	# move_rec =

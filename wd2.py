@@ -18,12 +18,15 @@ import els
 import dmlearn
 import clrecgrp
 import compare_conts
+import forbidden
+
 import wdconfig
 from wdconfig import e_move_type
 import wdlearn
 import wd_imagine
 import wd_admin
 import wd_classicAI
+import wd_alliance
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID, iref')
@@ -255,7 +258,7 @@ def OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, orders_statu
 
 	return owns_tbl, new_orders_status_list
 
-def OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list):
+def OwnsTerrTbl(cursor, gameID, country_names_tbl, terr_type_tbl, statement_list):
 	sqlTerrOwned = string.Template('SELECT ts.countryID, LOWER(t.name), ts.occupyingUnitID '
 								   'FROM webdiplomacy.wD_TerrStatus AS ts '
 								   'INNER JOIN webdiplomacy.wD_Territories AS t ON ('
@@ -274,7 +277,10 @@ def OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list):
 			owns_tbl[country] = []
 		owns_tbl[country].append([row[1], row[2]])
 		if wdconfig.c_b_add_owns_to_phrases:
-			statement_list.append([country, 'owns', row[1]])
+			terr_name = row[1]
+			terr_type = terr_type_tbl.get(terr_name, 'NA')
+			if terr_type != 'NA' and terr_type != 'sea':
+				statement_list.append([country, 'owns', row[1]])
 		if row[2] == None:
 			statement_list.append([row[1], 'is', 'unoccupied'])
 		else:
@@ -490,6 +496,7 @@ def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_ord
 											wdconfig.c_b_predict_success)
 
 	if not b_waiting_for_AI:
+		db.commit()
 		return
 
 	move_template = ['?', 'in', '?', 'move', 'to', '?']
@@ -919,7 +926,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 				db, cursor, gname, l_humaans, country_names_tbl,
 				terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
 				init_db, old_orders_status_list, old_status_db, old_orders_db, old_orders_list,
-				b_waiting_for_AI, game_store):
+				b_waiting_for_AI, game_store, alliance_data):
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
@@ -935,6 +942,11 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 										 'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 	sql_hold_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Hold\' '
 										 'WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+	sql_get_msg_ids = string.Template('SELECT id from webdiplomacy.wD_BoardMessages WHERE gameID = ${gameID} ;')
+	sql_delete_board_msgs = string.Template('DELETE FROM webdiplomacy.wD_BoardMessages WHERE id = ${id} ;')
+	sql_insert_board_msg = string.Template('INSERT INTO webdiplomacy.wD_BoardMessages (message, gameID) VALUES (\'${msg}\', \'${gameID}\');')
+
+
 	l_sql_action_orders = [sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order]
 
 	b_game_finished, b_orders_valid, b_reset_orders, b_stuck = False, False, False, False
@@ -973,7 +985,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 
 	statement_list = []
 
-	terr_owns_tbl = OwnsTerrTbl(cursor, gameID, country_names_tbl, statement_list)
+	terr_owns_tbl = OwnsTerrTbl(cursor, gameID, country_names_tbl, terr_type_tbl, statement_list)
 	unit_owns_tbl, updated_orders_status_list = OwnsUnitsTbl(cursor, gameID, country_names_tbl, statement_list, old_orders_status_list)
 	for iorder, order_status in enumerate(updated_orders_status_list):
 		print(' '.join(old_orders_list[iorder]), 'succeeded' if order_status.status else 'failed')
@@ -992,6 +1004,18 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		if not b_keep_working:
 			b_game_finished, b_orders_valid, = False, False
 			return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, [], [], [], []
+
+	sql_get = sql_get_msg_ids.substitute(gameID=str(gameID))
+	cursor.execute(sql_get)
+	results = cursor.fetchall()
+	for row in results:
+		sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
+		cursor.execute(sql_del)
+	alliance_msgs = wd_alliance.make_alliances(game_turn, country_names_tbl, alliance_data, statement_list)
+	for msg in alliance_msgs:
+		sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
+		cursor.execute(sql_insert)
+	db.commit()
 
 	status_db = els.convert_list_to_phrases(statement_list)
 
@@ -1158,6 +1182,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 			old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 			b_keep_working = True
 			game_store = []
+			alliance_data = []
 			num_stuck = 0
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
@@ -1182,6 +1207,9 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				if wdconfig.c_b_play_human:
 					b_waiting_for_AI = wait_to_play(db, cursor, gameID, l_humaans)
 
+				if not b_waiting_for_AI:
+					iturn -= 1
+
 				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, \
 				orders_list, orders_status_list = \
 					play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
@@ -1189,7 +1217,8 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 								terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
 								fleet_can_pass_tbl, init_db, old_orders_status_list,
 								old_status_db=old_status_db, old_orders_db=old_orders_db,
-								old_orders_list=old_orders_list, b_waiting_for_AI=b_waiting_for_AI, game_store = game_store)
+								old_orders_list=old_orders_list, b_waiting_for_AI=b_waiting_for_AI,
+								game_store = game_store, alliance_data=alliance_data)
 				if b_stuck:
 					db.commit() # just in case
 					time.sleep(1.0)
@@ -1207,7 +1236,7 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 
 				if b_finished:
 					print('Game Over!')
-					gameID = -1
+					# gameID = -1
 					# return -1, b_can_continue
 					break
 				elif status_db == []: # means turn finished early
@@ -1296,7 +1325,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1187 # Set to -1 to restart
+	gameID = 1488 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

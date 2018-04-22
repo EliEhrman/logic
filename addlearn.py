@@ -12,6 +12,7 @@ import makerecs as mr
 import clrecgrp
 import compare_conts as cc
 import els
+import forbidden
 
 class cl_add_gg(object):
 	def __init__(	self, b_from_load, templ_len=None, scvo=None, gens_rec=None,
@@ -219,8 +220,12 @@ class cl_cont_mgr(object):
 		self.__cont_stats_mgr = None
 		self.__perm_dict = None
 		self.__W_dict = None
+		self.__forbidden_rule_list = []
 		# print(self.status.untried)
 		return
+
+	def get_forbidden_rules(self):
+		return  self.__forbidden_rule_list
 
 	def add_cont(self, gg_cont):
 		self.__cont_list.append(gg_cont)
@@ -268,10 +273,13 @@ class cl_cont_mgr(object):
 		return new_cont
 
 
-	def init_cont_stats_mgr_from_file(self, fnt, b_analyze_conts, b_modify_conts):
+	def init_cont_stats_mgr_from_file(self, fnt, forbidden_fn, forbidden_version, b_analyze_conts, b_modify_conts):
 		self.__cont_stats_mgr = cc.cl_cont_stats_mgr()
 		b_load_done = self.__cont_stats_mgr.load(fnt)
 		if b_load_done:
+			if forbidden_fn != None:
+				forbidden.load_forbidden(forbidden_fn, forbidden_version, self.__forbidden_rule_list)
+
 			self.set_max_cont_id(self.__cont_stats_mgr.get_max_cont_id())
 			self.__cont_stats_mgr.prepare_dictance_keys()
 			if b_analyze_conts:

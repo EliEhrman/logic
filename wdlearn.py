@@ -12,6 +12,7 @@ import makerecs as mr
 import compare_conts as cc
 import clrecgrp
 import rules
+import forbidden
 # import utils
 import wdconfig
 
@@ -196,6 +197,47 @@ def load_order_freq_tbl(freq_tbl, id_dict, max_id, fnt):
 		print('Error. Cannot load order frequency stats.')
 		return
 
+def load_order_freq( l_all_units,
+					l_f_rules, full_db, cascade_els, glv_dict, fnt):
+	freq_tbl, id_dict, unit_dict, max_id = dict(), dict(), dict(), [-1]
+	try:
+		o_fn = expanduser(fnt)
+		with open(o_fn, 'rb') as o_fhr:
+			o_csvr = csv.reader(o_fhr, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+			_, _, version_str, _, snum_orders = next(o_csvr)
+			version = int(version_str)
+			if version != wdconfig.c_freq_stats_version:
+				raise IOError
+			for iorder in range(int(snum_orders)) :
+				row = next(o_csvr)
+				l_co_oids = next(o_csvr)
+				oid, co_dict = int(row[1]), dict()
+				if oid > max_id[0]:
+					max_id[0] = oid
+				move = row[2:]
+				unit_data = [move[0], move[2]]
+				b_can_do = True
+				if unit_data not in l_all_units:
+					b_can_do = False
+				if b_can_do and forbidden.test_move_forbidden(move, l_f_rules, full_db, cascade_els, glv_dict):
+					b_can_do = False
+				if b_can_do:
+					l_unit_moves = unit_dict.get(tuple(unit_data), [])
+					l_unit_moves.append(oid)
+					unit_dict[tuple(unit_data)] = l_unit_moves
+				freq_tbl[tuple(move)] = (int(row[0]), oid, co_dict)
+				id_dict[oid] = tuple(row[2:])
+				for co_soid in l_co_oids:
+					co_oid, co_freq = co_soid.split(':')
+					co_dict[int(co_oid)] = int(co_freq)
+
+	except IOError:
+		print('Error. Cannot load order frequency stats.')
+		return dict(), dict(), dict(), [-1]
+
+	return freq_tbl, id_dict, unit_dict, max_id
+
+
 
 def create_order_freq_tbl(orders_list, order_status_list):
 	success_orders_freq, failed_orders_freq = dict(), dict()
@@ -370,6 +412,7 @@ def cont_stats_save(db_cont_mgr, fnt):
 def init_cont_stats_from_file():
 	db_cont_mgr = addlearn.cl_cont_mgr()
 	b_load_done = db_cont_mgr.init_cont_stats_mgr_from_file(wdconfig.c_cont_stats_fnt,
+															wdconfig.c_cont_forbidden_fn, wdconfig.c_cont_forbidden_version,
 															wdconfig.c_b_analyze_conts, wdconfig.c_b_modify_conts)
 	if not b_load_done:
 		db_cont_mgr = None
