@@ -1750,3 +1750,12 @@ passed between functions.
 Checking in:
 
 Initial use of game state object working.
+
+Alliances work. There was a problem because once some borders were not hot, the units far from the hot borders
+wandered around aimlesssly. Now the gravitate toward the contested supply centers.
+Also, the colist demands were too high and few support moves were made. This was fixed by requiring only
+the top colist and then only if it crossed the threshold
+
+Checking in with:
+
+Alliances and moving towards front lines work.

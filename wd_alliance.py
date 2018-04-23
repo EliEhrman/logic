@@ -3,7 +3,7 @@ import random
 
 import wdconfig
 
-def make_alliances(game_turn, country_names_tbl, alliance_data, statement_list):
+def make_alliances(game_turn, country_names_tbl, unit_owns_tbl, alliance_data, statement_list):
 	if alliance_data == []:
 		alliance_rel = [[random.random() for _ in country_names_tbl] for _ in country_names_tbl]
 		# alliance_timer = -1
@@ -44,6 +44,22 @@ def make_alliances(game_turn, country_names_tbl, alliance_data, statement_list):
 	alliance_data[0] = game_turn
 	alliance_rel[:] = [[max(0, min((wdconfig.c_alliance_move_per_turn * (1.0 if random.random() < 0.5 else -1.0)) + rel, 1.0))
 						for rel in country_alliance_rel] for country_alliance_rel in alliance_rel]
+
+	for icountry, scountry in enumerate(country_names_tbl):
+		l_units = unit_owns_tbl.get(scountry, [])
+		if l_units == [] or len(l_units) > wdconfig.c_alliance_oversize_limit:
+			alliance_rel[icountry] = [0.0 for _ in country_names_tbl]
+			if l_units == []:
+				alliance_matrix[icountry] = [-1 for _ in country_names_tbl]
+				propose_times[icountry] = [-1 for _ in country_names_tbl]
+				terminate_times[icountry] = [-1 for _ in country_names_tbl]
+			for icountry2, _ in enumerate(country_names_tbl):
+				alliance_rel[icountry2][icountry] = 0.0
+				if l_units == []:
+					alliance_matrix[icountry2][icountry] = -1
+					propose_times[icountry2][icountry] = -1
+					terminate_times[icountry2][icountry] = -1
+
 	for icountry, scountry in enumerate(country_names_tbl):
 		if icountry == 0:
 			continue

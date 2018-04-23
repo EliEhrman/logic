@@ -1007,7 +1007,7 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	for row in results:
 		sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
 		cursor.execute(sql_del)
-	alliance_msgs = wd_alliance.make_alliances(game_turn, country_names_tbl, alliance_data, statement_list)
+	alliance_msgs = wd_alliance.make_alliances(game_turn, country_names_tbl, unit_owns_tbl, alliance_data, statement_list)
 	for msg in alliance_msgs:
 		sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
 		cursor.execute(sql_insert)
@@ -1149,8 +1149,8 @@ def play(wd_game_state):
 				init(cursor, country_names_tbl)
 			init_db = els.convert_list_to_phrases(statement_list)
 
-			d_terrs, matrix = wd_imagine.create_distance_matrix()
-			wd_game_state.set_distance_params(d_terrs, matrix)
+			# d_terrs, matrix = wd_imagine.create_distance_obj()
+			wd_game_state.set_distance_params(wd_imagine.cl_distance_calc())
 
 			# if gameID != -1:
 			l_humaans = []
@@ -1324,7 +1324,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1488 # Set to -1 to restart
+	gameID = 1489 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []

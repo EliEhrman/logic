@@ -281,6 +281,10 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 	l_target_templates = [move_target_template, convoy_target_template]
 	l_template_bonuses = [0.0, 1.0]
 
+	rollback_country_orders_list = copy.deepcopy(country_orders_list)
+	rollback_l_units_avail = copy.deepcopy(l_unit_avail)
+
+
 	b_success, first_stage_success, first_stage_order, first_stage_match_pattern, first_stage_words, \
 	b_colist_extra, i_extra_colist_unit, extra_colist_order = \
 		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
@@ -321,7 +325,12 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 				   country_orders_list=country_orders_list, first_stage_order=first_stage_order,
 				   prev_stage_match_pattern=block_stage_match_pattern, b_my_move=True, b_offensive=True)
 
-	if not b_success:
+	if not b_success or rejoiner_stage_success < wdconfig.c_classic_AI_rejoiner_min:
+		if random.random() < wdconfig.c_classic_AI_abandon_prob:
+			print('Offensive move blocked without rejoiner. Abandoning move')
+			country_orders_list[:] = rollback_country_orders_list
+			l_unit_avail[:] = rollback_l_units_avail
+
 		return block_stage_success
 
 	print('My rejoiner', ' '.join(rejoiner_stage_words), 'est. success:', rejoiner_stage_success)
@@ -334,6 +343,63 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		print('Adding a required colist order:', ' '.join(extra_colist_order), 'est. success:', rejoiner_stage_success)
 
 	return rejoiner_stage_success
+
+def bring_closer_to_contested(	glv_dict, cont_stats_mgr, iunit, unit_data, contested_goal, distance_calc,
+								l_rules, l_scvos, l_lens, l_unit_avail, num_rules,
+								country_orders_list, success_orders_data):
+	start_distance = distance_calc.get_distance(unit_data[1], contested_goal)
+	if start_distance == 0:
+		print('ClassicAI concern: An avail unit in the contested area wants to move out')
+		return False
+ 	elif start_distance == 1:
+		print('ClassicAI cncern: An avail unit adjacent to contested area not supporting')
+		# horder = [unit_data[0], 'in', unit_data[1], 'hold']
+		# print(' '.join(horder))
+		# country_orders_list.append(horder)
+		# l_unit_avail[iunit] = False
+		# return True
+		return False
+
+	def get_comb_success(match_pattern, order_phrase):
+		order_rec, _ = mr.make_rec_from_phrase_list(order_phrase)
+		order_scvo = mr.gen_cvo_str(order_rec)
+		order_len = mr.get_olen(order_scvo)
+		b_one_success = False
+		for irule, rule in enumerate(l_rules):
+			if order_len != l_lens[irule] or order_scvo != l_scvos[irule]:
+				continue
+			if not mr.does_match_rule(glv_dict, l_rules[irule], order_rec):
+				continue
+			b_one_success = True
+			match_pattern[irule] = True
+		if b_one_success:
+			return True, cont_stats_mgr.predict_success_rate(match_pattern)
+
+		return False, 0.0
+
+	move_order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
+	l_pos_orders = wd_imagine.get_moves(unit_data, [move_order_template], success_orders_data)
+	l_choices = [[distance_calc.get_distance(poss_order[5], contested_goal), poss_order] for poss_order in l_pos_orders]
+	l_choices.sort(key=lambda x: x[0])
+	for choice in l_choices:
+		order_phrase = els.convert_list_to_phrases([choice[1]])
+		match_pattern = [False for i in range(num_rules)]
+		b_initial_success, initial_success = get_comb_success(match_pattern, order_phrase)
+		if initial_success > 0.0:
+			b_go_for_it = True
+			for other_order in country_orders_list:
+				comb_order_phrase = els.convert_list_to_phrases([choice[1], other_order])
+				b_comb_success, comb_success = get_comb_success(match_pattern, comb_order_phrase)
+				if b_comb_success and comb_success < initial_success:
+					b_go_for_it = False
+					break
+			if b_go_for_it:
+				print(' '.join(choice[1]))
+				country_orders_list.append(choice[1])
+				l_unit_avail[iunit] = False
+				return True
+
+	return False
 
 
 def classic_AI(wd_game_state, b_predict_success):
@@ -435,6 +501,8 @@ def classic_AI(wd_game_state, b_predict_success):
 
 			# s_poss_staging = [stage for stage in s_poss_staging if stage not in s_poss_targets]
 
+			s_contested = set(s_poss_targets)
+
 			l_target_data = []
 			for a_target in s_poss_targets:
 				l_target_data.append([a_target, b_offensive])
@@ -465,6 +533,7 @@ def classic_AI(wd_game_state, b_predict_success):
 					if dest_name in supply_set and prev_owner == scountry:
 						s_poss_targets.add(dest_name)
 
+			s_contested = s_contested.union(s_poss_targets)
 
 			for a_target in s_poss_targets:
 				l_target_data.append([a_target, b_offensive])
@@ -491,8 +560,31 @@ def classic_AI(wd_game_state, b_predict_success):
 														target_name, country_orders_list, success_orders_data,
 														num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 			# end loop over target names and data in l_target_data
+
+			l_contested = list(s_contested)
+			random.shuffle(l_contested)
 			if any(l_unit_avail):
 				print('Staging moves for:', scountry)
+				distance_calc = wd_game_state.get_distance_params()
+
+			l_contested = l_contested * wdconfig.c_classic_AI_contested_repl
+			random.shuffle(l_contested)
+
+			for contested_goal in l_contested:
+				if not any(l_unit_avail):
+					break
+
+				# avail_data = next(unit_data for iunit, unit_data in enumerate(unit_list) if l_unit_avail[iunit])
+				for iunit, avail_data in enumerate(unit_list):
+					if not l_unit_avail[iunit]:
+						continue
+
+					if bring_closer_to_contested(	glv_dict, cont_stats_mgr, iunit, avail_data,
+													contested_goal, distance_calc,
+													l_rules, l_scvos, l_lens, l_unit_avail, num_rules,
+													country_orders_list, success_orders_data):
+						break
+
 			for stage_dest in s_poss_staging:
 				if not any(l_unit_avail):
 					break
@@ -502,17 +594,6 @@ def classic_AI(wd_game_state, b_predict_success):
 													stage_dest, country_orders_list, success_orders_data,
 													num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 
-			# remaining units have been assigned no purpose, so they make a random move
-			# for iunit, unit_data in enumerate(unit_list):
-			# 	if not l_unit_avail[iunit]:
-			# 		continue
-			#
-			# 	order_template = [unit_data[0], 'in', unit_data[1], 'move', 'to', '?']
-			# 	l_pos_orders = wd_imagine.get_moves([order_template], success_orders_data)
-			#
-			# 	rnd_order = random.choice(l_pos_orders)
-			# 	print('random move:', ' '.join(rnd_order))
-			# 	country_orders_list.append(rnd_order)
 
 			if country_orders_list != []:
 				num_options_stored = len(game_store[icountry])

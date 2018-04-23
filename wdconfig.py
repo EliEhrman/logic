@@ -69,8 +69,11 @@ c_oracle_convoy_err_prob = 0.3
 
 c_classic_AI_defensive_bias = 1.2
 c_classic_AI_max_successes = 10
-c_classic_AI_num_option_runs = 2
+c_classic_AI_num_option_runs = 5
 c_classic_AI_stage_score_factor = 0.3
+c_classic_AI_rejoiner_min = 0.1
+c_classic_AI_abandon_prob = 0.3
+c_classic_AI_contested_repl = 3
 
 c_freq_stats_newbie_thresh = 5
 c_freq_stats_mature_thresh = 10
@@ -84,8 +87,9 @@ c_alliance_accept_thresh = 0.5
 c_alliance_propose_thresh = 0.6
 c_alliance_wait_to_propose = 2
 c_alliance_wait_after_terminate = 4
-c_alliance_move_per_turn = 0.06
+c_alliance_move_per_turn = 0.03
 c_alliance_notice_time = 2
+c_alliance_oversize_limit = 11
 
 class cl_wd_state(object):
 
@@ -120,6 +124,7 @@ class cl_wd_state(object):
 		self.__orders_list = None
 		self.__orders_status_list = None
 		self.__status_db = None
+		self.__distance_calc = None
 
 	def set_at_main(self, gameID, all_dicts, el_set_arr, learn_vars):
 		self.__gameID = gameID
@@ -140,9 +145,8 @@ class cl_wd_state(object):
 		return self.__gameID, self.__all_dicts, self.__db_len_grps, self.__db_cont_mgr, \
 			   self.__i_active_cont, self.__el_set_arr, self.__sess, self.__learn_vars
 
-	def set_distance_params(self, d_terrs, matrix):
-		self.__d_distance_terrs = d_terrs
-		self.__distance_matrix = matrix
+	def set_distance_params(self, distance_calc):
+		self.__distance_calc = distance_calc
 
 	def set_at_play(self, db, cursor, gname, l_humaans, country_names_tbl,
 					terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
@@ -194,3 +198,6 @@ class cl_wd_state(object):
 
 	def set_gameID(self, gameID):
 		self.__gameID = gameID
+
+	def get_distance_params(self):
+		return self.__distance_calc
