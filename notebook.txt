@@ -1741,3 +1741,12 @@ Sunday 22nd April
 Checking in with the following comment:
 
 Inter-AI alliances working and displaying.
+
+Monday 23rd April
+
+Started a process of a game state object that hold the game state instead of long long lists of parameters
+passed between functions.
+
+Checking in:
+
+Initial use of game state object working.

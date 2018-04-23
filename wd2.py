@@ -476,24 +476,16 @@ def create_build_orders(db, cursor, gameID, l_humaan_countries, country_names_tb
 
 	db.commit()
 
-def create_move_orders2(db, cursor, gameID, l_humaan_countries, sql_complete_order,
-						sql_get_unit_id, l_sql_action_orders,
-						unit_owns_tbl, terr_id_tbl,
-						country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-						ref_orders_list, orders_status_list,
-						init_db, status_db, db_cont_mgr, all_the_dicts,
-						terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_store):
+def create_move_orders2(wd_game_state):
+	db, cursor, gameID, sql_complete_order, sql_get_unit_id, l_sql_action_orders, terr_id_tbl, \
+	ref_orders_list, orders_status_list, b_waiting_for_AI  = \
+		wd_game_state.get_at_create_move_orders2()
 	# nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID')
 
 	sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order = l_sql_action_orders
 
 	orders_list, orders_db, success_list, icountry_list = \
-		wd_classicAI.create_move_orders2(	init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db,
-											db_cont_mgr, country_names_tbl, l_humaan_countries, unit_owns_tbl,
-											all_the_dicts, terr_owns_tbl, supply_tbl,
-											b_waiting_for_AI, game_store,
-											wdconfig.c_num_montes, wdconfig.c_preferred_nation,
-											wdconfig.c_b_predict_success)
+		wd_classicAI.classic_AI(	wd_game_state, wdconfig.c_b_predict_success)
 
 	if not b_waiting_for_AI:
 		db.commit()
@@ -922,11 +914,13 @@ def create_results_db(orders_db, orders_status_list):
 
 	return results_db
 
-def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
-				db, cursor, gname, l_humaans, country_names_tbl,
-				terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-				init_db, old_orders_status_list, old_status_db, old_orders_db, old_orders_list,
-				b_waiting_for_AI, game_store, alliance_data):
+def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_db, old_orders_list):
+	all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, \
+	db, cursor, gname, l_humaans, country_names_tbl, \
+	terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl, \
+	init_db, b_waiting_for_AI, game_store, alliance_data = \
+		wd_game_state.get_at_play_turn()
+
 	sqlOrderComplete = string.Template(
 		'UPDATE webdiplomacy.wD_Members SET timeLoggedIn = ${timeLoggedIn}, missedPhases = 0, orderStatus = \'Saved,Completed,Ready\' '
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
@@ -990,6 +984,8 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	for iorder, order_status in enumerate(updated_orders_status_list):
 		print(' '.join(old_orders_list[iorder]), 'succeeded' if order_status.status else 'failed')
 
+	wd_game_state.set_at_play_turn_tbls(unit_owns_tbl, terr_owns_tbl)
+
 	results_db = create_results_db(old_orders_db, updated_orders_status_list)
 	if results_db != None and len(results_db) > 0:
 		b_reset_orders = True
@@ -1025,6 +1021,8 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 	# Remebser how to do the following hack
 	# orders_status_list[:] = [] # a hack so that the reference itself has the contents removed
 	orders_status_list = []
+	wd_game_state.set_at_play_turn(sqlOrderComplete, sql_get_unit_id, l_sql_action_orders, orders_list,
+								   orders_status_list, status_db)
 	if game_phase == 'Builds':
 		if not b_waiting_for_AI:
 			play_turn.b_done = False
@@ -1050,13 +1048,7 @@ def play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, 
 		else:
 			b_orders_valid = True
 		if wdconfig.c_b_play_from_saved:
-			create_move_orders2(db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
-								sql_get_unit_id, l_sql_action_orders,
-								unit_owns_tbl, terr_id_tbl,
-								country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-								orders_list, orders_status_list,
-								init_db, status_db, db_cont_mgr, all_dicts,
-								terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_store)
+			create_move_orders2(wd_game_state)
 		else:
 			if b_waiting_for_AI:
 				create_oracle_move_orders(	db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
@@ -1130,7 +1122,8 @@ def create_dict_files(terr_names_fn):
 				terr_names_fh.write(row[0]+'\n')
 			return
 
-def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, b_create_dict_file=False):
+def play(wd_game_state):
+	gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars = wd_game_state.get_at_play()
 	glv_dict, _, _ = all_dicts
 
 	b_can_continue = True
@@ -1156,6 +1149,9 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				init(cursor, country_names_tbl)
 			init_db = els.convert_list_to_phrases(statement_list)
 
+			d_terrs, matrix = wd_imagine.create_distance_matrix()
+			wd_game_state.set_distance_params(d_terrs, matrix)
+
 			# if gameID != -1:
 			l_humaans = []
 			if wdconfig.c_b_play_human:
@@ -1178,7 +1174,8 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 					else:
 						b_not_found = False
 
-			orders_status_list = []
+			wd_game_state.set_gameID(gameID)
+
 			old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 			b_keep_working = True
 			game_store = []
@@ -1210,15 +1207,15 @@ def play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr,
 				if not b_waiting_for_AI:
 					iturn -= 1
 
+				wd_game_state.set_at_play(	db, cursor, gname, l_humaans, country_names_tbl,
+											terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
+											fleet_can_pass_tbl, init_db, b_waiting_for_AI,
+											game_store, alliance_data)
 				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, \
 				orders_list, orders_status_list = \
-					play_turn(	all_dicts, db_len_grps, db_cont_mgr, i_active_cont,  el_set_arr, sess, learn_vars,
-								db, cursor, gname, l_humaans, country_names_tbl,
-								terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
-								fleet_can_pass_tbl, init_db, old_orders_status_list,
+					play_turn(	wd_game_state, old_orders_status_list,
 								old_status_db=old_status_db, old_orders_db=old_orders_db,
-								old_orders_list=old_orders_list, b_waiting_for_AI=b_waiting_for_AI,
-								game_store = game_store, alliance_data=alliance_data)
+								old_orders_list=old_orders_list)
 				if b_stuck:
 					db.commit() # just in case
 					time.sleep(1.0)
@@ -1275,7 +1272,8 @@ def logic_init():
 	# cwdtest = os.getcwd()
 	return [glv_dict, def_article_dict, cascade_dict]
 
-def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
+def do_wd(wd_game_state):
+	gameID, all_dicts, el_set_arr, learn_vars = wd_game_state.get_at_do_wd()
 	db_cont_mgr = None
 	db_len_grps, i_active_cont = [], -1
 	if wdconfig.c_b_load_cont_stats:
@@ -1308,7 +1306,8 @@ def do_wd(gameID, all_dicts, el_set_arr, learn_vars):
 
 		# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
-	gameID, b_can_continue = play(gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars)
+	wd_game_state.set_at_do_wd(db_len_grps, db_cont_mgr, i_active_cont, sess)
+	gameID, b_can_continue = play(wd_game_state)
 	sess.close()
 	dmlearn.learn_reset()
 
@@ -1336,9 +1335,11 @@ def main():
 	wdlearn.set_target_gens()
 	# clrecgrp.cl_templ_grp.c_target_gens = wdconfig.c_target_gens
 	wdlearn.init_learn()
+	wd_game_state = wdconfig.cl_wd_state()
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	for iplay in range(wdconfig.c_num_plays):
-		gameID, b_can_continue = do_wd(gameID, all_dicts, el_set_arr, learn_vars)
+		wd_game_state.set_at_main(gameID, all_dicts, el_set_arr, learn_vars)
+		gameID, b_can_continue = do_wd(wd_game_state)
 		if not b_can_continue:
 			print('Program will not continue due to no conts being available or administrative action taken.')
 			return

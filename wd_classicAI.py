@@ -336,11 +336,10 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 	return rejoiner_stage_success
 
 
-def create_move_orders2(init_db, army_can_pass_tbl, fleet_can_pass_tbl, status_db, db_cont_mgr,
-						country_names_tbl, l_humaan_countries, unit_owns_tbl,
-						all_the_dicts, terr_owns_tbl, supply_tbl,
-						b_waiting_for_AI, game_store,
-						num_montes, preferred_nation, b_predict_success):
+def classic_AI(wd_game_state, b_predict_success):
+	init_db, status_db, db_cont_mgr, country_names_tbl, l_humaan_countries, unit_owns_tbl, \
+	all_the_dicts, terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_store  = \
+		wd_game_state.get_at_classic_AI()
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
 	cascade_els = [el for el in cascade_dict.keys() if cascade_dict[el]]
 

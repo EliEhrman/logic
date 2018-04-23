@@ -86,3 +86,111 @@ c_alliance_wait_to_propose = 2
 c_alliance_wait_after_terminate = 4
 c_alliance_move_per_turn = 0.06
 c_alliance_notice_time = 2
+
+class cl_wd_state(object):
+
+	def __init__(self):
+		self.__gameID = None
+		self.__all_dicts = None
+		self.__el_set_arr = None
+		self.__learn_vars = None
+		self.__db_len_grps = None
+		self.__db_cont_mgr = None
+		self.__i_active_cont = None
+		self.__sess = None
+		self.__db  = None
+		self.__cursor = None
+		self.__gname = None
+		self.__l_humaans = None
+		self.__country_names_tbl = None
+		self.__terr_id_tbl = None
+		self.__supply_tbl = None
+		self.__terr_type_tbl = None
+		self.__army_can_pass_tbl = None
+		self.__fleet_can_pass_tbl = None
+		self.__init_db = None
+		self.__b_waiting_for_AI = None
+		self.__game_store = None
+		self.__alliance_data = None
+		self.__unit_owns_tbl = None
+		self.__terr_owns_tbl = None
+		self.__sqlOrderComplete = None
+		self.__sql_get_unit_id = None
+		self.__l_sql_action_orders = None
+		self.__orders_list = None
+		self.__orders_status_list = None
+		self.__status_db = None
+
+	def set_at_main(self, gameID, all_dicts, el_set_arr, learn_vars):
+		self.__gameID = gameID
+		self.__all_dicts = all_dicts
+		self.__el_set_arr = el_set_arr
+		self.__learn_vars = learn_vars
+
+	def get_at_do_wd(self):
+		return self.__gameID, self.__all_dicts, self.__el_set_arr, self.__learn_vars
+
+	def set_at_do_wd(self, db_len_grps, db_cont_mgr, i_active_cont, sess):
+		self.__db_len_grps = db_len_grps
+		self.__db_cont_mgr = db_cont_mgr
+		self.__i_active_cont = i_active_cont
+		self.__sess = sess
+
+	def get_at_play(self):
+		return self.__gameID, self.__all_dicts, self.__db_len_grps, self.__db_cont_mgr, \
+			   self.__i_active_cont, self.__el_set_arr, self.__sess, self.__learn_vars
+
+	def set_distance_params(self, d_terrs, matrix):
+		self.__d_distance_terrs = d_terrs
+		self.__distance_matrix = matrix
+
+	def set_at_play(self, db, cursor, gname, l_humaans, country_names_tbl,
+					terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
+					fleet_can_pass_tbl, init_db, b_waiting_for_AI,
+					game_store, alliance_data):
+		self.__db  = db
+		self.__cursor = cursor
+		self.__gname = gname
+		self.__l_humaans = l_humaans
+		self.__country_names_tbl = country_names_tbl
+		self.__terr_id_tbl = terr_id_tbl
+		self.__supply_tbl = supply_tbl
+		self.__terr_type_tbl = terr_type_tbl
+		self.__army_can_pass_tbl = army_can_pass_tbl
+		self.__fleet_can_pass_tbl = fleet_can_pass_tbl
+		self.__init_db = init_db
+		self.__b_waiting_for_AI = b_waiting_for_AI
+		self.__game_store = game_store
+		self.__alliance_data = alliance_data
+
+	def set_at_play_turn_tbls(self, unit_owns_tbl, terr_owns_tbl):
+		self.__unit_owns_tbl = unit_owns_tbl
+		self.__terr_owns_tbl = terr_owns_tbl
+
+	def get_at_play_turn(self):
+		return 	self.__all_dicts, self.__db_len_grps, self.__db_cont_mgr, self.__i_active_cont, self.__el_set_arr, \
+				self.__sess, self.__learn_vars, \
+				self.__db, self.__cursor, self.__gname, self.__l_humaans, self.__country_names_tbl, \
+				self.__terr_id_tbl, self.__supply_tbl, self.__terr_type_tbl, \
+				self.__army_can_pass_tbl, self.__fleet_can_pass_tbl, \
+				self.__init_db, self.__b_waiting_for_AI, self.__game_store, self.__alliance_data
+
+	def set_at_play_turn(self, sql_complete_order, sql_get_unit_id, l_sql_action_orders, orders_list, orders_status_list, status_db):
+		self.__sql_complete_order = sql_complete_order
+		self.__sql_get_unit_id = sql_get_unit_id
+		self.__l_sql_action_orders = l_sql_action_orders
+		self.__orders_list = orders_list
+		self.__orders_status_list = orders_status_list
+		self.__status_db = status_db
+
+	def get_at_create_move_orders2(self):
+		return 	self.__db, self.__cursor, self.__gameID, self.__sql_complete_order, self.__sql_get_unit_id, self.__l_sql_action_orders, \
+				  self.__terr_id_tbl, self.__orders_list, self.__orders_status_list, self.__b_waiting_for_AI
+
+	def get_at_classic_AI(	self):
+		return 	self.__init_db, self.__status_db, self.__db_cont_mgr, self.__country_names_tbl, self.__l_humaans, \
+				self.__unit_owns_tbl, self.__all_dicts, self.__terr_owns_tbl, self.__supply_tbl, \
+				self.__b_waiting_for_AI, self.__game_store
+
+	def set_gameID(self, gameID):
+		self.__gameID = gameID

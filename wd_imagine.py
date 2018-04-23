@@ -11,6 +11,49 @@ import makerecs as mr
 
 # def imagine_init
 
+def create_distance_matrix():
+	success_orders_freq, success_id_dict, max_id = dict(), dict(), [-1]
+	wdlearn.load_order_freq_tbl(success_orders_freq, success_id_dict, max_id, wdconfig.orders_success_fnt)
+	def add_to_dict(d, l, sterr):
+		iterr = d.get(sterr, -1)
+		if iterr == -1:
+			d[sterr] = len(l)
+			l.append(sterr)
+
+	d_terrs, l_terr_ids = dict(), []
+	for koid, vmove in success_id_dict.iteritems():
+		if vmove[3] == 'move':
+			add_to_dict(d_terrs, l_terr_ids, vmove[2])
+			add_to_dict(d_terrs, l_terr_ids, vmove[5])
+
+	num_terrs = len(d_terrs)
+	matrix = [[1000 for _ in range(num_terrs)] for _ in range(num_terrs)]
+
+	for koid, vmove in success_id_dict.iteritems():
+		if vmove[3] == 'move':
+			matrix[d_terrs[vmove[2]]][d_terrs[vmove[5]]] = 1
+
+	num_stalled = 0
+	while num_stalled < 3:
+		b_better = False
+		for iterr, terr_row in enumerate(matrix):
+			for iterr2, dist in enumerate(terr_row):
+				if iterr == iterr2:
+					continue
+				if dist > 1:
+					l_dist_data = [(dist1_3 + matrix[iterr3][iterr2], iterr3) for iterr3, dist1_3 in enumerate(terr_row)
+									if dist1_3 < 1000 and matrix[iterr3][iterr2] < 1000 and iterr3 != iterr and iterr3 != iterr2]
+					if l_dist_data != []:
+						best = min(l_dist_data, key=lambda x:x[0])
+						if best[0] < dist:
+							matrix[iterr][iterr2] = best[0]
+							b_better = True
+
+		num_stalled = 0 if b_better else (num_stalled + 1)
+
+	return d_terrs, matrix
+
+
 def get_colist_moves(order, freq_data, colist_req_thresh, colist_strong_thresh):
 	freq_tbl, oid_dict, unit_dict = freq_data
 	l_colist_orders = []
