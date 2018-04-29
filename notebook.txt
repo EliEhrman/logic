@@ -1752,10 +1752,37 @@ Checking in:
 Initial use of game state object working.
 
 Alliances work. There was a problem because once some borders were not hot, the units far from the hot borders
-wandered around aimlesssly. Now the gravitate toward the contested supply centers.
+wandered around aimlesssly. Now they gravitate toward the contested supply centers.
 Also, the colist demands were too high and few support moves were made. This was fixed by requiring only
 the top colist and then only if it crossed the threshold
 
 Checking in with:
 
 Alliances and moving towards front lines work.
+
+Sunday 29th April
+
+Created a mechanism that stores bitvectors per turn for each of:
+    strength-alliances
+    territories held
+    army-fleet locations and whose they are.
+ The turn data is appended to the appropriate file with game id and turn number and a look into the future five turns
+ later to see how the number of units has changed in that time.
+
+Created a stand-alone module called wd_allied_lrn.py. Its purpose is to take the alliance bitvecs and learn to
+predict the strength change that would happen over the next few turns
+It uses a selection matrix that selects a number of bits for each output bit and a threshold for how many
+of these input bits must be turned on, for the output to turn on.
+It learns by aiming for an accuracy using hamming knn
+It writes a matrix file which is loaded by wd_alliance and used to build a database and transform each query for
+matching with the db using haming knn
+The system is used as follows. Each country considers its predicted strength change and then sends a query for how
+the prediction looks with an additional alliance or a current alliance removed. This data is used to affect the
+strength of the alliance_rel matrix each turn until alliances are forged or dropped.
+
+Currently alliances don't help you much. There is also not much data collected. So the predictions are not far different
+from numerology. However, the system is in place and I hope it gets better.
+
+Checking in with:
+
+Alliance strength prediction integrated into the alliance system.

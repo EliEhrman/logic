@@ -4,7 +4,7 @@ c_sample_el = 'army'
 c_cont_score_thresh = 0.95 # better than this, we don't bother trying to find more clauses
 c_cont_score_min = 0.1
 c_cont_min_tests = 10
-c_num_turns_per_play = 100
+c_num_turns_per_play = 500
 c_num_plays = 5300
 c_expands_min_tries = 30
 c_expands_score_thresh = 4.0
@@ -87,9 +87,19 @@ c_alliance_accept_thresh = 0.5
 c_alliance_propose_thresh = 0.6
 c_alliance_wait_to_propose = 2
 c_alliance_wait_after_terminate = 4
-c_alliance_move_per_turn = 0.03
+c_alliance_move_per_turn = 0.3
+c_alliance_max_move_per_turn = 0.1
 c_alliance_notice_time = 2
 c_alliance_oversize_limit = 11
+
+c_max_units_for_status = 15 # as far as status stats are concerned we stop at this number
+c_alliance_stats_turn_delay = 5
+c_alliance_stats_fnt = '~/tmp/strength_stats.txt'
+c_terr_stats_fnt = '~/tmp/terr_stats.txt'
+c_unit_stats_fnt = '~/tmp/unit_stats.txt'
+c_alliance_sel_mat_fnt = '~/tmp/alliance_sel_mat.txt'
+
+c_alliance_prediction_k = 100
 
 class cl_wd_state(object):
 
@@ -125,12 +135,22 @@ class cl_wd_state(object):
 		self.__orders_status_list = None
 		self.__status_db = None
 		self.__distance_calc = None
+		self.__alliance_stats = None
 
-	def set_at_main(self, gameID, all_dicts, el_set_arr, learn_vars):
-		self.__gameID = gameID
+	def set_alliance_stats(self, alliance_stats):
+		self.__alliance_stats = alliance_stats
+
+	def get_alliance_stats(self):
+		return self.__alliance_stats
+
+	def set_at_main(self, all_dicts, el_set_arr, learn_vars, country_names_tbl):
 		self.__all_dicts = all_dicts
 		self.__el_set_arr = el_set_arr
 		self.__learn_vars = learn_vars
+		self.__country_names_tbl = country_names_tbl
+
+	def set_gameID(self, gameID):
+		self.__gameID = gameID
 
 	def get_at_do_wd(self):
 		return self.__gameID, self.__all_dicts, self.__el_set_arr, self.__learn_vars
@@ -143,7 +163,7 @@ class cl_wd_state(object):
 
 	def get_at_play(self):
 		return self.__gameID, self.__all_dicts, self.__db_len_grps, self.__db_cont_mgr, \
-			   self.__i_active_cont, self.__el_set_arr, self.__sess, self.__learn_vars
+			   self.__i_active_cont, self.__el_set_arr, self.__sess, self.__learn_vars, self.__country_names_tbl
 
 	def set_distance_params(self, distance_calc):
 		self.__distance_calc = distance_calc
@@ -156,7 +176,6 @@ class cl_wd_state(object):
 		self.__cursor = cursor
 		self.__gname = gname
 		self.__l_humaans = l_humaans
-		self.__country_names_tbl = country_names_tbl
 		self.__terr_id_tbl = terr_id_tbl
 		self.__supply_tbl = supply_tbl
 		self.__terr_type_tbl = terr_type_tbl

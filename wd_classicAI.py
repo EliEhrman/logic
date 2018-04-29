@@ -594,6 +594,15 @@ def classic_AI(wd_game_state, b_predict_success):
 													stage_dest, country_orders_list, success_orders_data,
 													num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail)
 
+			if any(l_unit_avail):
+				print('Tried everything.', scountry, 'still has units available')
+				for iunit, avail_data in enumerate(unit_list):
+					if not l_unit_avail[iunit]:
+						continue
+					out_of_options_order = [avail_data[0], 'in', avail_data[1], 'hold']
+					country_orders_list.append(out_of_options_order)
+					print(' '.join(out_of_options_order))
+					l_unit_avail[iunit] = False
 
 			if country_orders_list != []:
 				num_options_stored = len(game_store[icountry])

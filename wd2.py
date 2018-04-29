@@ -27,6 +27,7 @@ import wd_imagine
 import wd_admin
 import wd_classicAI
 import wd_alliance
+import wd_success
 
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID, iref')
@@ -944,6 +945,7 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	l_sql_action_orders = [sql_move_order, sql_support_order, sql_support_hold_order, sql_convoy_order, sql_hold_order]
 
 	b_game_finished, b_orders_valid, b_reset_orders, b_stuck = False, False, False, False
+	db.commit()
 	gameID, game_phase, game_turn = get_game_id(cursor, gname)
 	if gameID == None:
 		CreateGame(db, cursor, gname)
@@ -1007,13 +1009,17 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	for row in results:
 		sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
 		cursor.execute(sql_del)
-	alliance_msgs = wd_alliance.make_alliances(game_turn, country_names_tbl, unit_owns_tbl, alliance_data, statement_list)
+	alliance_msgs = wd_alliance.make_alliances(wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
+											   alliance_data, statement_list)
+
 	for msg in alliance_msgs:
 		sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
 		cursor.execute(sql_insert)
 	db.commit()
 
+
 	status_db = els.convert_list_to_phrases(statement_list)
+
 
 	l_humaan_countries = get_humaan_countries(cursor, gameID, l_humaans)
 
@@ -1047,6 +1053,8 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 			b_orders_valid = False
 		else:
 			b_orders_valid = True
+			wd_game_state.get_alliance_stats().update_status_bitvec_data(gameID, game_turn, statement_list, unit_owns_tbl)
+
 		if wdconfig.c_b_play_from_saved:
 			create_move_orders2(wd_game_state)
 		else:
@@ -1123,7 +1131,8 @@ def create_dict_files(terr_names_fn):
 			return
 
 def play(wd_game_state):
-	gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars = wd_game_state.get_at_play()
+	gameID, all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, country_names_tbl \
+		= wd_game_state.get_at_play()
 	glv_dict, _, _ = all_dicts
 
 	b_can_continue = True
@@ -1131,7 +1140,6 @@ def play(wd_game_state):
 	# if gameID == -1:
 	# 	gname = 't' + str(int(time.time()))[-6:]
 
-	country_names_tbl = ['neutral', 'england', 'france', 'italy', 'germany', 'austria', 'turkey', 'russia']
 
 
 	# Open database connection
@@ -1149,6 +1157,7 @@ def play(wd_game_state):
 				init(cursor, country_names_tbl)
 			init_db = els.convert_list_to_phrases(statement_list)
 
+			wd_game_state.get_alliance_stats().init_terr_and_army_stmts(terr_type_tbl)
 			# d_terrs, matrix = wd_imagine.create_distance_obj()
 			wd_game_state.set_distance_params(wd_imagine.cl_distance_calc())
 
@@ -1230,6 +1239,9 @@ def play(wd_game_state):
 					old_status_db, old_orders_db, old_orders_list, old_orders_status_list \
 						= status_db, orders_db, orders_list, orders_status_list
 					num_stuck = 0
+
+				# here for test only. Move to end of loop
+				wd_game_state.get_alliance_stats().save()
 
 				if b_finished:
 					print('Game Over!')
@@ -1324,7 +1336,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1489 # Set to -1 to restart
+	gameID = 1562 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
@@ -1336,9 +1348,15 @@ def main():
 	# clrecgrp.cl_templ_grp.c_target_gens = wdconfig.c_target_gens
 	wdlearn.init_learn()
 	wd_game_state = wdconfig.cl_wd_state()
+	country_names_tbl = ['neutral', 'england', 'france', 'italy', 'germany', 'austria', 'turkey', 'russia']
+	wd_game_state.set_at_main(all_dicts, el_set_arr, learn_vars, country_names_tbl)
+	wd_game_state.set_alliance_stats(
+		wd_success.cl_alliance_stats(	country_names_tbl, wdconfig.c_alliance_stats_fnt,
+										wdconfig.c_terr_stats_fnt, wdconfig.c_unit_stats_fnt,
+										wdconfig.c_alliance_sel_mat_fnt))
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	for iplay in range(wdconfig.c_num_plays):
-		wd_game_state.set_at_main(gameID, all_dicts, el_set_arr, learn_vars)
+		wd_game_state.set_gameID(gameID)
 		gameID, b_can_continue = do_wd(wd_game_state)
 		if not b_can_continue:
 			print('Program will not continue due to no conts being available or administrative action taken.')
