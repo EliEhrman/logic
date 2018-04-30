@@ -919,7 +919,7 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	all_dicts, db_len_grps, db_cont_mgr, i_active_cont, el_set_arr, sess, learn_vars, \
 	db, cursor, gname, l_humaans, country_names_tbl, \
 	terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl, fleet_can_pass_tbl, \
-	init_db, b_waiting_for_AI, game_store, alliance_data = \
+	init_db, b_waiting_for_AI, game_store, alliance_state = \
 		wd_game_state.get_at_play_turn()
 
 	sqlOrderComplete = string.Template(
@@ -1009,8 +1009,8 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	for row in results:
 		sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
 		cursor.execute(sql_del)
-	alliance_msgs = wd_alliance.make_alliances(wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
-											   alliance_data, statement_list)
+	alliance_msgs = alliance_state.make_alliances(	wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
+													statement_list)
 
 	for msg in alliance_msgs:
 		sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
@@ -1188,7 +1188,7 @@ def play(wd_game_state):
 			old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 			b_keep_working = True
 			game_store = []
-			alliance_data = []
+			# alliance_data = []
 			num_stuck = 0
 			for iturn in range(wdconfig.c_num_turns_per_play):
 				if not b_keep_working:
@@ -1219,7 +1219,7 @@ def play(wd_game_state):
 				wd_game_state.set_at_play(	db, cursor, gname, l_humaans, country_names_tbl,
 											terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
 											fleet_can_pass_tbl, init_db, b_waiting_for_AI,
-											game_store, alliance_data)
+											game_store)
 				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, \
 				orders_list, orders_status_list = \
 					play_turn(	wd_game_state, old_orders_status_list,
@@ -1318,7 +1318,7 @@ def do_wd(wd_game_state):
 
 		# db_len_grps, blocked_len_grps = wdlearn.load_len_grps()
 	sess = dmlearn.init_templ_learn()
-	wd_game_state.set_at_do_wd(db_len_grps, db_cont_mgr, i_active_cont, sess)
+	wd_game_state.set_at_do_wd(db_len_grps, db_cont_mgr, i_active_cont, sess, wd_alliance.cl_alliance_state())
 	gameID, b_can_continue = play(wd_game_state)
 	sess.close()
 	dmlearn.learn_reset()

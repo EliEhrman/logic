@@ -82,12 +82,12 @@ c_freq_stats_version = 1
 
 c_num_game_store_options = 3
 
-c_alliance_terminate_thresh = 0.4
-c_alliance_accept_thresh = 0.5
+c_alliance_terminate_thresh = 0.3
+c_alliance_accept_thresh = 0.4
 c_alliance_propose_thresh = 0.6
 c_alliance_wait_to_propose = 2
 c_alliance_wait_after_terminate = 4
-c_alliance_move_per_turn = 0.3
+c_alliance_move_per_turn = 0.6
 c_alliance_max_move_per_turn = 0.1
 c_alliance_notice_time = 2
 c_alliance_oversize_limit = 11
@@ -125,7 +125,7 @@ class cl_wd_state(object):
 		self.__init_db = None
 		self.__b_waiting_for_AI = None
 		self.__game_store = None
-		self.__alliance_data = None
+		self.__alliance_state = None
 		self.__unit_owns_tbl = None
 		self.__terr_owns_tbl = None
 		self.__sqlOrderComplete = None
@@ -155,11 +155,12 @@ class cl_wd_state(object):
 	def get_at_do_wd(self):
 		return self.__gameID, self.__all_dicts, self.__el_set_arr, self.__learn_vars
 
-	def set_at_do_wd(self, db_len_grps, db_cont_mgr, i_active_cont, sess):
+	def set_at_do_wd(self, db_len_grps, db_cont_mgr, i_active_cont, sess, alliance_state):
 		self.__db_len_grps = db_len_grps
 		self.__db_cont_mgr = db_cont_mgr
 		self.__i_active_cont = i_active_cont
 		self.__sess = sess
+		self.__alliance_state = alliance_state
 
 	def get_at_play(self):
 		return self.__gameID, self.__all_dicts, self.__db_len_grps, self.__db_cont_mgr, \
@@ -171,7 +172,7 @@ class cl_wd_state(object):
 	def set_at_play(self, db, cursor, gname, l_humaans, country_names_tbl,
 					terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
 					fleet_can_pass_tbl, init_db, b_waiting_for_AI,
-					game_store, alliance_data):
+					game_store):
 		self.__db  = db
 		self.__cursor = cursor
 		self.__gname = gname
@@ -184,7 +185,6 @@ class cl_wd_state(object):
 		self.__init_db = init_db
 		self.__b_waiting_for_AI = b_waiting_for_AI
 		self.__game_store = game_store
-		self.__alliance_data = alliance_data
 
 	def set_at_play_turn_tbls(self, unit_owns_tbl, terr_owns_tbl):
 		self.__unit_owns_tbl = unit_owns_tbl
@@ -196,7 +196,7 @@ class cl_wd_state(object):
 				self.__db, self.__cursor, self.__gname, self.__l_humaans, self.__country_names_tbl, \
 				self.__terr_id_tbl, self.__supply_tbl, self.__terr_type_tbl, \
 				self.__army_can_pass_tbl, self.__fleet_can_pass_tbl, \
-				self.__init_db, self.__b_waiting_for_AI, self.__game_store, self.__alliance_data
+				self.__init_db, self.__b_waiting_for_AI, self.__game_store, self.__alliance_state
 
 	def set_at_play_turn(self, sql_complete_order, sql_get_unit_id, l_sql_action_orders, orders_list, orders_status_list, status_db):
 		self.__sql_complete_order = sql_complete_order

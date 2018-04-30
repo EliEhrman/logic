@@ -1786,3 +1786,11 @@ from numerology. However, the system is in place and I hope it gets better.
 Checking in with:
 
 Alliance strength prediction integrated into the alliance system.
+
+Monday 30th April
+
+Modified alliance system so that aliiances are formed in groups. Everybody in the alliance is friends
+
+Checking in with:
+
+New alliance-group system working.
