@@ -6,5 +6,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ham3" />
     <orderEntry type="module" module-name="phrases" />
+    <orderEntry type="module" module-name="hamcifar" />
   </component>
 </module>

@@ -167,6 +167,8 @@ class cl_alliance_state(object):
 						break
 					b_can_do = True
 					bgrp = self.__alliance_grps[p_grp_rels[1]]
+					if len(bgrp) >= wdconfig.c_alliance_max_grp_size:
+						continue
 					for icountry3 in bgrp:
 						if self.__propose_times[icountry][icountry3] >= 0 or self.__terminate_times[icountry][icountry3] >= 0:
 							b_can_do = False

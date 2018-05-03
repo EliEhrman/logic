@@ -1794,3 +1794,11 @@ Modified alliance system so that aliiances are formed in groups. Everybody in th
 Checking in with:
 
 New alliance-group system working.
+
+Wednesday 2nd May
+
+Spent some time on HD but I'm back now
+
+Thursday 3rd May
+
+Upgraded forbidden module to include blocking with subsidiary unless rules.

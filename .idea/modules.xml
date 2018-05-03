@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file:///devlink2/dev/ham3/.idea/ham3.iml" filepath="/devlink2/dev/ham3/.idea/ham3.iml" />
+      <module fileurl="file:///devlink2/dev/hamcifar/.idea/hamcifar.iml" filepath="/devlink2/dev/hamcifar/.idea/hamcifar.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/logic.iml" filepath="$PROJECT_DIR$/.idea/logic.iml" />
       <module fileurl="file:///devlink2/dev/phrases/.idea/phrases.iml" filepath="/devlink2/dev/phrases/.idea/phrases.iml" />
     </modules>

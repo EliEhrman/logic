@@ -58,7 +58,7 @@ c_cont_stats_init_thresh = 0.1
 c_cont_stats_init_exclude_irrelevant = True
 c_cont_stats_fnt = '~/tmp/cont_stats.txt'
 c_cont_forbidden_fn = 'wd_forbidden.txt'
-c_cont_forbidden_version = 1
+c_cont_forbidden_version = 2
 
 e_move_type = Enum('e_move_type', 'none move support convoy hold support_hold convoy_move')
 
@@ -84,13 +84,14 @@ c_num_game_store_options = 3
 
 c_alliance_terminate_thresh = 0.3
 c_alliance_accept_thresh = 0.4
-c_alliance_propose_thresh = 0.6
+c_alliance_propose_thresh = 0.5
 c_alliance_wait_to_propose = 2
 c_alliance_wait_after_terminate = 4
 c_alliance_move_per_turn = 0.6
 c_alliance_max_move_per_turn = 0.1
 c_alliance_notice_time = 2
 c_alliance_oversize_limit = 11
+c_alliance_max_grp_size = 3
 
 c_max_units_for_status = 15 # as far as status stats are concerned we stop at this number
 c_alliance_stats_turn_delay = 5

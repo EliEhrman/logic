@@ -220,7 +220,7 @@ class cl_cont_mgr(object):
 		self.__cont_stats_mgr = None
 		self.__perm_dict = None
 		self.__W_dict = None
-		self.__forbidden_rule_list = []
+		self.__forbidden_rule_list = None
 		# print(self.status.untried)
 		return
 
@@ -278,7 +278,7 @@ class cl_cont_mgr(object):
 		b_load_done = self.__cont_stats_mgr.load(fnt)
 		if b_load_done:
 			if forbidden_fn != None:
-				forbidden.load_forbidden(forbidden_fn, forbidden_version, self.__forbidden_rule_list)
+				self.__forbidden_rule_list= forbidden.load_forbidden(forbidden_fn, forbidden_version)
 
 			self.set_max_cont_id(self.__cont_stats_mgr.get_max_cont_id())
 			self.__cont_stats_mgr.prepare_dictance_keys()

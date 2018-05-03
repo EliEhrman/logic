@@ -651,12 +651,12 @@ def make_rec_from_phrase_list(phrase_list, b_force_AND = False):
 
 	return new_phrase_list, vars_dict
 
-def make_perm_preconds_rec(rule_base, one_perm, story_db):
+def make_perm_preconds_rec(rule_base, one_perm, story_db, b_force_AND=False):
 	phrase_list = list(rule_base)
 	for iphrase in one_perm:
 		phrase_list += [story_db[iphrase].phrase()]
 
-	new_phrase_list, vars_dict = make_rec_from_phrase_list(phrase_list, b_force_AND=False)
+	new_phrase_list, vars_dict = make_rec_from_phrase_list(phrase_list, b_force_AND)
 	return new_phrase_list, vars_dict, phrase_list
 
 	# move_rec =

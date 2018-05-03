@@ -36,10 +36,11 @@ def extra_orders(	glv_dict, cont_stats_mgr, num_rules, l_rules, l_lens, l_scvos,
 
 	return match_pattern, success
 
-
+# First shot at ally support. b_my_move will be False, but we score according to b_offensive
+# The move must have a colist requirement and the requirement must be be in the country orders list
 def sel_orders(	glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, unit_list, success_orders_data,
 				num_rules, l_rules, l_lens, l_scvos, l_gens_recs, prev_stage_score, l_unit_avail, country_orders_list,
-				first_stage_order, prev_stage_match_pattern, b_my_move, b_offensive):
+				first_stage_order, prev_stage_match_pattern, b_my_move, b_offensive, b_ally_support=False):
 	# success_orders_freq, oid_dict, success_unit_dict = success_orders_data
 	l_successes = []
 	for iunit, unit_data in enumerate(unit_list):
@@ -272,9 +273,9 @@ def create_defensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 
 
 
-def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
-						target_name, country_orders_list, success_orders_data,
-						 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail):
+def create_offensive(glv_dict, cont_stats_mgr, unit_list, l_units_of_others,
+					 target_name, country_orders_list, success_orders_data,
+					 num_rules, l_rules, l_lens, l_scvos, l_gens_recs, l_unit_avail):
 	# target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
 	move_target_template = ['?', '?', 'in', '?', 'move', 'to', target_name, 'succeeded', '?']
 	convoy_target_template = ['?', '?', 'in', '?', 'convoy', 'move', 'to', target_name, 'succeeded', '?']
@@ -306,7 +307,7 @@ def create_offensive(	glv_dict, cont_stats_mgr, unit_list, block_unit_list,
 		print('Adding a required colist order:', ' '.join(extra_colist_order), 'est. success:', first_stage_success)
 
 	b_success, block_stage_success, _, block_stage_match_pattern, block_stage_words, _, _, _ = \
-		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, block_unit_list, success_orders_data,
+		sel_orders(glv_dict, cont_stats_mgr, l_target_templates, l_template_bonuses, l_units_of_others, success_orders_data,
 				   num_rules, l_rules, l_lens, l_scvos, l_gens_recs,
 				   prev_stage_score=first_stage_success, l_unit_avail=[],
 				   country_orders_list=[], first_stage_order=first_stage_order,
@@ -425,7 +426,7 @@ def classic_AI(wd_game_state, b_predict_success):
 		country_dict[country_name] = icountry
 
 	terr_owner_dict = dict()
-	for kcountry, vterr_list in 	terr_owns_tbl.iteritems():
+	for kcountry, vterr_list in terr_owns_tbl.iteritems():
 		for terr_data in vterr_list:
 			# icountry = country_dict[kcountry]
 			terr_owner_dict[terr_data[0]] = kcountry
