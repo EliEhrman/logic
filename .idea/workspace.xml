@@ -2,18 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c6b771a1-a10b-4216-9350-efe4ef2bc292" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/logic.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/logic.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/addlearn.py" beforeDir="false" afterPath="$PROJECT_DIR$/addlearn.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/forbidden.py" beforeDir="false" afterPath="$PROJECT_DIR$/forbidden.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/makerecs.py" beforeDir="false" afterPath="$PROJECT_DIR$/makerecs.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebook.txt" beforeDir="false" afterPath="$PROJECT_DIR$/notebook.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wd2.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wd_alliance.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_alliance.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wd_classicAI.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_classicAI.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wd_forbidden.txt" beforeDir="false" afterPath="$PROJECT_DIR$/wd_forbidden.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wd_imagine.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_imagine.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wdconfig.py" beforeDir="false" afterPath="$PROJECT_DIR$/wdconfig.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wdlearn.py" beforeDir="false" afterPath="$PROJECT_DIR$/wdlearn.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -30,7 +26,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="wd2.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="wd2.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/wd2.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="165">
@@ -42,11 +38,20 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="wdconfig.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wdconfig.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="102">
+              <caret line="71" column="9" lean-forward="true" selection-start-line="71" selection-start-column="9" selection-end-line="71" selection-end-column="9" />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="wd_imagine.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wd_imagine.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="61" selection-start-line="61" selection-end-line="61" />
+            <state relative-caret-position="148">
+              <caret line="74" selection-start-line="74" selection-end-line="74" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -54,23 +59,23 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="wd_success.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/wd_success.py">
+      <file leaf-file-name="wd_classicAI.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="76" selection-start-line="76" selection-end-line="76" />
+            <state relative-caret-position="121">
+              <caret line="561" column="29" selection-start-line="561" selection-start-column="29" selection-end-line="561" selection-end-column="29" />
               <folding>
-                <element signature="e#0#9#0" expanded="true" />
+                <element signature="e#0#37#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="wd_forbidden.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/wd_forbidden.txt">
+      <file leaf-file-name="copy.py" pinned="false" current-in-tab="false">
+        <entry file="file:///usr/lib/python2.7/copy.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="102">
-              <caret line="6" column="75" lean-forward="true" selection-start-line="6" selection-start-column="75" selection-end-line="6" selection-end-column="75" />
+            <state relative-caret-position="174">
+              <caret line="229" selection-start-line="229" selection-end-line="229" />
             </state>
           </provider>
         </entry>
@@ -78,8 +83,8 @@
       <file leaf-file-name="forbidden.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/forbidden.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="155">
-              <caret line="157" selection-start-line="157" selection-end-line="157" />
+            <state relative-caret-position="463">
+              <caret line="99" column="16" lean-forward="true" selection-start-line="99" selection-start-column="16" selection-end-line="99" selection-end-column="16" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
               </folding>
@@ -90,34 +95,10 @@
       <file leaf-file-name="wdlearn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wdlearn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="221" selection-start-line="221" selection-end-line="221" />
+            <state relative-caret-position="155">
+              <caret line="244" column="8" selection-start-line="244" selection-start-column="8" selection-end-line="244" selection-end-column="8" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="wd_classicAI.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="138">
-              <caret line="39" column="99" selection-start-line="39" selection-start-column="99" selection-end-line="39" selection-end-column="99" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="wd_alliance.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/wd_alliance.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="46" selection-start-line="46" selection-end-line="46" />
-              <folding>
-                <element signature="e#0#13#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -126,8 +107,8 @@
       <file leaf-file-name="makerecs.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/makerecs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="78" selection-start-line="78" selection-end-line="78" />
+            <state relative-caret-position="9214">
+              <caret line="561" selection-start-line="561" selection-end-line="561" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -135,11 +116,20 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="learn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/learn.py">
+      <file leaf-file-name="notebook.txt" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/notebook.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="119">
-              <caret line="348" column="79" lean-forward="true" selection-start-line="348" selection-start-column="79" selection-end-line="348" selection-end-column="79" />
+            <state relative-caret-position="488">
+              <caret line="1850" lean-forward="true" selection-start-line="1850" selection-end-line="1850" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="els.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/els.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="463">
+              <caret line="193" column="4" selection-start-line="193" selection-start-column="4" selection-end-line="193" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -155,36 +145,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>igrp, grp</find>
-      <find>country_names_tbl</find>
-      <find>l_allies</find>
-      <find>alliance_state</find>
-      <find>__alliance_membership</find>
-      <find>num_hits</find>
-      <find>l_dbs</find>
-      <find>ilen</find>
-      <find>d_phrase_sel_mats</find>
-      <find>mid_score</find>
-      <find>mid_</find>
-      <find>skip_phrase</find>
-      <find>nd_bits</find>
-      <find>c_mid_score</find>
-      <find>l_scores</find>
-      <find>phrase_len</find>
-      <find>d_words</find>
-      <find>num_flip_muts</find>
-      <find>num_ham_winners</find>
-      <find>num_uniques = len(d_words)</find>
-      <find>max_score</find>
-      <find>for ilen</find>
-      <find>num_input_bits</find>
-      <find>stringIO</find>
-      <find>StringIO</find>
-      <find>unit_data</find>
-      <find>rule_arr</find>
-      <find>test</find>
-      <find>l_units_of_others</find>
-      <find>prev_stage_score</find>
+      <find>Adding a req</find>
+      <find>Th</find>
+      <find>yay</find>
+      <find>Might get b</find>
+      <find>id_dict</find>
+      <find>l_all_units</find>
+      <find>success_order_data</find>
+      <find>freq_tbl</find>
+      <find>success_orders_data</find>
+      <find>oid_dict</find>
+      <find>def get_moves</find>
+      <find>order</find>
+      <find>l_f_rules</find>
+      <find>distance_calc</find>
+      <find>game_option_state</find>
+      <find>l_rules</find>
+      <find>extra_orders</find>
+      <find>sel_orders</find>
+      <find>uccess_orders_data.get_moves</find>
+      <find>s_poss_staging</find>
+      <find>create_offensive</find>
+      <find>l_target_data</find>
+      <find>Error. set_success_orders_data removed</find>
+      <find>raise</find>
+      <find>oid</find>
+      <find>s_poss_targets</find>
+      <find>unit_list</find>
+      <find>Ally</find>
+      <find>unrecognised game option</find>
+      <find>get_option</find>
     </findStrings>
     <replaceStrings>
       <replace>curr_cont</replace>
@@ -231,8 +221,6 @@
         <option value="$PROJECT_DIR$/wd_terrnames.txt" />
         <option value="$PROJECT_DIR$/wd_orders.txt" />
         <option value="$PROJECT_DIR$/embed.py" />
-        <option value="$PROJECT_DIR$/wdlearn.py" />
-        <option value="$PROJECT_DIR$/wd_imagine.py" />
         <option value="/devlink2/dev/ham3/randsel.py" />
         <option value="/devlink2/dev/ham3/wdallies2.py" />
         <option value="$PROJECT_DIR$/wd_success.py" />
@@ -241,14 +229,16 @@
         <option value="/devlink2/dev/hamcifar/hc.py" />
         <option value="$PROJECT_DIR$/wd_alliance.py" />
         <option value="/devlink2/dev/phrases/phrases2.py" />
-        <option value="$PROJECT_DIR$/notebook.txt" />
-        <option value="$PROJECT_DIR$/wd2.py" />
         <option value="$PROJECT_DIR$/addlearn.py" />
-        <option value="$PROJECT_DIR$/wdconfig.py" />
         <option value="$PROJECT_DIR$/wd_forbidden.txt" />
         <option value="$PROJECT_DIR$/makerecs.py" />
+        <option value="$PROJECT_DIR$/wd2.py" />
+        <option value="$PROJECT_DIR$/wdconfig.py" />
+        <option value="$PROJECT_DIR$/wd_imagine.py" />
+        <option value="$PROJECT_DIR$/wdlearn.py" />
         <option value="$PROJECT_DIR$/forbidden.py" />
         <option value="$PROJECT_DIR$/wd_classicAI.py" />
+        <option value="$PROJECT_DIR$/notebook.txt" />
       </list>
     </option>
   </component>
@@ -783,7 +773,14 @@
       <option name="project" value="LOCAL" />
       <updated>1525069783281</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="Upgraded forbidden module to include blocking with subsidiary unless rules.">
+      <created>1525332268414</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1525332268414</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TodoView">
@@ -797,18 +794,17 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="64" y="-11" width="1857" height="1092" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.44765344" weight="0.16975982" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.44223827" visible="true" weight="0.16975982" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.325054" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3261339" />
       <window_info anchor="bottom" id="Version Control" order="10" weight="0.32721382" />
-      <window_info anchor="bottom" id="Python Console" order="8" weight="0.3286638" />
-      <window_info id="Structure" order="1" sideWeight="0.5523466" visible="true" weight="0.16975982" />
-      <window_info anchor="bottom" id="Terminal" order="9" weight="0.3297414" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.40172786" />
+      <window_info anchor="bottom" id="Python Console" order="8" weight="0.32829374" />
+      <window_info id="Structure" order="1" sideWeight="0.5577617" weight="0.16975982" />
+      <window_info anchor="bottom" id="Terminal" order="9" weight="0.32937366" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.40172786" />
       <window_info id="Favorites" order="2" sideWeight="0.5032258" side_tool="true" weight="0.17139737" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -848,7 +844,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Rule learning looks solid." />
     <MESSAGE value="AI of Monte Carlo beats random using rules it learned." />
     <MESSAGE value="Learning based on success list. Learning to a target." />
     <MESSAGE value="Learning wd rules. No nonblock after block. New untried maturation." />
@@ -873,14 +868,15 @@
     <MESSAGE value="Alliances and moving towards front lines work." />
     <MESSAGE value="Alliance strength prediction integrated into the alliance system." />
     <MESSAGE value="New alliance-group system working." />
-    <option name="LAST_COMMIT_MESSAGE" value="New alliance-group system working." />
+    <MESSAGE value="Upgraded forbidden module to include blocking with subsidiary unless rules." />
+    <option name="LAST_COMMIT_MESSAGE" value="Upgraded forbidden module to include blocking with subsidiary unless rules." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wdlearn.py</url>
-          <line>75</line>
+          <line>77</line>
           <option name="timeStamp" value="1674" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -945,7 +941,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1246</line>
+          <line>1245</line>
           <option name="timeStamp" value="1750" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -955,7 +951,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1230</line>
+          <line>1229</line>
           <option name="timeStamp" value="1752" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1030,22 +1026,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1254</line>
+          <line>1253</line>
           <option name="timeStamp" value="2061" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
-          <line>449</line>
+          <line>673</line>
           <option name="timeStamp" value="2069" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1260</line>
+          <line>1259</line>
           <option name="timeStamp" value="2070" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1321</line>
+          <line>1320</line>
           <option name="timeStamp" value="2071" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1075,13 +1071,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd_imagine.py</url>
-          <line>61</line>
+          <line>74</line>
           <option name="timeStamp" value="2188" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd2.py</url>
-          <line>1135</line>
-          <option name="timeStamp" value="2199" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file:///devlink2/dev/phrases/phrases.py</url>
@@ -1122,11 +1113,6 @@
           <url>file://$PROJECT_DIR$/wd_success.py</url>
           <line>59</line>
           <option name="timeStamp" value="2404" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd_success.py</url>
-          <line>76</line>
-          <option name="timeStamp" value="2415" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd_alliance.py</url>
@@ -1189,55 +1175,97 @@
           <option name="timeStamp" value="2522" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd_alliance.py</url>
-          <line>9</line>
-          <option name="timeStamp" value="2538" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/forbidden.py</url>
-          <line>35</line>
-          <option name="timeStamp" value="2539" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/wd_alliance.py</url>
-          <line>46</line>
-          <option name="timeStamp" value="2565" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/forbidden.py</url>
-          <line>72</line>
-          <option name="timeStamp" value="2574" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/forbidden.py</url>
-          <line>78</line>
-          <option name="timeStamp" value="2575" />
+          <condition expression="b_ally_support and this_stage_success &gt; 0.1" language="Python" />
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>179</line>
+          <option name="timeStamp" value="2606" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>351</line>
+          <option name="timeStamp" value="2611" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>955</line>
+          <option name="timeStamp" value="2640" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>942</line>
+          <option name="timeStamp" value="2643" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>945</line>
+          <option name="timeStamp" value="2645" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>560</line>
+          <option name="timeStamp" value="2661" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>975</line>
+          <option name="timeStamp" value="2670" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>972</line>
+          <option name="timeStamp" value="2671" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>590</line>
+          <option name="timeStamp" value="2678" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wdlearn.py</url>
           <line>313</line>
-          <option name="timeStamp" value="2590" />
+          <option name="timeStamp" value="2727" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
-          <line>162</line>
-          <option name="timeStamp" value="2592" />
+          <line>608</line>
+          <option name="timeStamp" value="2786" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/wd_classicAI.py</url>
+          <line>613</line>
+          <option name="timeStamp" value="2787" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="2593" />
+      <option name="time" value="2809" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="step_phrases_list" />
-        <watch expression="test_move" />
+        <watch expression="s_poss_targets" />
+        <watch expression="l_target_data" />
+        <watch expression="scountry" />
       </configuration>
     </watches-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="breakpointCondition">
+      <expression>
+        <expression-string>iunit==18</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>b_ally_support and this_stage_success &gt; 0.1</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>b_ally_support</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>iorder &gt; 40</expression-string>
         <language-id>Python</language-id>
@@ -1288,59 +1316,53 @@
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>forbidden_state.add_rule(int(rule_id), rule)</expression-string>
+        <expression-string>set(korder) - set([unit_data[1]])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>orbidden_state.add_rule(int(rule_id), rule)</expression-string>
+        <expression-string>set.intersection(set(korder) - set([unit_data[1]]), set(target_neighbors))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.array(l_scores).argsort()</expression-string>
+        <expression-string>set(korder) - set(unit_data[1])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>l_scores[np.array(l_scores).argsort()</expression-string>
+        <expression-string>set(korder)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>d_words[skip_phrase[2]]</expression-string>
+        <expression-string>set(korder) - set(unit_data[1]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self.__propose_times[icountry][icountry4]</expression-string>
+        <expression-string>distance_calc.get_distance(unit_data[1], target_name)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self</expression-string>
+        <expression-string>self.__l_b_allowed[idx]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self.__alliance_rel[icountry][icountry2]</expression-string>
+        <expression-string>l_donated[ially]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>nd_scores.argsort()</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>l_scores.index(max_score)</expression-string>
+        <expression-string>list(donated)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/classicAI.py" />
     <entry file="file://$PROJECT_DIR$/adv_learn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="153">
@@ -1483,13 +1505,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/els.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1445">
-          <caret line="96" column="8" selection-start-line="96" selection-start-column="8" selection-end-line="96" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/wd_terrnames.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1513">
@@ -1532,20 +1547,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="463">
-          <caret line="101" selection-start-line="101" selection-end-line="101" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/wd_allies_lrn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="272">
           <caret line="45" column="18" lean-forward="true" selection-start-line="45" selection-start-column="18" selection-end-line="45" selection-end-column="18" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1608,9 +1613,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
           <caret line="14" column="19" selection-start-line="14" selection-start-column="19" selection-end-line="14" selection-end-column="19" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1624,13 +1626,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/notebook.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="488">
-          <caret line="1801" lean-forward="true" selection-start-line="1801" selection-end-line="1801" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/addlearn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
@@ -1641,27 +1636,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wdconfig.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="60" column="28" selection-start-line="60" selection-start-column="28" selection-end-line="60" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/wd_forbidden.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
           <caret line="6" column="75" lean-forward="true" selection-start-line="6" selection-start-column="75" selection-end-line="6" selection-end-column="75" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/wdlearn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="221" selection-start-line="221" selection-end-line="221" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1672,9 +1650,19 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/wd_alliance.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="9" selection-start-line="9" selection-end-line="9" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/wd_success.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
+        <state relative-caret-position="1173">
           <caret line="76" selection-start-line="76" selection-end-line="76" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
@@ -1682,10 +1670,61 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wd2.py">
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="1161" selection-start-line="1161" selection-end-line="1161" />
+        <state relative-caret-position="463">
+          <caret line="101" selection-start-line="101" selection-end-line="101" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/makerecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9214">
+          <caret line="561" selection-start-line="561" selection-end-line="561" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdlearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="155">
+          <caret line="244" column="8" selection-start-line="244" selection-start-column="8" selection-end-line="244" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/python2.7/copy.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="174">
+          <caret line="229" selection-start-line="229" selection-end-line="229" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/forbidden.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="463">
+          <caret line="99" column="16" lean-forward="true" selection-start-line="99" selection-start-column="16" selection-end-line="99" selection-end-column="16" />
+          <folding>
+            <element signature="e#0#30#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/notebook.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="488">
+          <caret line="1850" lean-forward="true" selection-start-line="1850" selection-end-line="1850" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="121">
+          <caret line="561" column="29" selection-start-line="561" selection-start-column="29" selection-end-line="561" selection-end-column="29" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
@@ -1694,48 +1733,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/wd_imagine.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="61" selection-start-line="61" selection-end-line="61" />
+        <state relative-caret-position="148">
+          <caret line="74" selection-start-line="74" selection-end-line="74" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wd_alliance.py">
+    <entry file="file://$PROJECT_DIR$/els.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="463">
+          <caret line="193" column="4" selection-start-line="193" selection-start-column="4" selection-end-line="193" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdconfig.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="71" column="9" lean-forward="true" selection-start-line="71" selection-start-column="9" selection-end-line="71" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
-          <caret line="46" selection-start-line="46" selection-end-line="46" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/forbidden.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="155">
-          <caret line="157" selection-start-line="157" selection-end-line="157" />
-          <folding>
-            <element signature="e#0#30#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/makerecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="78" selection-start-line="78" selection-end-line="78" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="138">
-          <caret line="39" column="99" selection-start-line="39" selection-start-column="99" selection-end-line="39" selection-end-column="99" />
+          <caret line="1161" selection-start-line="1161" selection-end-line="1161" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>

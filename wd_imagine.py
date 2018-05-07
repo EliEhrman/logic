@@ -13,6 +13,11 @@ import makerecs as mr
 
 class cl_distance_calc(object):
 	def __init__(self):
+		# The goal is to create a matrix of distances between all the terrs
+		# The method is to fill in the places where the dstance is 1 by virtue of a direct move
+		# between the two terrs
+		# The keep iterating over all the matrix where if a is x from b and b is y from c and x + y
+		# is less than the figure in the matrix, replace it
 		success_orders_freq, success_id_dict, max_id = dict(), dict(), [-1]
 		wdlearn.load_order_freq_tbl(success_orders_freq, success_id_dict, max_id, wdconfig.orders_success_fnt)
 		def add_to_dict(d, l, sterr):
@@ -59,11 +64,27 @@ class cl_distance_calc(object):
 					continue
 				matrix[iterr][iterr2] = 0
 
+		self.__1_neighbors = []
+		for iterr in range(len(l_terr_ids)):
+			sin = set()
+			for iterr2, dist in enumerate(matrix[iterr]):
+				if dist <= 1:
+					sin.add(iterr2)
+			self.__1_neighbors.append([l_terr_ids[ine] for ine in sin])
+
 		self.__d_terrs = d_terrs
 		self.__matrix = matrix
+		self.__l_terrs = l_terr_ids
 
 	def get_distance(self, sterr1, sterr2):
 		return self.__matrix[self.__d_terrs[sterr1]][self.__d_terrs[sterr2]]
+
+	def get_neighbors(self, sterr, max_dist):
+		if max_dist != 1:
+			print('Only 1-neighbors pre-calculated at present. Exiting')
+			exit(1)
+		iterr = self.__d_terrs[sterr]
+		return self.__1_neighbors[iterr]
 
 def get_colist_moves(order, freq_data, colist_req_thresh, colist_strong_thresh):
 	freq_tbl, oid_dict, unit_dict = freq_data

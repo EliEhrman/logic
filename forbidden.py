@@ -74,9 +74,9 @@ def load_forbidden(fn, version):
 
 test_move = ['army', 'in', 'gascony', 'support', 'hold', 'in', 'paris']
 def test_move_forbidden(l_move, forbidden_state, db, cascade_els, glv_dict):
-	global test_move
-	if l_move == test_move:
-		print('test this')
+	# global test_move
+	# if l_move == test_move:
+	# 	print('test this')
 	if forbidden_state == None:
 		return False
 
@@ -93,10 +93,10 @@ def test_move_forbidden(l_move, forbidden_state, db, cascade_els, glv_dict):
 						b_forbidden = False
 						break
 				if b_forbidden:
-					print(' '.join(l_move+['forbidden!!!!']))
+					# print(' '.join(l_move+['forbidden!!!!']))
 					return True
 
-	print(' '.join(l_move + ['allowed. Yayyyyyyyyyyy']))
+	# print(' '.join(l_move + ['allowed. Yayyyyyyyyyyy']))
 	return False
 
 # This is the WRONG place. It should be in rules.py but rules is a dep of makerecs and els so it doesn't seem to want to import them

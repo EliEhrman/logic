@@ -5,6 +5,8 @@ from os.path import expanduser
 from shutil import copyfile
 import copy
 import csv
+import random
+
 import learn
 import addlearn
 import els
@@ -197,8 +199,197 @@ def load_order_freq_tbl(freq_tbl, id_dict, max_id, fnt):
 		print('Error. Cannot load order frequency stats.')
 		return
 
-def load_order_freq( l_all_units,
-					l_f_rules, full_db, cascade_els, glv_dict, fnt):
+# class cl_order_data(object):
+
+class cl_order_freq_data(object):
+	def __init__(self):
+		self.__freq_tbl = dict() # dict mapping move/order to *index* into l_oids, l_freqs, l_b_tested and l_b_allowed
+		self.__d_oids_to_move = dict() # dict mapping oids to move/order
+		self.__d_oids = dict() # dict mapping oids directly to thr *index* into l_oids, l_freqs, l_b_tested and l_b_allowed
+		self.__d_units = dict()
+		self.__l_oids = []
+		self.__l_freqs = []
+		self.__l_co_dicts = []
+		self.__l_b_tested = []
+		self.__l_b_allowed = []
+		self.__forbidden_state = []
+		self.__cascade_els = []
+		self.__glv_dict = dict()
+		self.__status_db = []
+
+	def init_for_move(self, full_db):
+		self.__status_db = full_db
+
+	def is_init_for_move(self):
+		return self.__status_db != []
+
+	# I expect not to use this. Full testing of all units for move
+	def test_for_allowed(self, l_all_units, full_db):
+		self.__status_db = full_db
+		for kmove, vidx in self.__freq_tbl:
+			move = list(kmove)
+			unit_data = [move[0], move[2]]
+			b_can_do, b_tested = True, False
+			if unit_data in l_all_units:
+				b_tested = False
+			if b_tested:
+				b_can_do = forbidden.test_move_forbidden(move, self.__forbidden_state, full_db,
+														 self.__cascade_els, self.__glv_dict)
+			self.__l_b_tested[vidx] = b_tested
+			self.__l_b_allowed[vidx] = b_can_do
+			# if b_can_do:
+			# 	l_unit_moves = unit_dict.get(tuple(unit_data), [])
+			# 	l_unit_moves.append(oid)
+			# 	unit_dict[tuple(unit_data)] = l_unit_moves
+
+	def reset_for_move(self):
+		self.__status_db = []
+		self.__l_b_tested = [False for _ in self.__l_freqs]
+		self.__l_b_allowed = [False for _ in self.__l_freqs]
+
+	def is_init_for_game(self):
+		return self.__forbidden_state != []
+
+	def init_for_game(self, forbidden_state, fnt, cascade_els, glv_dict):
+		self.__forbidden_state = forbidden_state
+		self.__cascade_els = cascade_els
+		self.__glv_dict = glv_dict
+		# freq_tbl, id_dict, unit_dict, max_id = dict(), dict(), dict(), [-1]
+		max_id = [-1]
+		try:
+			o_fn = expanduser(fnt)
+			with open(o_fn, 'rb') as o_fhr:
+				o_csvr = csv.reader(o_fhr, delimiter='\t', quoting=csv.QUOTE_NONE, escapechar='\\')
+				_, _, version_str, _, snum_orders = next(o_csvr)
+				version = int(version_str)
+				if version != wdconfig.c_freq_stats_version:
+					raise IOError
+				for iorder in range(int(snum_orders)) :
+					row = next(o_csvr)
+					l_co_oids = next(o_csvr)
+					oid, co_dict = int(row[1]), dict()
+					if oid > max_id[0]:
+						max_id[0] = oid
+					move = row[2:]
+					unit_data = [move[0], move[2]]
+					# b_can_do = True
+					# if unit_data not in l_all_units:
+					# 	b_can_do = False
+					# if b_can_do and forbidden.test_move_forbidden(move, l_f_rules, full_db, cascade_els, glv_dict):
+					# 	b_can_do = False
+					# if b_can_do:
+					l_unit_moves = self.__d_units.get(tuple(unit_data), [])
+					l_unit_moves.append(oid)
+					self.__d_units[tuple(unit_data)] = l_unit_moves
+					idx = len(self.__l_freqs)
+					self.__l_freqs.append(int(row[0]))
+					self.__l_oids.append(oid)
+					self.__l_co_dicts.append(co_dict)
+					self.__l_b_tested.append(False)
+					self.__l_b_allowed.append(False)
+					self.__freq_tbl[tuple(move)] = idx
+					self.__d_oids_to_move[oid] = tuple(move)
+					self.__d_oids[oid] = idx
+
+					for co_soid in l_co_oids:
+						co_oid, co_freq = co_soid.split(':')
+						co_dict[int(co_oid)] = int(co_freq)
+
+		except IOError:
+			print('Error. Cannot load order frequency stats.')
+			return [-1]
+
+		return max_id
+
+	def get_moves(self, unit_data, l_order_templ, target_neighbors=[], max_len=1000, max_num_moves=1000):
+		# success_orders_freq, oid_dict, success_unit_dict = success_orders_data
+
+		# b_max_reached = False
+		order_list = []
+		l_all_poss_oids = self.__d_units.get(tuple(unit_data), [])
+		if l_all_poss_oids == []:
+			return order_list
+		for poss_oid in l_all_poss_oids:
+			if len(order_list) >= max_num_moves:
+				return order_list
+			korder = self.__d_oids_to_move[poss_oid]
+			b_success = False
+			for one_templ in l_order_templ:
+				if b_success:
+					break
+				b_success = True
+				order = list(one_templ)
+				for iel, el in enumerate(korder):
+					if iel > max_len:
+						break
+					if order[iel] == '?':
+						order[iel] = el
+					else:
+						if order[iel] != el:
+							b_success = False
+							break
+
+			if b_success and target_neighbors != []:
+				u = set.intersection(set(korder) - set([unit_data[1]]), set(target_neighbors))
+				b_success = (len(u) > 0)
+
+			if b_success:
+				# order_list.append(list(korder))
+				move = list(korder) # not really very deep copy, may be too shallow
+				idx = self.__d_oids[poss_oid]
+				if not self.__l_b_tested[idx]:
+					b_can_do = not forbidden.test_move_forbidden(move, self.__forbidden_state, self.__status_db,
+															 self.__cascade_els, self.__glv_dict)
+					self.__l_b_tested[idx] = True
+					self.__l_b_allowed[idx] = b_can_do
+				else:
+					b_can_do = self.__l_b_allowed[idx]
+				if b_can_do:
+					order_list.append(move)
+
+		random.shuffle(order_list)
+		return order_list
+
+	def get_colist_moves(self, order, colist_req_thresh, colist_strong_thresh):
+		# freq_tbl, oid_dict, unit_dict = freq_data
+		l_colist_orders = []
+		idx = self.__freq_tbl[tuple(order)]
+		# freq, id, colist_dict = freq_tbl[tuple(order)]
+		colist_dict, id, freq = self.__l_co_dicts[idx], self.__l_oids[idx], self.__l_freqs[idx]
+		l_scores, l_oids, l_freqs = [], [], []
+		for koid, vco_freq in colist_dict.iteritems():
+			# l_scores.append((vco_freq) / float(freq))
+			l_freqs.append(vco_freq)
+			l_oids.append(koid)
+		if len(l_freqs) == 0:
+			return [], [], []
+		i_max_score = max(xrange(len(l_freqs)), key=l_freqs.__getitem__)
+		max_score =  float(l_freqs[i_max_score]) / float(freq)
+		l_b_req, l_b_rev_req = [False for score in l_freqs], [False for score in l_freqs]
+		if max_score > colist_strong_thresh:
+			l_b_req[i_max_score] = True
+			rev_oid = l_oids[i_max_score]
+			# rev_order = oid_dict.get(oid, [])
+			rev_order = self.__d_oids_to_move.get(rev_oid, [])
+			if rev_order != []:
+				# rev_idx = self.__freq_tbl[tuple(order)]
+				rev_idx = self.__d_oids[rev_oid]
+				rev_colist_dict, rev_id, rev_freq = self.__l_co_dicts[rev_idx], self.__l_oids[rev_idx], self.__l_freqs[rev_idx]
+				# rev_freq, rev_id, rev_colist_dict = freq_tbl[tuple(rev_order)]
+				rev_rev_freq = rev_colist_dict.get(id, -1)
+				if rev_rev_freq != -1:
+					rev_score = float(rev_rev_freq) / float(rev_freq)
+					if rev_score > colist_req_thresh:
+						l_b_rev_req[i_max_score] = True
+
+		l_colist_orders = [self.__d_oids_to_move[oid] for oid in l_oids]
+
+		return l_colist_orders, l_b_req, l_b_rev_req
+
+
+
+def load_order_freq(l_all_units,
+					forbidden_state, full_db, cascade_els, glv_dict, fnt):
 	freq_tbl, id_dict, unit_dict, max_id = dict(), dict(), dict(), [-1]
 	try:
 		o_fn = expanduser(fnt)
@@ -219,7 +410,7 @@ def load_order_freq( l_all_units,
 				b_can_do = True
 				if unit_data not in l_all_units:
 					b_can_do = False
-				if b_can_do and forbidden.test_move_forbidden(move, l_f_rules, full_db, cascade_els, glv_dict):
+				if b_can_do and forbidden.test_move_forbidden(move, forbidden_state, full_db, cascade_els, glv_dict):
 					b_can_do = False
 				if b_can_do:
 					l_unit_moves = unit_dict.get(tuple(unit_data), [])

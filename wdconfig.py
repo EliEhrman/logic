@@ -69,11 +69,15 @@ c_oracle_convoy_err_prob = 0.3
 
 c_classic_AI_defensive_bias = 1.2
 c_classic_AI_max_successes = 10
-c_classic_AI_num_option_runs = 5
+c_classic_AI_num_option_runs = 9
 c_classic_AI_stage_score_factor = 0.3
 c_classic_AI_rejoiner_min = 0.1
 c_classic_AI_abandon_prob = 0.3
 c_classic_AI_contested_repl = 3
+c_classic_AI_ally_success_min = 0.4
+c_classic_AI_request_help_sanity_limit = 10
+c_classic_AI_unit_distance_to_target = 2
+c_classic_AI_action_distance_to_target = 1
 
 c_freq_stats_newbie_thresh = 5
 c_freq_stats_mature_thresh = 10
@@ -92,6 +96,7 @@ c_alliance_max_move_per_turn = 0.1
 c_alliance_notice_time = 2
 c_alliance_oversize_limit = 11
 c_alliance_max_grp_size = 3
+
 
 c_max_units_for_status = 15 # as far as status stats are concerned we stop at this number
 c_alliance_stats_turn_delay = 5
@@ -137,6 +142,26 @@ class cl_wd_state(object):
 		self.__status_db = None
 		self.__distance_calc = None
 		self.__alliance_stats = None
+		self.__success_orders_data = None
+		self.__b_game_rules_initialized = False
+		self.__l_game_rules = None
+		self.__l_game_scvos = None
+		self.__l_game_lens = None
+		self.__l_game_gens_recs = None
+		self.__num_game_rules = -1
+
+	def is_game_rules_initialized(self):
+		return self.__b_game_rules_initialized
+
+	def init_game_rules(self, num_rules, l_rules, l_scvos, l_lens, l_gens_recs):
+		self.__num_game_rules = num_rules
+		self.__l_game_rules = l_rules
+		self.__l_game_scvos = l_scvos
+		self.__l_game_lens = l_lens
+		self.__l_game_gens_recs = l_gens_recs
+
+	def get_game_rules(self):
+		return self.__num_game_rules, self.__l_game_rules, self.__l_game_scvos, self.__l_game_lens, self.__l_game_gens_recs
 
 	def set_alliance_stats(self, alliance_stats):
 		self.__alliance_stats = alliance_stats
@@ -172,8 +197,7 @@ class cl_wd_state(object):
 
 	def set_at_play(self, db, cursor, gname, l_humaans, country_names_tbl,
 					terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
-					fleet_can_pass_tbl, init_db, b_waiting_for_AI,
-					game_store):
+					fleet_can_pass_tbl, init_db, b_waiting_for_AI):
 		self.__db  = db
 		self.__cursor = cursor
 		self.__gname = gname
@@ -185,7 +209,7 @@ class cl_wd_state(object):
 		self.__fleet_can_pass_tbl = fleet_can_pass_tbl
 		self.__init_db = init_db
 		self.__b_waiting_for_AI = b_waiting_for_AI
-		self.__game_store = game_store
+		# self.__game_store = game_store
 
 	def set_at_play_turn_tbls(self, unit_owns_tbl, terr_owns_tbl):
 		self.__unit_owns_tbl = unit_owns_tbl
@@ -216,8 +240,17 @@ class cl_wd_state(object):
 				self.__unit_owns_tbl, self.__all_dicts, self.__terr_owns_tbl, self.__supply_tbl, \
 				self.__b_waiting_for_AI, self.__game_store
 
+	def set_game_state(self, game_state):
+		self.__game_store = game_state
+
 	def set_gameID(self, gameID):
 		self.__gameID = gameID
+
+	def set_success_orders_data(self, success_orders_data):
+		self.__success_orders_data = success_orders_data
+
+	def get_success_orders_data(self):
+		return self.__success_orders_data
 
 	def get_distance_params(self):
 		return self.__distance_calc

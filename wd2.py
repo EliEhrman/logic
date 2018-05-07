@@ -1218,8 +1218,7 @@ def play(wd_game_state):
 
 				wd_game_state.set_at_play(	db, cursor, gname, l_humaans, country_names_tbl,
 											terr_id_tbl, supply_tbl, terr_type_tbl, army_can_pass_tbl,
-											fleet_can_pass_tbl, init_db, b_waiting_for_AI,
-											game_store)
+											fleet_can_pass_tbl, init_db, b_waiting_for_AI)
 				gameID, b_finished, b_orders_valid, b_reset_orders, b_stuck, status_db, orders_db, \
 				orders_list, orders_status_list = \
 					play_turn(	wd_game_state, old_orders_status_list,

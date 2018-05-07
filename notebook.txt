@@ -1802,3 +1802,52 @@ Spent some time on HD but I'm back now
 Thursday 3rd May
 
 Upgraded forbidden module to include blocking with subsidiary unless rules.
+
+Don't forget
+recalculate the target list each option - otherwise it isn't an option
+don't consider blocking units that are more than 2 distance units away
+when it's time to pick an option, add a request system
+
+Friday 4th May
+
+More to work on before you're done with alliances and support
+    Don't set all forbidden rules before you start
+        Load the file once er.. per game not turn
+        Add two fields to the content of the freq_dict
+            b_tested_for_allowed
+            b_allowed
+        These two fields are reset once per turn not once per option run
+            so reset when you reset the game store
+        Calculate forbidden only in wd_imaging get_moves.
+            It needs to take a target and list of distance-1 from target
+            Orders that include no words from the target or dist-1
+                Should not be tested for allowed
+                Should not be returned even if they have been previouly tested and found allowed
+
+
+And when that's done...
+    You work on UI
+    1. One line lets you pick an alliance or unalligen individual to choose from
+        When you are in the alliance get replaced by a leave button
+    2. Add a refresh conditional on the db telling you to
+    3. A second line allows you to pick a requested support (once the order is saved)
+        If there is an incoming request, this line is replaced by Accept or reject a request
+
+Saturday 5th May
+
+Fix that horrible issue of AI leaving a terr before ownership is transferred!!!!!!
+Fix it! Fix it!
+
+Sunday 6th May
+
+Don't forget to impact the like based on accept/reject of requests for support
+
+Monday 7th May
+
+It's starting to look a little better. Allies are supporting each other - if a little rarely.
+The AI starts very slowly as it still works through a lot of forbidden and allowed moves but after that... wow!
+I am on 9 option runs now, but many more could be added. We might even start looking into the future
+
+Checkin in with:
+
+Allies can support each other units. Some speedups implemented.
