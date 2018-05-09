@@ -808,6 +808,7 @@ def classic_AI(wd_game_state, b_predict_success):
 				game_option_state.init_donated(scountry, list(s_donated))
 				del icountry, scountry, l_allies, unit_list, s_donated
 
+
 	for ioption_run in range(num_option_iters):
 		# if game_option_state == []:
 		# 	game_option_state[:] = [[] for _ in country_names_tbl]
@@ -993,4 +994,46 @@ def classic_AI(wd_game_state, b_predict_success):
 	success_list = [True for o in orders_list]
 	return orders_list, orders_db, success_list, icountry_list
 
+
+def alliance_AI(alliance_state):
+	# What is a little confusing here is that the function is called where it is assumed that it is
+	# same country until the function returns. The caller knows which county
+
+	l_notice_option = alliance_state.select_option_type([	'leave alliance notice', 'now allied notice',
+															'no alliance notice', 'alliance accepted',
+															'alliance rejected'])
+	for notice_option in l_notice_option:
+		alliance_state.remove_option(notice_option[0], baccept=True)
+
+	l_app_ally_options = alliance_state.select_option_type(['app_ally', 'app_join'])
+	for app_ally_option in l_app_ally_options:
+		score = alliance_state.score_alliance_option(app_ally_option[1])
+		alliance_state.remove_option(app_ally_option[0], baccept=(score >= wdconfig.c_alliance_accept_thresh))
+
+
+	l_leave_option = alliance_state.select_option_type(['leave_alliance'])
+	if l_leave_option == []:
+		l_join_options = alliance_state.select_option_type(['ally_req', 'join_req'])
+		opt_opts = []
+		if l_join_options != []:
+			for option_data in l_join_options:
+				iopt, option = option_data
+				score = alliance_state.score_alliance_option(option)
+				opt_opts.append([score, iopt])
+			sorted_opt_opts = sorted(opt_opts, key=lambda x: x[0], reverse=True)
+			b_accept_first = False
+			if sorted_opt_opts[0][0] >= wdconfig.c_alliance_propose_thresh:
+				b_accept_first = True
+			for isorted, sorted_opt in enumerate(sorted_opt_opts):
+				alliance_state.remove_option(sorted_opt[1], isorted==0 and b_accept_first)
+				# wd_game_state.get_alliance_state().exec_option(option, baccept=True)
+	else:
+		iopt, option = l_leave_option[0]
+		score = alliance_state.score_alliance_option(option)
+		# if score < wdconfig.c_alliance_terminate_thresh:
+		alliance_state.remove_option(iopt, score < wdconfig.c_alliance_terminate_thresh)
+
+	return alliance_state.move_on_resp('done')
+	# if user_option_status != 'good':
+	# 	break
 

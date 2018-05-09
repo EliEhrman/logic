@@ -1009,13 +1009,15 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	for row in results:
 		sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
 		cursor.execute(sql_del)
-	alliance_msgs = alliance_state.make_alliances(	wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
+	alliance_state.process_alliance_data(	wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
 													statement_list)
-
+	alliance_msgs = alliance_state.get_msgs()
 	for msg in alliance_msgs:
 		sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
 		cursor.execute(sql_insert)
 	db.commit()
+
+	statement_list += alliance_state.get_statements()
 
 
 	status_db = els.convert_list_to_phrases(statement_list)

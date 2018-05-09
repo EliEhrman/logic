@@ -1851,3 +1851,13 @@ I am on 9 option runs now, but many more could be added. We might even start loo
 Checkin in with:
 
 Allies can support each other units. Some speedups implemented.
+
+Wednesday 9th May
+
+In preparation for adding human alliances and unit support, I have added a whole framework of user
+options. It is a kind of message system where countrys consider making alliance requests, perhaps make
+them, send them to the partner and he considers the request.
+
+Checking in with:
+
+Alliance and user option system working. No humans yet.

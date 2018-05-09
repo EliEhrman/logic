@@ -97,6 +97,8 @@ c_alliance_notice_time = 2
 c_alliance_oversize_limit = 11
 c_alliance_max_grp_size = 3
 
+c_distance_calc_num_stalls = 2
+c_distance_calc_max_iters = 1
 
 c_max_units_for_status = 15 # as far as status stats are concerned we stop at this number
 c_alliance_stats_turn_delay = 5
@@ -223,6 +225,9 @@ class cl_wd_state(object):
 				self.__army_can_pass_tbl, self.__fleet_can_pass_tbl, \
 				self.__init_db, self.__b_waiting_for_AI, self.__game_store, self.__alliance_state
 
+	def get_alliance_state(self):
+		return self.__alliance_state
+
 	def set_at_play_turn(self, sql_complete_order, sql_get_unit_id, l_sql_action_orders, orders_list, orders_status_list, status_db):
 		self.__sql_complete_order = sql_complete_order
 		self.__sql_get_unit_id = sql_get_unit_id
@@ -243,8 +248,11 @@ class cl_wd_state(object):
 	def set_game_state(self, game_state):
 		self.__game_store = game_state
 
-	def set_gameID(self, gameID):
-		self.__gameID = gameID
+	# def set_gameID(self, gameID):
+	# 	self.__gameID = gameID
+
+	def get_gameID(self):
+		return self.__gameID
 
 	def set_success_orders_data(self, success_orders_data):
 		self.__success_orders_data = success_orders_data

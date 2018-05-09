@@ -40,7 +40,11 @@ class cl_distance_calc(object):
 				matrix[d_terrs[vmove[2]]][d_terrs[vmove[5]]] = 1
 
 		num_stalled = 0
-		while num_stalled < 3:
+		num_iters = 0
+		while num_stalled < wdconfig.c_distance_calc_num_stalls:
+			if num_iters > wdconfig.c_distance_calc_max_iters:
+				break
+			num_iters += 1
 			b_better = False
 			for iterr, terr_row in enumerate(matrix):
 				for iterr2, dist in enumerate(terr_row):
