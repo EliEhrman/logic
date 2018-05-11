@@ -2,6 +2,7 @@ from __future__ import print_function
 import random
 import copy
 from operator import itemgetter
+import sys
 
 import wdconfig
 import wdlearn
@@ -537,7 +538,7 @@ class cl_game_option_state(object):
 		return country_data.get_targets() if country_data != None else []
 
 	def propose_donated(self, scountry):
-		min_num_proposed, min_option = 1000, []
+		min_num_proposed, min_option = sys.maxint, []
 		for koption, vioption in self.__d_stores.iteritems():
 			donated, scountry2, b_needs_ally = koption
 			num_proposed = self.__l_num_proposed[vioption]
@@ -616,7 +617,7 @@ class cl_game_option_state(object):
 		# return self.__success_orders_data
 
 def classic_AI(wd_game_state, b_predict_success):
-	init_db, status_db, db_cont_mgr, country_names_tbl, l_humaan_countries, unit_owns_tbl, \
+	init_db, status_db, db_cont_mgr, country_names_tbl, _, unit_owns_tbl, \
 	all_the_dicts, terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_option_state  = \
 		wd_game_state.get_at_classic_AI()
 	glv_dict, def_article_dict, cascade_dict = all_the_dicts
@@ -629,6 +630,8 @@ def classic_AI(wd_game_state, b_predict_success):
 	if success_orders_data == None:
 		success_orders_data = wdlearn.cl_order_freq_data()
 		wd_game_state.set_success_orders_data(success_orders_data)
+	alliance_state = wd_game_state.get_alliance_state()
+	human_by_icountry = alliance_state.get_human_by_icountry()
 
 	if b_predict_success:
 		icc_list = db_cont_mgr.get_conts_above(wdconfig.c_use_rule_thresh)
@@ -670,7 +673,7 @@ def classic_AI(wd_game_state, b_predict_success):
 	l_country_options = [[] for _ in country_names_tbl]
 	# for ioption_run in range(wdconfig.c_classic_AI_num_option_runs):
 	num_option_iters = wdconfig.c_classic_AI_num_option_runs
-	if len(l_humaan_countries) > 0:
+	if any(human_by_icountry):
 		if not b_waiting_for_AI or not game_option_state.is_donated_initialized():
 			num_option_iters = 1
 		else:
@@ -701,7 +704,7 @@ def classic_AI(wd_game_state, b_predict_success):
 
 		if not game_option_state.is_donated_initialized():
 			for icountry in range(1, len(country_names_tbl)):
-				# if icountry in l_humaan_countries:
+				# if human_by_icountry[icountry]:
 				# 	continue
 				scountry = country_names_tbl[icountry]
 				s_poss_targets = set()
@@ -788,8 +791,8 @@ def classic_AI(wd_game_state, b_predict_success):
 					unit_list, b_offensive, s_contested, l_target_data, block_unit_list
 
 			for icountry in range(1, len(country_names_tbl)):
-				if icountry in l_humaan_countries:
-					continue
+				# if human_by_icountry[icountry]:
+				# 	continue
 				scountry = country_names_tbl[icountry]
 				l_allies = game_option_state.get_allies(scountry, status_db, country_names_tbl)
 				unit_list = game_option_state.get_unit_list(scountry)
@@ -815,7 +818,7 @@ def classic_AI(wd_game_state, b_predict_success):
 
 
 		for icountry in range(1, len(country_names_tbl)):
-			if icountry in l_humaan_countries:
+			if human_by_icountry[icountry]:
 				continue
 			b_has_success_score = False
 			success_score = 0.0
@@ -918,12 +921,12 @@ def classic_AI(wd_game_state, b_predict_success):
 	# end if not b_waiting_for_AI or game_option_state = []
 
 	if b_waiting_for_AI:
-		l_donated, l_asked_ally, l_alreay_asked, l_done, l_ally_orders, l_best_options = [], [], [], [], [], []
+		l_donated, l_asked_ally, l_already_asked, l_done, l_ally_orders, l_best_options = [], [], [], [], [], []
 		for icountry, _ in enumerate(country_names_tbl):
 			l_donated.append(('None', 'None'))
 			l_asked_ally.append(False)
-			l_alreay_asked.append(False)
-			l_done.append(icountry==0)
+			l_already_asked.append(icountry==0 or human_by_icountry[icountry])
+			l_done.append(icountry==0 or human_by_icountry[icountry])
 			l_ally_orders.append([])
 			l_best_options.append([])
 
@@ -947,8 +950,8 @@ def classic_AI(wd_game_state, b_predict_success):
 					sally, ally_orders = best_option.get_ally_data()
 					ially = d_countries[sally]
 					l_asked_ally[icountry] = True
-					if not l_alreay_asked[ially]:
-						l_alreay_asked[ially] = True
+					if not l_already_asked[ially]:
+						l_already_asked[ially] = True
 						best_ally_option = game_option_state.get_best_option(	sally, (ally_orders[0], ally_orders[2]),
 																				b_no_ally=l_asked_ally[ially])
 						#if giving a unit means that I have no option, I'm not going to do it.
@@ -965,7 +968,7 @@ def classic_AI(wd_game_state, b_predict_success):
 					l_done[icountry] = True
 
 		for icountry, scountry in enumerate(country_names_tbl):
-			if icountry == 0:
+			if icountry == 0 or human_by_icountry[icountry]:
 				continue
 			print('Conclusion for ', scountry)
 			ally_orders = l_ally_orders[icountry]

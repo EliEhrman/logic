@@ -1861,3 +1861,9 @@ them, send them to the partner and he considers the request.
 Checking in with:
 
 Alliance and user option system working. No humans yet.
+
+Friday 11th May
+
+Check in :
+
+Alliances including human seems to work.

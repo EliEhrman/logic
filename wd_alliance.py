@@ -31,6 +31,21 @@ class cl_alliance_state(object):
 		def get_id(self):
 			return self.__id
 
+		def get_user_vals(self):
+			return self.__id, self.__turn_id, self.__text, self.__b_processed
+
+		def is_processed(self):
+			return self.__b_processed
+
+		def is_accepted(self):
+			return self.__b_accepted
+
+		def set_processed(self, b):
+			self.__b_processed = b
+
+		def set_accepted(self, b):
+			self.__b_accepted = b
+
 	def __init__(self):
 		self.__alliance_rel = []
 		self.__alliance_matrix = []
@@ -54,6 +69,12 @@ class cl_alliance_state(object):
 		self.__l_alliance_statements = []
 		self.__l_alliance_msgs = []
 		self.__b_option_created = False
+		self.__human_by_icountry = []
+		self.__wd_game_state = []
+		self.__l_still_option_active = []
+
+	def get_human_by_icountry(self):
+		return self.__human_by_icountry
 
 	def get_statements(self):
 		return self.__l_alliance_statements
@@ -67,6 +88,8 @@ class cl_alliance_state(object):
 			for item in seq:
 				if f(item):
 					return item
+
+			return None
 
 		return find(lambda option: option.get_id() == iopt, l_options)
 
@@ -95,22 +118,32 @@ class cl_alliance_state(object):
 	def exec_option(self, option, baccept):
 		stype = option.get_stype()
 		alliance_stypes = [	'join_req', 'ally_req', 'leave_alliance', 'leave alliance notice', 'now allied notice',
-							'no alliance notice', 'alliance accepted', 'alliance rejected', 'app_ally', 'app_join']
+							'no alliance notice', 'alliance accepted', 'alliance rejected', 'app_ally', 'app_join',
+							'pass_alli_phase']
 		if stype in alliance_stypes:
 			self.exec_alliance_option(option, baccept)
 
+	def end_alliance_phase(self):
+		self.__l_still_option_active = [True for _ in self.__country_names_tbl]
+		self.__wd_game_state.set_diplomacy_sub_phase('moves')
+
 	# 'done', 'pause', 'another', 'skip', 'clearall'
-	# returns 'good', 'paused', 'finished'
+	# returns 'good', 'paused', 'finished', 'pass'
 	def find_another(self):
 		b_found = False
 		for itry in range(len(self.__shuffled_country_ids)):
 			self.__shuffled_curr_idx += 1
 			if self.__shuffled_curr_idx >= len(self.__shuffled_country_ids):
 				self.__shuffled_curr_idx = 0
+			i_curr_country = self.__shuffled_country_ids[self.__shuffled_curr_idx]
+			if not self.__l_still_option_active[i_curr_country]:
+				continue
 			l_curr_options = self.__l_user_l_options[self.__shuffled_country_ids[self.__shuffled_curr_idx]]
 			if len(l_curr_options) > 0:
 				b_found = True
 				break
+		if not b_found:
+			self.end_alliance_phase()
 		return 'good' if b_found else 'finished'
 
 	def move_on_resp(self, resp):
@@ -124,11 +157,14 @@ class cl_alliance_state(object):
 			raise ValueError('Unknown move on user option')
 
 
-	def add_option(self, stype='', scountry = '', l_params=[], text = ''):
+	def add_option(self, stype, scountry, l_params, text):
+		icountry = self.__d_countries[scountry]
 		self.__b_option_created = True
 		self.__max_option_id += 1
 		option = self.__cl_user_option(self.__max_option_id, self.__alliance_timer, stype, scountry, l_params, text)
 		self.__l_user_l_options[self.__d_countries[scountry]].append(option)
+		if self.__human_by_icountry[icountry]:
+			self.__wd_game_state.get_humaan_option_mgr().add_option(option)
 		return option
 
 	def create_alliance_options(self, scountry):
@@ -138,6 +174,7 @@ class cl_alliance_state(object):
 			print('Coding error!. Exiting')
 			exit(1)
 
+		l_options_created = []
 		if len(self.__alliance_grps[i_my_grp]) == 1:
 			grp_rels = []
 			for igrp, grp in enumerate(self.__alliance_grps):
@@ -161,6 +198,52 @@ class cl_alliance_state(object):
 		else:
 			self.add_option('leave_alliance', scountry, [i_my_grp], 'Leave the ' + self.__alliance_names[i_my_grp])
 
+		if self.__human_by_icountry[icountry]:
+			self.add_option('pass_alli_phase', scountry, [], 'End alliance phase and start moves.')
+
+	def destroy_option(self, option):
+		for icountry, l_options in enumerate(self.__l_user_l_options):
+			if self.find_option_by_id(l_options, option.get_id()) != None:
+				if self.__human_by_icountry[icountry]:
+					self.__wd_game_state.get_humaan_option_mgr().destroy_option(option)
+				l_options.remove(option)
+				break
+
+	def check_option_validity(self, option):
+		stype = option.get_stype()
+		alliance_stypes = [	'join_req', 'ally_req', 'leave_alliance', 'app_ally', 'app_join']
+		if stype in alliance_stypes:
+			if not self.check_alliance_option_validity(option):
+				self.destroy_option(option)
+
+
+	def check_alliance_option_validity(self, option):
+		def is_single(icountry):
+			igrp = self.__alliance_membership[icountry]
+			grp = self.__alliance_grps[igrp]
+			return len(grp) == 1
+		def len_grp(igrp):
+			grp = self.__alliance_grps[igrp]
+			return len(grp)
+
+		stype, params, icountry = option.get_stype(), option.get_params(), self.__d_countries[option.get_scountry()]
+		if stype =='leave_alliance':
+			return not is_single(icountry)
+		elif stype == 'join_req':
+			return is_single(icountry) and len_grp(params[0]) > 1
+		elif stype == 'ally_req':
+			return is_single(icountry) and is_single(params[0])
+		elif stype == 'app_ally':
+			return is_single(icountry) and is_single(params[0])
+		elif stype == 'app_join':
+			return not is_single(icountry) and is_single(params[0])
+		else:
+			raise ValueError('unrecognized alliance option')
+		return False
+		# if self.__human_by_icountry[icountry]:
+		# 	for option in l_options_created:
+		# 		self.__wd_game_state.get_humaan_option_mgr().add_option(option)
+
 	def score_alliance_option(self, option):
 		def abort_if_not_single(icountry, abort_val, val):
 			igrp = self.__alliance_membership[icountry]
@@ -170,7 +253,7 @@ class cl_alliance_state(object):
 			igrp = self.__alliance_membership[icountry]
 			grp = self.__alliance_grps[igrp]
 			return abort_val if len(grp) == 1 else val
-		def calc_grp_score(igrp):
+		def calc_grp_score(igrp, abort_val):
 			grp = self.__alliance_grps[params[0]]
 			arel, fnum = 0.0, 0.0
 			for icountry2 in grp:
@@ -178,14 +261,14 @@ class cl_alliance_state(object):
 					continue
 				arel += self.__alliance_rel[icountry][icountry2]
 				fnum += 1.0
-			arel /= float(fnum)
+			arel = arel / float(fnum) if fnum > 0.0 else abort_val
 			return arel
 		stype, params, icountry = option.get_stype(), option.get_params(), self.__d_countries[option.get_scountry()]
 		if stype =='leave_alliance':
-			arel = calc_grp_score(params[0])
+			arel = calc_grp_score(params[0], 1.0)
 			arel = abort_if_single(icountry, 1.0, arel)
 		elif stype == 'join_req':
-			arel = calc_grp_score(params[0])
+			arel = calc_grp_score(params[0], 0.0)
 			arel = abort_if_not_single(icountry, 0.0, arel)
 			grp = self.__alliance_grps[params[0]]
 			arel = 0.0 if len(grp) <= 1 else arel
@@ -328,6 +411,12 @@ class cl_alliance_state(object):
 			if bfound and bcomplete:
 				self.__l_option_actions_pending.remove(opt_action)
 
+		elif stype == 'pass_alli_phase':
+			if baccept:
+				self.__l_still_option_active[icountry] = False
+			else:
+				self.add_option('pass_alli_phase', scountry, [], 'End alliance phase and start moves (2).')
+
 	def create_output(self):
 		self.__l_alliance_statements = []
 		self.__l_alliance_msgs = []
@@ -390,7 +479,16 @@ class cl_alliance_state(object):
 			self.__country_names_tbl = country_names_tbl
 			self.__l_user_l_options = [[] for _ in country_names_tbl]
 			self.__shuffled_country_ids = range(1, len(country_names_tbl))
+			self.__wd_game_state = wd_game_state
+			self.__l_still_option_active = [True for _ in country_names_tbl]
 			random.shuffle(self.__shuffled_country_ids)
+
+		humaan_option_mgr = wd_game_state.get_humaan_option_mgr()
+		l_humaans = wd_game_state.get_l_humaans()
+		if not humaan_option_mgr.is_game_initialized():
+			d_country_to_user_ids, d_user_to_country_ids = wd_game_state.get_user_country_id_conversions()
+			humaan_option_mgr.game_init(l_humaans, d_user_to_country_ids, country_names_tbl)
+			self.__human_by_icountry = [False] + [d_country_to_user_ids[icountry] in l_humaans for icountry, _ in enumerate(country_names_tbl) if icountry != 0]
 		# alliance_data[:] = [game_turn-1, alliance_rel, alliance_matrix, propose_times, terminate_times]
 
 
@@ -600,15 +698,27 @@ class cl_alliance_state(object):
 	def process_alliance_user_options(self):
 		num_quiet = 0
 		while num_quiet <= len(self.__country_names_tbl):
-			if wd_classicAI.alliance_AI(self) != 'good':
-				break
+			next_up_country_id = self.__shuffled_country_ids[self.__shuffled_curr_idx]
+			if self.__human_by_icountry[next_up_country_id]:
+				if self.__wd_game_state.get_humaan_option_mgr().remove_processed_options(self) != 'good':
+					break
+			else:
+				if wd_classicAI.alliance_AI(self) != 'good':
+					break
 			if self.__b_option_created:
 				num_quiet = -1
 			self.__b_option_created = False
 			num_quiet += 1
 
+
+	def check_options_validity(self):
+		for l_options in self.__l_user_l_options:
+			for option in l_options:
+				self.check_option_validity(option)
+
 	def process_alliance_data(self, wd_game_state, game_turn, country_names_tbl, unit_owns_tbl, statement_list):
 		if self.__alliance_timer < game_turn:
+			self.__alliance_timer = game_turn
 			self.__saved_gen_statements = copy.deepcopy(statement_list)
 			self.make_alliances(wd_game_state, game_turn, country_names_tbl, unit_owns_tbl, statement_list)
 			# out of date comment:
@@ -617,8 +727,9 @@ class cl_alliance_state(object):
 			for scountry in self.__country_names_tbl[1:]:
 				self.create_alliance_options(scountry)
 
+		self.check_options_validity()
+
 		self.process_alliance_user_options()
 
 		self.create_output()
 
-		self.__alliance_timer = game_turn

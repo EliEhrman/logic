@@ -50,7 +50,7 @@ c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmo
 				 'l:army:1.0,l:in:1.0,l:munich:-0.5,l:convoy:1.0,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
 
 c_admin_action = None # 'DeleteGames'
-c_b_play_human = False
+c_b_play_human = True
 c_starting_user_id = 6
 c_human_uids = [7]
 c_gname_human_prefix = 'tplay'
@@ -151,6 +151,30 @@ class cl_wd_state(object):
 		self.__l_game_lens = None
 		self.__l_game_gens_recs = None
 		self.__num_game_rules = -1
+		self.__humaan_option_mgr = None
+		self.__d_country_to_user_ids = dict()
+		self.__d_user_to_country_ids = dict()
+		self.__diplomacy_sub_phase = 'alliances' # as opposed to moves
+
+	def get_diplomacy_sub_phase(self):
+		return self.__diplomacy_sub_phase
+
+	def set_diplomacy_sub_phase(self, new_phase):
+		self.__diplomacy_sub_phase = new_phase
+
+	def get_user_country_id_conversions(self):
+		return self.__d_country_to_user_ids, self.__d_user_to_country_ids
+
+	def set_user_country_id_conversions(self, d_country_to_user_ids, d_user_to_country_ids):
+		self.__d_country_to_user_ids = d_country_to_user_ids
+		self.__d_user_to_country_ids = d_user_to_country_ids
+
+
+	def get_humaan_option_mgr(self):
+		return self.__humaan_option_mgr
+
+	def set_humaan_option_mgr(self, mgr):
+		self.__humaan_option_mgr = mgr
 
 	def is_game_rules_initialized(self):
 		return self.__b_game_rules_initialized
@@ -244,6 +268,9 @@ class cl_wd_state(object):
 		return 	self.__init_db, self.__status_db, self.__db_cont_mgr, self.__country_names_tbl, self.__l_humaans, \
 				self.__unit_owns_tbl, self.__all_dicts, self.__terr_owns_tbl, self.__supply_tbl, \
 				self.__b_waiting_for_AI, self.__game_store
+
+	def get_l_humaans(self):
+		return self.__l_humaans
 
 	def set_game_state(self, game_state):
 		self.__game_store = game_state

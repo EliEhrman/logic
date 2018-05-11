@@ -32,6 +32,101 @@ import wd_success
 # response = urllib2.urlopen("http://localhost/gamemaster.php?gameMasterSecret=")
 nt_order_status = collections.namedtuple('nt_order_status', 'order_num, status, unitID, fromTerrID, toTerrID, iref')
 
+class cl_humaan_option_mgr(object):
+	sql_get_req_ids = string.Template(	'SELECT id, userID, turnID, message, optionID, processed, accepted '
+										' from webdiplomacy.wD_UserRequestOptions WHERE gameID = ${gameID} ;')
+	sql_delete_req_msgs = string.Template('DELETE FROM webdiplomacy.wD_UserRequestOptions WHERE id = ${id} ;')
+	sql_insert_req_msg = string.Template(	'INSERT INTO webdiplomacy.wD_UserRequestOptions '
+											'(userID, gameID, turnID, message, optionID, processed) '
+											' VALUES (\'${userID}\', \'${gameID}\', \'${turnID}\', \'${message}\', '
+											' \'${optionID}\', \'${processed}\');')
+
+	def __init__(self):
+		self.__country_names_tbl = []
+		self.__l_humaans = []
+		self.__l_humaan_countries = []
+		self.__d_countries = dict()
+		self.__d_scountry_to_idx = dict()
+		self.__l_l_options = []
+		self.__game_initialized = False
+		self.__b_sent_options_to_db = False
+
+	def game_init(self, l_humaans, d_user_to_country_ids, country_names_tbl):
+		self.__country_names_tbl = []
+		self.__l_humaans = l_humaans # user ids of human players
+		self.__l_humaan_countries = [country_names_tbl[d_user_to_country_ids[userID]] for userID in l_humaans] # same index as the l_humans
+		self.__d_countries = {scountry:icountry for icountry, scountry in enumerate(country_names_tbl)}
+		self.__d_scountry_to_idx = {scountry:icountry for icountry, scountry in enumerate(self.__l_humaan_countries)}
+		self.__d_userID_to_idx = {userID:idx for idx, userID in enumerate(l_humaans)}
+		self.__l_l_options = [[] for _ in l_humaans] # one list for each human user - even though we start with just one human. Indexed by l_humaans
+		self.__game_initialized = True
+		self.__d_iopt_to_option = dict()
+		self.__b_sent_options_to_db = False
+
+	def is_game_initialized(self):
+		return self.__game_initialized
+
+	def add_option(self, option):
+		scountry = option.get_scountry()
+		idx = self.__d_scountry_to_idx[scountry] #idx is the index into arrays for the class, not the userID
+		self.__l_l_options[idx].append(option)
+		self.__d_iopt_to_option[option.get_id()] = option
+
+	def set_in_db(self, db, cursor, gameID):
+		sql_get = self.sql_get_req_ids.substitute(gameID=str(gameID))
+		cursor.execute(sql_get)
+		results = cursor.fetchall()
+		for row in results:
+			id, userID, turnID, message, optionID, processed, accepted = row
+			if self.__b_sent_options_to_db:
+				option = self.__d_iopt_to_option.get(optionID, None)
+				if option != None:
+					option.set_processed(processed == 1)
+					option.set_accepted(accepted == 1)
+			sql_del = self.sql_delete_req_msgs.substitute(id=str(id))
+			cursor.execute(sql_del)
+
+		for iuser, user in enumerate(self.__l_humaans):
+			for opt in self.__l_l_options[iuser]:
+				optionID, turnID, message, bprocessed = opt.get_user_vals()
+				if bprocessed:
+					continue
+				sql_insert = self.sql_insert_req_msg.substitute(userID=str(user), gameID=str(gameID),
+																turnID=str(turnID), message=message,
+																optionID=str(optionID), processed='0')
+				cursor.execute(sql_insert)
+		self.__b_sent_options_to_db = True
+		db.commit()
+
+	def destroy_option(self, option):
+		scountry = option.get_scountry()
+		idx = self.__d_scountry_to_idx[scountry]  # idx is the index into arrays for the class, not the userID
+		human_option = self.__d_iopt_to_option[option.get_id()]
+		self.__l_l_options[idx].remove(human_option)
+		del self.__d_iopt_to_option[human_option.get_id()]
+
+	def remove_processed_options(self, alliance_state):
+		l_options = alliance_state.select_option_type([	'leave alliance notice', 'now allied notice',
+														'no alliance notice', 'alliance accepted',
+														'alliance rejected', 'app_ally', 'app_join',
+														'leave_alliance', 'ally_req', 'join_req',
+														'pass_alli_phase'])
+		b_done_one = False
+		for iopt, option in l_options:
+			scountry = option.get_scountry()
+			idx = self.__d_scountry_to_idx[scountry]  # idx is the index into arrays for the class, not the userID
+			# human_option = alliance_state.find_option_by_id(self.__l_l_options[idx], option.get_id())
+			human_option = self.__d_iopt_to_option[option.get_id()]
+			del option
+			if human_option != None:
+				if human_option.is_processed():
+					alliance_state.remove_option(iopt, baccept=human_option.is_accepted())
+					b_done_one = True
+					self.__l_l_options[idx].remove(human_option)
+					del self.__d_iopt_to_option[human_option.get_id()]
+
+		return alliance_state.move_on_resp('done' if b_done_one else 'pause')
+
 
 def complete_game_init(db, cursor, gameID, l_humaan_countries):
 	if l_humaan_countries != None and l_humaan_countries != []:
@@ -80,12 +175,27 @@ def get_humaan_countries(cursor, gameID, l_humaans):
 	sql = sqlFindCountries.substitute(gameID=gameID)
 	cursor.execute(sql)
 	results = cursor.fetchall()
-	l_humaan_country_ids = []
+	l_humaan_country_ids = [-1 for _ in l_humaans]
 	for row in results:
 		if row[0] in l_humaans:
-			l_humaan_country_ids.append(row[1])
+			l_humaan_country_ids[l_humaans.index(row[0])] = row[1]
 
 	return l_humaan_country_ids
+
+def get_user_country_id_conversions(cursor, gameID):
+	d_country_to_user_ids = dict()
+	d_user_to_country_ids = dict()
+	sqlFindCountries = string.Template('select userID, countryID from webdiplomacy.wD_Members where gameID = \'${gameID}\';')
+	sql = sqlFindCountries.substitute(gameID=gameID)
+	cursor.execute(sql)
+	results = cursor.fetchall()
+	for row in results:
+		userID, countryID = row
+		d_user_to_country_ids[userID] = countryID
+		d_country_to_user_ids[countryID] = userID
+
+	return d_country_to_user_ids, d_user_to_country_ids
+
 
 def find_human_game(db, cursor):
 	sqlGetGames = 'select id, name, phase from webdiplomacy.wD_Games;'
@@ -927,12 +1037,12 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 		'WHERE gameID = ${gameID} AND countryID = ${countryID};')
 	sql_get_unit_id = string.Template(
 		'SELECT id FROM webdiplomacy.wD_Units where gameID = ${gameID} and terrID = ${terrID};')
-	sql_move_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
-										 'toTerrID = ${toTerrID}, viaConvoy = \'${bConvoyed}\' WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+	sql_move_order = string.Template(	'UPDATE webdiplomacy.wD_Orders SET type=\'Move\', '
+										'toTerrID = ${toTerrID}, viaConvoy = \'${bConvoyed}\' WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 	sql_support_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Support move\', '
-										 'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
-	sql_support_hold_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Support hold\', '
-										 'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+										'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
+	sql_support_hold_order = string.Template(	'UPDATE webdiplomacy.wD_Orders SET type=\'Support hold\', '
+												'toTerrID = ${toTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 	sql_convoy_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Convoy\', '
 										 'toTerrID = ${toTerrID}, fromTerrID = ${fromTerrID} WHERE unitID = ${unitID} AND gameID = ${gameID} ;')
 	sql_hold_order = string.Template('UPDATE webdiplomacy.wD_Orders SET type=\'Hold\' '
@@ -1003,21 +1113,14 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 			b_game_finished, b_orders_valid, = False, False
 			return gameID, b_game_finished, b_orders_valid, b_reset_orders, b_stuck, [], [], [], []
 
-	sql_get = sql_get_msg_ids.substitute(gameID=str(gameID))
-	cursor.execute(sql_get)
-	results = cursor.fetchall()
-	for row in results:
-		sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
-		cursor.execute(sql_del)
-	alliance_state.process_alliance_data(	wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
-													statement_list)
-	alliance_msgs = alliance_state.get_msgs()
-	for msg in alliance_msgs:
-		sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
-		cursor.execute(sql_insert)
-	db.commit()
 
-	statement_list += alliance_state.get_statements()
+	diplomancy_sub_phase = wd_game_state.get_diplomacy_sub_phase()
+
+	if wd_game_state.get_humaan_option_mgr().is_game_initialized():
+		wd_game_state.get_humaan_option_mgr().set_in_db(db, cursor, gameID)
+
+	if diplomancy_sub_phase == 'moves':
+		statement_list += alliance_state.get_statements()
 
 
 	status_db = els.convert_list_to_phrases(statement_list)
@@ -1050,24 +1153,44 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 			create_retreat_orders(db, cursor, gameID, l_humaan_countries, country_names_tbl, terr_id_tbl, supply_tbl,
 								  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
-		if not b_waiting_for_AI:
+		if diplomancy_sub_phase == 'moves':
+			if not b_waiting_for_AI:
+				play_turn.b_done = False
+				b_orders_valid = False
+			else:
+				b_orders_valid = True
+				wd_game_state.get_alliance_stats().update_status_bitvec_data(gameID, game_turn, statement_list, unit_owns_tbl)
+
+			if wdconfig.c_b_play_from_saved:
+				create_move_orders2(wd_game_state)
+			else:
+				if b_waiting_for_AI:
+					create_oracle_move_orders(	db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
+												sql_get_unit_id, l_sql_action_orders,
+												unit_owns_tbl, terr_id_tbl, terr_type_tbl,
+												country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
+												orders_list, orders_status_list)
+				else:
+					time.sleep(10.0)
+
+			if b_waiting_for_AI:
+				wd_game_state.set_diplomacy_sub_phase('alliances')
+		elif diplomancy_sub_phase == 'alliances':
 			play_turn.b_done = False
 			b_orders_valid = False
-		else:
-			b_orders_valid = True
-			wd_game_state.get_alliance_stats().update_status_bitvec_data(gameID, game_turn, statement_list, unit_owns_tbl)
-
-		if wdconfig.c_b_play_from_saved:
-			create_move_orders2(wd_game_state)
-		else:
-			if b_waiting_for_AI:
-				create_oracle_move_orders(	db, cursor, gameID, l_humaan_countries, sqlOrderComplete,
-											sql_get_unit_id, l_sql_action_orders,
-											unit_owns_tbl, terr_id_tbl, terr_type_tbl,
-											country_names_tbl, army_can_pass_tbl, fleet_can_pass_tbl,
-											orders_list, orders_status_list)
-			else:
-				time.sleep(10.0)
+			sql_get = sql_get_msg_ids.substitute(gameID=str(gameID))
+			cursor.execute(sql_get)
+			results = cursor.fetchall()
+			for row in results:
+				sql_del = sql_delete_board_msgs.substitute(id=str(row[0]))
+				cursor.execute(sql_del)
+			alliance_state.process_alliance_data(wd_game_state, game_turn, country_names_tbl, unit_owns_tbl,
+												 statement_list)
+			alliance_msgs = alliance_state.get_msgs()
+			for msg in alliance_msgs:
+				sql_insert = sql_insert_board_msg.substitute(msg=msg, gameID=str(gameID))
+				cursor.execute(sql_insert)
+			db.commit()
 
 	elif game_phase == 'Pre-game':
 		complete_game_init(db, cursor, gameID, l_humaan_countries)
@@ -1187,12 +1310,16 @@ def play(wd_game_state):
 
 			wd_game_state.set_gameID(gameID)
 
+			conv1, conv2 = get_user_country_id_conversions(cursor, gameID)
+			wd_game_state.set_user_country_id_conversions(conv1, conv2)
+
 			old_status_db, old_orders_db, old_orders_list, old_orders_status_list = [], [], [], []
 			b_keep_working = True
 			game_store = []
 			# alliance_data = []
-			num_stuck = 0
-			for iturn in range(wdconfig.c_num_turns_per_play):
+			num_stuck, iturn = 0, -1
+			while iturn < wdconfig.c_num_turns_per_play:
+				iturn += 1
 				if not b_keep_working:
 					# return gameID, b_can_continue
 					break
@@ -1337,7 +1464,7 @@ def main():
 	# embed.create_ext(glv_file_list)
 	# return
 
-	gameID = 1688 # Set to -1 to restart
+	gameID = 1705 # Set to -1 to restart
 	all_dicts = logic_init()
 	# db_len_grps = []
 	el_set_arr = []
@@ -1355,6 +1482,7 @@ def main():
 		wd_success.cl_alliance_stats(	country_names_tbl, wdconfig.c_alliance_stats_fnt,
 										wdconfig.c_terr_stats_fnt, wdconfig.c_unit_stats_fnt,
 										wdconfig.c_alliance_sel_mat_fnt))
+	wd_game_state.set_humaan_option_mgr(cl_humaan_option_mgr())
 	# sess, saver_dict, saver = dmlearn.init_templ_learn()
 	for iplay in range(wdconfig.c_num_plays):
 		wd_game_state.set_gameID(gameID)
