@@ -456,7 +456,7 @@ class cl_cont_mgr(object):
 					b_has_best_score_bonus = score_bonus > 0.0
 					print('cont best:', icc, 'best score', best_score)
 
-		# ibest = 29
+		# ibest = 0
 
 		if ibest >= 0:
 			for icc, ccont in enumerate(self.__cont_list):

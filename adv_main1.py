@@ -54,7 +54,7 @@ def init_sets(els_lists):
 
 
 def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
-			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, b_for_query):
+			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, learn_vars, b_for_query):
 	start_rule_names = ['objects_start', 'people_start']
 	event_rule_names = ['pickup_rule', 'went_rule']
 	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went',
@@ -72,12 +72,13 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 
 	train_rules = []
 	event_results = []
-	event_step_id = -1
+	event_step_id = [learn_vars[0]]
 	event_result_id_arr = []
 	# db_len_grps = []
 	el_set_arr = []
 
 	for i_one_story in range(num_stories):
+		l_player_events = []
 		els_sets, num_els, els_arr, els_dict = init_sets(els_lists)
 		# els.quality_of_els_sets(glv_dict, els_sets)
 		all_rules = adv_rules.init_adv_rules(els_sets, els_dict)
@@ -137,7 +138,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				print('Story loop stage seems stuck in an infinite loop. Next story!')
 				i_story_loop_stage = -1
 				break
-			event_step_id += 1
+			event_step_id[0] += 1
 			if story_loop_stage == e_story_loop_stage.decision_init:
 				decide_options = []
 				if i_story_player < len(story_names) - 1:
@@ -184,6 +185,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 						out_str = els.output_phrase(def_article_dict, out_str, player_event[1:])
 						out_str += ' **** '
 						print(out_str)
+						l_player_events.append(els.convert_phrase_to_word_list([player_event[1:]])[0])
 						story_loop_stage = e_story_loop_stage.state1
 					else:
 						event_as_decided = []
@@ -198,7 +200,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 					rule_stats[ruleid][1] += 1.0
 				print('rule stats:',  rule_stats, 'ruleid:', ruleid, 'rand thresh:', (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1])))
 				if event_as_decided != [] or (random.random() > (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1]))):
-					adv_learn.do_learn_rule_from_step(	event_as_decided, event_step_id, story_db, one_decide, '',
+					adv_learn.do_learn_rule_from_step(	event_as_decided, event_step_id[0], story_db, one_decide, '',
 														def_article_dict, db_len_grps, sess,
 														el_set_arr, glv_dict, els_sets, cascade_dict,
 														gg_cont, db_cont_mgr)
@@ -237,6 +239,11 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 			if not b_keep_working:
 				break
 
+		if adv_config.c_b_save_freq_stats:
+			story_phrases = [crec.phrase() for crec in story_db]
+			story_wlists = els.convert_phrase_to_word_list(story_phrases)
+			adv_learn.create_phrase_freq_tbl(story_wlists + l_player_events)
+
 	# end of loop over stories
 	sess.close()
 
@@ -249,9 +256,10 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 	# 	print(out_str)
 
 
-def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists):
+def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists, learn_vars):
 	cl_templ_grp.glv_dict = glv_dict
 	cl_gens_grp.glv_len = cl_templ_grp.glv_len = len(glv_dict[adv_config.sample_el])
+	adv_learn.init_learn()
 
 	for iplay in range(adv_config.c_num_plays):
 		dmlearn.learn_reset()
@@ -260,13 +268,19 @@ def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists):
 
 		db_len_grps, i_active_cont  = adv_learn.sel_cont_and_len_grps(db_cont_mgr)
 
+		db_cont_mgr.load_perm_dict(adv_config.perm_fnt)
+		max_eid = db_cont_mgr.apply_perm_dict_data(db_len_grps, i_active_cont)
+		db_cont_mgr.load_W_dict(adv_config.W_fnt)
+		db_cont_mgr.apply_W_dict_data(db_len_grps, i_active_cont)
+		learn_vars[0] = max_eid
+
 		# if gg_cont_list != []:
 		# 	dmlearn.learn_reset()
 		# 	db_len_grps = []
 
 		play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				adv_config.c_num_stories, adv_config.c_story_len, db_len_grps,
-				 db_cont_mgr, i_active_cont, b_for_query=False)
+				 db_cont_mgr, i_active_cont, learn_vars, b_for_query=False)
 	print('Done!')
 	exit(1)
 
@@ -276,8 +290,10 @@ def logic_init():
 	full_glv_list = [fname+'s.glv' for fname in adv_config.glv_file_list]
 	glv_dict, def_article_dict, cascade_dict, els_sets = \
 		els.init_glv(full_glv_list, adv_config.cap_first_arr, adv_config.def_article_arr, adv_config.cascade_els_arr)
+	event_step_id = -1
+	learn_vars = [event_step_id]
 
-	do_adv(glv_dict, def_article_dict, cascade_dict, els_sets)
+	do_adv(glv_dict, def_article_dict, cascade_dict, els_sets, learn_vars)
 
 
 def main():

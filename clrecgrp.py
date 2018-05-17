@@ -413,8 +413,8 @@ class cl_templ_grp(object):
 	# __slots__='__len', '__templ_grp_list'
 	glv_dict = []
 	glv_len = -1
-	c_score_loser_penalty = config.c_score_loser_penalty
-	c_score_winner_bonus = config.c_score_winner_bonus
+	# c_score_loser_penalty = config.c_score_loser_penalty
+	# c_score_winner_bonus = config.c_score_winner_bonus
 	c_target_gens = None
 
 	def __init__(self, b_from_load, templ_len=None, scvo=None, preconds_rec=None, gens_rec_list=None,
@@ -521,7 +521,7 @@ class cl_templ_grp(object):
 
 		if gens_rec_list == []:
 			# skipping reducing count of adds till next learn
-			print('Warning! check why this function returned here. Cannot find original reason for code')
+			# print('Warning! check why this function returned here. Cannot find original reason for code')
 			return
 
 		b_needs_recalib = False

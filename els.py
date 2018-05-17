@@ -194,6 +194,9 @@ def init_ext_objects():
 def convert_list_to_phrases(statement_list):
 	return [[[rec_def_type.obj, item] for item in statement] for statement in statement_list]
 
+def convert_phrase_to_word_list(statement_list):
+	return [[el[1] for el in statement] for statement in statement_list]
+
 def make_obj_el_from_str(sobj):
 	return [rec_def_type.obj, sobj]
 

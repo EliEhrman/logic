@@ -1867,3 +1867,9 @@ Friday 11th May
 Check in :
 
 Alliances including human seems to work.
+
+Thursday 17th May
+
+Checking in with:
+
+Made adv work again including loading perms and writing freq stats.
