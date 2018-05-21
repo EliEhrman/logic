@@ -741,6 +741,8 @@ def create_move_orders2(wd_game_state):
 		print(dstr)
 
 	for icountry in icountry_list:
+		# raise ValueError('This must be a list of countries, human or not, that do not have a none orders status')
+		# solved for now by including everyone in country_names_tbl, even humans
 		sql_order = sql_complete_order.substitute(gameID=str(gameID), countryID=str(icountry), timeLoggedIn=str(int(time.time())))
 		print(sql_order)
 		cursor.execute(sql_order)
@@ -1122,7 +1124,6 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 	if diplomancy_sub_phase == 'moves':
 		statement_list += alliance_state.get_statements()
 
-
 	status_db = els.convert_list_to_phrases(statement_list)
 
 
@@ -1154,12 +1155,16 @@ def play_turn(	wd_game_state, old_orders_status_list, old_status_db, old_orders_
 								  unit_owns_tbl, sqlOrderComplete)
 	elif game_phase == 'Diplomacy':
 		if diplomancy_sub_phase == 'moves':
+			b_waiting_for_AI = alliance_state.process_alliance_support(wd_game_state)
+
 			if not b_waiting_for_AI:
 				play_turn.b_done = False
 				b_orders_valid = False
+				wd_game_state.turn_off_waiting_for_AI()
 			else:
 				b_orders_valid = True
 				wd_game_state.get_alliance_stats().update_status_bitvec_data(gameID, game_turn, statement_list, unit_owns_tbl)
+
 
 			if wdconfig.c_b_play_from_saved:
 				create_move_orders2(wd_game_state)

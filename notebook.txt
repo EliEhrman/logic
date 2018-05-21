@@ -1873,3 +1873,11 @@ Thursday 17th May
 Checking in with:
 
 Made adv work again including loading perms and writing freq stats.
+
+Monday 21st May
+
+Pausing in mid-work because I want wd wok to happen only on Thursday & Friday
+
+Chaecking in with:
+
+Trying to get AI only games to support only with user options. Not working yet.

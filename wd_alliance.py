@@ -8,6 +8,11 @@ import wdconfig
 import wd_classicAI
 
 class cl_alliance_state(object):
+	alliance_stypes = ['join_req', 'ally_req', 'leave_alliance', 'leave alliance notice', 'now allied notice',
+							'no alliance notice', 'alliance accepted', 'alliance rejected', 'app_ally', 'app_join',
+							'pass_alli_phase']
+	support_stypes = ['support_req', 'app_support', 'support_denied_notice', 'support_promised_notice',
+					  'pass_support_phase']
 	class __cl_user_option(object):
 		def __init__(self, id=-1, turn_id=-1, stype='', scountry='', l_params=[], text=''):
 			self.__id = id
@@ -72,6 +77,13 @@ class cl_alliance_state(object):
 		self.__human_by_icountry = []
 		self.__wd_game_state = []
 		self.__l_still_option_active = []
+		self.__b_support_processing_done = False
+		self.__l_b_asked_ally = []
+		self.__l_b_asked_by_ally = []
+		# self.__l_b_support_processing_complete = [] # for each country
+		self.__l_donated = []
+		self.__l_support_order = []
+
 
 	def get_human_by_icountry(self):
 		return self.__human_by_icountry
@@ -102,6 +114,9 @@ class cl_alliance_state(object):
 		return option.get_id(), option
 
 	def select_option_type(self, l_stype):
+		for stype in l_stype:
+			if stype not in self.alliance_stypes and stype not in self.support_stypes:
+				raise ValueError('Mistyped user option stype ' + stype)
 		l_ret = []
 		l_curr_options = self.__l_user_l_options[self.__shuffled_country_ids[self.__shuffled_curr_idx]]
 		for option in l_curr_options:
@@ -117,19 +132,47 @@ class cl_alliance_state(object):
 
 	def exec_option(self, option, baccept):
 		stype = option.get_stype()
-		alliance_stypes = [	'join_req', 'ally_req', 'leave_alliance', 'leave alliance notice', 'now allied notice',
-							'no alliance notice', 'alliance accepted', 'alliance rejected', 'app_ally', 'app_join',
-							'pass_alli_phase']
-		if stype in alliance_stypes:
+		# alliance_stypes = [	'join_req', 'ally_req', 'leave_alliance', 'leave alliance notice', 'now allied notice',
+		# 					'no alliance notice', 'alliance accepted', 'alliance rejected', 'app_ally', 'app_join',
+		# 					'pass_alli_phase']
+		if stype in self.alliance_stypes:
 			self.exec_alliance_option(option, baccept)
+		elif stype in self.support_stypes:
+			self.exec_support_option(option, baccept)
 
 	def end_alliance_phase(self):
 		self.__l_still_option_active = [True for _ in self.__country_names_tbl]
 		self.__wd_game_state.set_diplomacy_sub_phase('moves')
 
+	def end_support_phase(self):
+		l_l_country_moves = self.__wd_game_state.get_all_country_moves()
+		if any([l_country_moves != [] for l_country_moves in l_l_country_moves]):
+			self.__b_support_processing_done = True
+
+	def end_moves_phase(self):
+		self.__l_still_option_active = [True for _ in self.__country_names_tbl]
+		self.__l_b_asked_ally = [False for _ in self.__country_names_tbl]
+		self.__l_b_asked_by_ally = [False for _ in self.__country_names_tbl]
+		self.__l_donated = [[] for _ in self.__country_names_tbl]
+		self.__l_support_order = [[] for _ in self.__country_names_tbl]
+		self.__wd_game_state.clear_country_moves()
+		self.__wd_game_state.set_diplomacy_sub_phase('alliances')
+
+	def has_asked_ally(self, icountry):
+		return self.__l_b_asked_ally[icountry]
+
+	def has_been_asked_by_ally(self, icountry):
+		return self.__l_b_asked_by_ally[icountry]
+
+	def get_donated(self, icountry):
+		return self.__l_donated[icountry]
+
+	def get_support_order(self, icountry):
+		return self.__l_support_order[icountry]
+
 	# 'done', 'pause', 'another', 'skip', 'clearall'
 	# returns 'good', 'paused', 'finished', 'pass'
-	def find_another(self):
+	def find_another(self, b_support_phase):
 		b_found = False
 		for itry in range(len(self.__shuffled_country_ids)):
 			self.__shuffled_curr_idx += 1
@@ -143,12 +186,15 @@ class cl_alliance_state(object):
 				b_found = True
 				break
 		if not b_found:
-			self.end_alliance_phase()
+			if b_support_phase:
+				self.end_support_phase()
+			else:
+				self.end_alliance_phase()
 		return 'good' if b_found else 'finished'
 
-	def move_on_resp(self, resp):
+	def move_on_resp(self, resp, b_support=False):
 		if resp == 'done':
-			return self.find_another()
+			return self.find_another(b_support)
 		elif resp == 'pause':
 			return 'paused'
 		elif resp == 'finished':
@@ -158,6 +204,8 @@ class cl_alliance_state(object):
 
 
 	def add_option(self, stype, scountry, l_params, text):
+		if stype not in self.alliance_stypes and stype not in self.support_stypes:
+			raise ValueError('Mistyped user option stype ' + stype)
 		icountry = self.__d_countries[scountry]
 		self.__b_option_created = True
 		self.__max_option_id += 1
@@ -166,6 +214,47 @@ class cl_alliance_state(object):
 		if self.__human_by_icountry[icountry]:
 			self.__wd_game_state.get_humaan_option_mgr().add_option(option)
 		return option
+
+	def create_support_options(self, scountry, l_country_orders):
+		icountry = self.__d_countries[scountry]
+		if self.has_asked_ally(icountry):
+			return
+		i_my_grp = self.__alliance_membership[icountry]
+		mgrp = self.__alliance_grps[i_my_grp]
+		if len(mgrp) <= 1:
+			return
+
+		unit_owns_tbl= self.__wd_game_state.get_unit_owns_tbl()
+		success_orders_data = self.__wd_game_state.get_success_orders_data()
+		for order in l_country_orders:
+			l_templates = []
+			# l_support_orders = []
+			if len(order) == 6:
+				order_sutype, w_in, order_src, w_move, w_to, order_dest = order
+				if w_in == 'in' and w_move == 'move' and w_to == 'to':
+					l_templates.append(['?', 'in', '?', 'support', 'move', 'from', order_src, 'to', order_dest])
+			elif len(order) == 4:
+				order_sutype, w_in, order_src, w_hold = order
+				if w_in == 'in' and w_move == 'hold':
+					l_templates.append(['?', 'in', '?', 'support', 'hold', 'in', order_src])
+			for icountry2 in mgrp:
+				if icountry2 == icountry or self.has_asked_ally(icountry2) or self.has_been_asked_by_ally((icountry2)):
+					continue
+				scountry2 = self.__country_names_tbl[icountry2]
+				l_country_units = unit_owns_tbl.get(scountry2, [])
+				if l_country_units == []:
+					continue
+				for unit_data in l_country_units:
+					for template in l_templates:
+						# template[0], template[2] = unit_data[0], unit_data[1]
+						l_support_orders = success_orders_data.get_moves(unit_data, [template])
+						if l_support_orders != []:
+							support_params = [icountry2] + l_support_orders[0]
+							self.add_option('support_req', scountry, support_params,
+											'Ask ' + scountry2 + ' for ' + ' '.join(l_support_orders[0][:3]) + ' to ' + ' '.join(l_support_orders[0][3:]))
+		if self.__human_by_icountry[icountry]:
+			self.add_option('pass_support_phase', scountry, [], 'End turn. Process the moves now please.')
+
 
 	def create_alliance_options(self, scountry):
 		icountry = self.__d_countries[scountry]
@@ -293,6 +382,43 @@ class cl_alliance_state(object):
 			# grp_rels.append([arel / float(len(grp)), igrp])
 
 			# sorted_grp_rels = sorted(grp_rels, key=lambda x: x[0], reverse=True)
+
+	def exec_support_option(self, option, baccept):
+		stype = option.get_stype()
+		scountry = option.get_scountry()
+		icountry = self.__d_countries[scountry]
+		if stype == 'support_req' :
+			if baccept:
+				self.__l_b_asked_ally[icountry] = True
+				support_req_params = option.get_params()
+				icountry2, order = support_req_params[0], support_req_params[1:]
+				# self.__l_b_asked_by_ally[icountry2] = True
+				params = [icountry] + order
+				self.add_option('app_support', self.__country_names_tbl[icountry2], params,
+								scountry + ' requests: ' + ' '.join(order))
+		elif stype == 'app_support':
+			support_req_params = option.get_params()
+			icountry_asking, order = support_req_params[0], support_req_params[1:]
+			self.__l_b_asked_by_ally[icountry] = True
+			if baccept:
+				self.__l_donated[icountry] = (order[0], order[2])
+				self.__l_support_order[icountry] = order
+				self.add_option('support_promised_notice', self.__country_names_tbl[icountry_asking], [icountry],
+								scountry + ' has promised to give you the support you asked for. Please acknowledge.')
+			else:
+				self.add_option('support_denied_notice', self.__country_names_tbl[icountry_asking], [icountry],
+								scountry + ' refuses to give you the support you asked for. Please acknowledge.')
+		elif stype == 'support_promised_notice':
+			pass
+		elif stype == 'support_denied_notice':
+			pass
+		elif stype == 'pass_support_phase':
+			if baccept:
+				self.__l_still_option_active[icountry] = False
+			else:
+				self.add_option('pass_support_phase', scountry, [], 'End turn. Process the moves now please. (2)')
+		else:
+			raise ValueError('Processing requested for unknown support option')
 
 	def exec_alliance_option(self, option, baccept):
 		stype = option.get_stype()
@@ -481,6 +607,11 @@ class cl_alliance_state(object):
 			self.__shuffled_country_ids = range(1, len(country_names_tbl))
 			self.__wd_game_state = wd_game_state
 			self.__l_still_option_active = [True for _ in country_names_tbl]
+			# some initialization for support states too
+			self.__l_b_asked_ally = [False for _ in country_names_tbl]
+			self.__l_b_asked_by_ally = [False for _ in self.__country_names_tbl]
+			self.__l_donated = [[] for _ in self.__country_names_tbl]
+			self.__l_support_order = [[] for _ in self.__country_names_tbl]
 			random.shuffle(self.__shuffled_country_ids)
 
 		humaan_option_mgr = wd_game_state.get_humaan_option_mgr()
@@ -567,83 +698,6 @@ class cl_alliance_state(object):
 
 		del scountry
 
-		"""
-		shuffled_country_names_tbl = range(len(country_names_tbl))
-		random.shuffle(shuffled_country_names_tbl)
-
-		for icountry in shuffled_country_names_tbl:
-			if icountry == 0:
-				continue
-			i_my_grp = self.__alliance_membership[icountry]
-			if icountry not in self.__alliance_grps[i_my_grp]:
-				print('Coding error!. Exiting')
-				exit(1)
-
-			if len(self.__alliance_grps[i_my_grp]) == 1:
-				grp_rels = []
-				for igrp, grp in enumerate(self.__alliance_grps):
-					if igrp == i_my_grp or grp == []:
-						continue
-					arel = 0.0
-					for icountry2 in grp:
-						arel += self.__alliance_rel[icountry][icountry2]
-					grp_rels.append([arel / float(len(grp)), igrp])
-				sorted_grp_rels = sorted(grp_rels, key=lambda x: x[0], reverse=True)
-				b_grp_found = False
-				for p_grp_rels in sorted_grp_rels:
-					if p_grp_rels[0] < wdconfig.c_alliance_propose_thresh:
-						break
-					b_can_do = True
-					bgrp = self.__alliance_grps[p_grp_rels[1]]
-					if len(bgrp) >= wdconfig.c_alliance_max_grp_size:
-						continue
-					for icountry3 in bgrp:
-						if self.__propose_times[icountry][icountry3] >= 0 or self.__terminate_times[icountry][icountry3] >= 0:
-							b_can_do = False
-							break
-					if not b_can_do:
-						continue
-					for icountry3 in bgrp:
-						if self.__alliance_rel[icountry3][icountry] < wdconfig.c_alliance_accept_thresh:
-							b_can_do = False
-							break
-					if b_can_do:
-						for icountry7 in bgrp:
-							self.__alliance_matrix[icountry][icountry7] = wdconfig.c_alliance_notice_time + 1
-							self.__alliance_matrix[icountry7][icountry] = wdconfig.c_alliance_notice_time + 1
-						self.__alliance_grps[i_my_grp] = []
-						self.__alliance_membership[icountry] = p_grp_rels[1]
-						bgrp.append(icountry)
-						b_grp_found = True
-					else:
-						for icountry4 in bgrp:
-							self.__propose_times[icountry][icountry4] = wdconfig.c_alliance_wait_to_propose
-					if b_grp_found:
-						break
-			else: # already a member of a larger group
-				arel = 0.0
-				mgrp = self.__alliance_grps[i_my_grp]
-				for icountry2 in mgrp:
-					if icountry2 == icountry:
-						continue
-					arel += self.__alliance_rel[icountry][icountry2]
-				if arel / float(len(mgrp)-1) <  wdconfig.c_alliance_terminate_thresh:
-					for icountry5 in mgrp:
-						if icountry5 == icountry:
-							continue
-						self.__alliance_matrix[icountry][icountry5] = wdconfig.c_alliance_notice_time
-						self.__alliance_matrix[icountry5][icountry] = wdconfig.c_alliance_notice_time
-					# remove from grp
-					mgrp.remove(icountry)
-					#find new grp
-					for ivgrp, vgrp in enumerate(self.__alliance_grps):
-						if vgrp == []:
-							vgrp.append(icountry)
-							self.__alliance_membership[icountry] = ivgrp
-							break
-		"""
-
-
 
 		for icountry, scountry in enumerate(country_names_tbl):
 			if icountry == 0:
@@ -695,7 +749,7 @@ class cl_alliance_state(object):
 
 		return # create_output(self.__alliance_matrix, statement_list)
 
-	def process_alliance_user_options(self):
+	def process_alliance_user_options(self, b_support_options=False):
 		num_quiet = 0
 		while num_quiet <= len(self.__country_names_tbl):
 			next_up_country_id = self.__shuffled_country_ids[self.__shuffled_curr_idx]
@@ -703,13 +757,17 @@ class cl_alliance_state(object):
 				if self.__wd_game_state.get_humaan_option_mgr().remove_processed_options(self) != 'good':
 					break
 			else:
-				if wd_classicAI.alliance_AI(self) != 'good':
+				if b_support_options:
+					AI_ret = wd_classicAI.support_AI(self, self.__wd_game_state)
+				else:
+					AI_ret = wd_classicAI.alliance_AI(self)
+
+				if AI_ret != 'good':
 					break
 			if self.__b_option_created:
 				num_quiet = -1
 			self.__b_option_created = False
 			num_quiet += 1
-
 
 	def check_options_validity(self):
 		for l_options in self.__l_user_l_options:
@@ -719,6 +777,7 @@ class cl_alliance_state(object):
 	def process_alliance_data(self, wd_game_state, game_turn, country_names_tbl, unit_owns_tbl, statement_list):
 		if self.__alliance_timer < game_turn:
 			self.__alliance_timer = game_turn
+			self.__b_support_processing_done = False
 			self.__saved_gen_statements = copy.deepcopy(statement_list)
 			self.make_alliances(wd_game_state, game_turn, country_names_tbl, unit_owns_tbl, statement_list)
 			# out of date comment:
@@ -733,3 +792,26 @@ class cl_alliance_state(object):
 
 		self.create_output()
 
+	def process_alliance_support(self, wd_game_state):
+		if self.__b_support_processing_done:
+			return True # means we are now ready for AI to completre
+
+		for icountry, l_options in enumerate(self.__l_user_l_options):
+			if icountry == 0:
+				continue
+
+			b_no_new = False
+			for option in l_options:
+				stype = option.get_stype()
+				if stype == 'support_req':
+					if option.is_processed():
+						b_no_new = True
+					else:
+						self.destroy_option(option)
+
+			if not b_no_new:
+				self.create_support_options(self.__country_names_tbl[icountry], wd_game_state.get_country_moves(icountry))
+
+		self.process_alliance_user_options(b_support_options=True)
+
+		return False # don't complete AI yet

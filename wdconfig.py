@@ -50,7 +50,7 @@ c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmo
 				 'l:army:1.0,l:in:1.0,l:munich:-0.5,l:convoy:1.0,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
 
 c_admin_action = None # 'DeleteGames'
-c_b_play_human = True
+c_b_play_human = False
 c_starting_user_id = 6
 c_human_uids = [7]
 c_gname_human_prefix = 'tplay'
@@ -155,6 +155,8 @@ class cl_wd_state(object):
 		self.__d_country_to_user_ids = dict()
 		self.__d_user_to_country_ids = dict()
 		self.__diplomacy_sub_phase = 'alliances' # as opposed to moves
+		self.__l_l_country_moves = []
+		self.__d_countries = dict() # simple conversion of scountry to icountry which is index to country_names_tbl
 
 	def get_diplomacy_sub_phase(self):
 		return self.__diplomacy_sub_phase
@@ -200,6 +202,26 @@ class cl_wd_state(object):
 		self.__el_set_arr = el_set_arr
 		self.__learn_vars = learn_vars
 		self.__country_names_tbl = country_names_tbl
+		self.__d_countries = {scountry:icountry for icountry, scountry in enumerate(country_names_tbl)}
+		self.__l_l_country_moves = [[] for _ in country_names_tbl]
+
+	def get_country_names_tbl(self):
+		return self.__country_names_tbl
+
+	def get_d_countries(self):
+		return self.__d_countries
+
+	def set_country_moves(self, icountry, l_country_moves):
+		self.__l_l_country_moves[icountry] = l_country_moves
+
+	def get_country_moves(self, icountry): # registrered by icountry instead of scountry because there is not supposed to be game logic here. Just storing vars
+		return self.__l_l_country_moves[icountry]
+
+	def get_all_country_moves(self):
+		return self.__l_l_country_moves
+
+	def clear_country_moves(self):
+		self.__l_l_country_moves = [[] for _ in self.__country_names_tbl]
 
 	def set_gameID(self, gameID):
 		self.__gameID = gameID
@@ -237,6 +259,9 @@ class cl_wd_state(object):
 		self.__b_waiting_for_AI = b_waiting_for_AI
 		# self.__game_store = game_store
 
+	def turn_off_waiting_for_AI(self):
+		self.__b_waiting_for_AI = False
+
 	def set_at_play_turn_tbls(self, unit_owns_tbl, terr_owns_tbl):
 		self.__unit_owns_tbl = unit_owns_tbl
 		self.__terr_owns_tbl = terr_owns_tbl
@@ -269,11 +294,17 @@ class cl_wd_state(object):
 				self.__unit_owns_tbl, self.__all_dicts, self.__terr_owns_tbl, self.__supply_tbl, \
 				self.__b_waiting_for_AI, self.__game_store
 
+	def get_unit_owns_tbl(self):
+		return self.__unit_owns_tbl
+
 	def get_l_humaans(self):
 		return self.__l_humaans
 
-	def set_game_state(self, game_state):
+	def set_game_option_state(self, game_state):
 		self.__game_store = game_state
+
+	def get_game_option_state(self):
+		return self.__game_store
 
 	# def set_gameID(self, gameID):
 	# 	self.__gameID = gameID

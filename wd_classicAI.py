@@ -504,6 +504,8 @@ class cl_game_option_state(object):
 		# self.__success_orders_data = []
 		self.__l_options = []
 		self.__l_num_proposed = []
+		self.__d_registered_option = dict() # set when a option is registered. Equiv to human saving
+		self.__d_hold_registered = dict() # set to True (onl ever use get not []) when an ally has been asked
 
 	def init_donated(self, scountry, l_donated):
 		for one_donated in [('None', 'None')] + l_donated:
@@ -519,6 +521,8 @@ class cl_game_option_state(object):
 		self.__l_options = []
 		self.__l_num_proposed = []
 		self.__d_country_data = dict()
+		self.__d_registered_option = dict()
+		self.__d_hold_registered = dict()
 
 	def is_donated_initialized(self):
 		return len(self.__d_stores) > 0
@@ -616,6 +620,21 @@ class cl_game_option_state(object):
 		raise ValueError('get_success_orders_data removed')
 		# return self.__success_orders_data
 
+	def set_registered_option(self, scountry, best_option):
+		self.__d_registered_option[scountry] = best_option
+
+	def get_registered_option(self, scountry):
+		return self.__d_registered_option.get(scountry, [])
+
+	def hold_registered_option(self, scountry):
+		self.__d_hold_registered[scountry] = True
+
+	def free_held_registered_option(self, scountry):
+		self.__d_hold_registered[scountry] = False
+
+	def is_registered_held(self, scountry):
+		return self.__d_hold_registered.get(scountry, False)
+
 def classic_AI(wd_game_state, b_predict_success):
 	init_db, status_db, db_cont_mgr, country_names_tbl, _, unit_owns_tbl, \
 	all_the_dicts, terr_owns_tbl, supply_tbl, b_waiting_for_AI, game_option_state  = \
@@ -625,7 +644,7 @@ def classic_AI(wd_game_state, b_predict_success):
 	distance_calc = wd_game_state.get_distance_params()
 	if game_option_state == None:
 		game_option_state = cl_game_option_state()
-		wd_game_state.set_game_state(game_option_state)
+		wd_game_state.set_game_option_state(game_option_state)
 	success_orders_data = wd_game_state.get_success_orders_data()
 	if success_orders_data == None:
 		success_orders_data = wdlearn.cl_order_freq_data()
@@ -920,83 +939,187 @@ def classic_AI(wd_game_state, b_predict_success):
 		# end loop over each country for that option run
 	# end if not b_waiting_for_AI or game_option_state = []
 
+	for icountry, scountry in enumerate(country_names_tbl):
+		if icountry == 0 or human_by_icountry[icountry]:
+			continue
+		scountry = country_names_tbl[icountry]
+		if game_option_state.is_registered_held(scountry):
+			continue
+		donated, b_asked_ally = ('None', 'None'), False
+		best_option = game_option_state.get_best_option(scountry, donated, b_no_ally=b_asked_ally)
+		if best_option != []:
+			l_country_orders = best_option.get_orders()
+			wdlearn.register_country_moves(wd_game_state, scountry, l_country_orders)
+			game_option_state.set_registered_option(scountry, best_option)
+
+
 	if b_waiting_for_AI:
-		l_donated, l_asked_ally, l_already_asked, l_done, l_ally_orders, l_best_options = [], [], [], [], [], []
-		for icountry, _ in enumerate(country_names_tbl):
-			l_donated.append(('None', 'None'))
-			l_asked_ally.append(False)
-			l_already_asked.append(icountry==0 or human_by_icountry[icountry])
-			l_done.append(icountry==0 or human_by_icountry[icountry])
-			l_ally_orders.append([])
-			l_best_options.append([])
-
-		d_countries =  {scountry: icountry for icountry, scountry in enumerate(country_names_tbl)}
-		shuffled_country_names_ids = range(1, len(country_names_tbl))
-		random.shuffle(shuffled_country_names_ids)
-
-		for i_request_try in range(wdconfig.c_classic_AI_request_help_sanity_limit):
-			if all(l_done):
-				break
-			for icountry in shuffled_country_names_ids:
-				if l_done[icountry]:
-					continue
-				scountry = country_names_tbl[icountry]
-				donated, b_asked_ally = l_donated[icountry], l_asked_ally[icountry]
-				best_option = game_option_state.get_best_option(scountry, donated, b_no_ally=b_asked_ally)
-				if best_option == []:
-					l_done[icountry] = True
-					continue
-				if best_option.get_need_ally():
-					sally, ally_orders = best_option.get_ally_data()
-					ially = d_countries[sally]
-					l_asked_ally[icountry] = True
-					if not l_already_asked[ially]:
-						l_already_asked[ially] = True
-						best_ally_option = game_option_state.get_best_option(	sally, (ally_orders[0], ally_orders[2]),
-																				b_no_ally=l_asked_ally[ially])
-						#if giving a unit means that I have no option, I'm not going to do it.
-						# In the future consider
-						if best_ally_option != []:
-							l_donated[ially] = (ally_orders[0], ally_orders[2])
-							l_ally_orders[icountry] = ally_orders
-							l_best_options[icountry] = best_option
-							l_done[ially] = False
-							l_done[icountry] = True
-					# no else, keep going round
-				else:
-					l_best_options[icountry] = best_option
-					l_done[icountry] = True
-
 		for icountry, scountry in enumerate(country_names_tbl):
 			if icountry == 0 or human_by_icountry[icountry]:
 				continue
 			print('Conclusion for ', scountry)
-			ally_orders = l_ally_orders[icountry]
-			if ally_orders != []:
-				orders_list += [ally_orders]
-				print('Ally order:', ' '.join(ally_orders))
-			best_option = l_best_options[icountry]
-			if best_option == []:
-				print('No best option for ', scountry)
+			donated = alliance_state.get_donated(icountry)
+			if donated == []:
+				donated = ('None', 'None')
 			else:
+				orders_list += alliance_state.get_support_order()
+				print('Ally order:', ' '.join(alliance_state.get_support_order()))
+
+			if game_option_state.is_registered_held(scountry):
+				best_option = game_option_state.get_registered_option(scountry)
+			else:
+				b_asked_ally = alliance_state.has_asked_ally(icountry)
+				best_option = game_option_state.get_best_option(scountry, donated, b_no_ally=b_asked_ally)
+
+			if best_option != []:
 				orders_list += best_option.get_orders()
 				print('Score:', best_option.get_score(), 'Orders:')
 				for order in best_option.get_orders():
 					print(' '.join(order))
-			# if len(game_option_state[icountry]) == 0 or game_option_state[icountry][0] == []:
-			# 	continue
-			# country_orders_list, success_score = game_option_state[icountry][0]
-			# orders_list += country_orders_list
-			icountry_list.append(icountry)
-		# game_option_state[:] = [] # delete the contents t=not the ref
+
+		icountry_list = range(1, len(country_names_tbl))
 		game_option_state.clear_donated()
-		# game_option_state.set_success_orders_data([])
 		success_orders_data.reset_for_move()
+		alliance_state.end_moves_phase()
+
+	# 	l_donated, l_asked_ally, l_already_asked, l_done, l_ally_orders, l_best_options = [], [], [], [], [], []
+	# 	for icountry, _ in enumerate(country_names_tbl):
+	# 		l_donated.append(('None', 'None'))
+	# 		l_asked_ally.append(False)
+	# 		l_already_asked.append(icountry==0 or human_by_icountry[icountry])
+	# 		l_done.append(icountry==0 or human_by_icountry[icountry])
+	# 		l_ally_orders.append([])
+	# 		l_best_options.append([])
+	#
+	# 	d_countries =  {scountry: icountry for icountry, scountry in enumerate(country_names_tbl)}
+	# 	shuffled_country_names_ids = range(1, len(country_names_tbl))
+	# 	random.shuffle(shuffled_country_names_ids)
+	#
+	# 	for i_request_try in range(wdconfig.c_classic_AI_request_help_sanity_limit):
+	# 		if all(l_done):
+	# 			break
+	# 		for icountry in shuffled_country_names_ids:
+	# 			if l_done[icountry]:
+	# 				continue
+	# 			scountry = country_names_tbl[icountry]
+	# 			donated, b_asked_ally = l_donated[icountry], l_asked_ally[icountry]
+	# 			best_option = game_option_state.get_best_option(scountry, donated, b_no_ally=b_asked_ally)
+	# 			if best_option == []:
+	# 				l_done[icountry] = True
+	# 				continue
+	# 			if best_option.get_need_ally():
+	# 				sally, ally_orders = best_option.get_ally_data()
+	# 				ially = d_countries[sally]
+	# 				l_asked_ally[icountry] = True
+	# 				if not l_already_asked[ially]:
+	# 					l_already_asked[ially] = True
+	# 					best_ally_option = game_option_state.get_best_option(	sally, (ally_orders[0], ally_orders[2]),
+	# 																			b_no_ally=l_asked_ally[ially])
+	# 					#if giving a unit means that I have no option, I'm not going to do it.
+	# 					# In the future consider
+	# 					if best_ally_option != []:
+	# 						l_donated[ially] = (ally_orders[0], ally_orders[2])
+	# 						l_ally_orders[icountry] = ally_orders
+	# 						l_best_options[icountry] = best_option
+	# 						l_done[ially] = False
+	# 						l_done[icountry] = True
+	# 				# no else, keep going round
+	# 			else:
+	# 				l_best_options[icountry] = best_option
+	# 				l_done[icountry] = True
+	#
+	# 	for icountry, scountry in enumerate(country_names_tbl):
+	# 		if icountry == 0 or human_by_icountry[icountry]:
+	# 			continue
+	# 		print('Conclusion for ', scountry)
+	# 		ally_orders = l_ally_orders[icountry]
+	# 		if ally_orders != []:
+	# 			orders_list += [ally_orders]
+	# 			print('Ally order:', ' '.join(ally_orders))
+	# 		best_option = l_best_options[icountry]
+	# 		if best_option == []:
+	# 			print('No best option for ', scountry)
+	# 		else:
+	# 			orders_list += best_option.get_orders()
+	# 			print('Score:', best_option.get_score(), 'Orders:')
+	# 			for order in best_option.get_orders():
+	# 				print(' '.join(order))
+	# 		# if len(game_option_state[icountry]) == 0 or game_option_state[icountry][0] == []:
+	# 		# 	continue
+	# 		# country_orders_list, success_score = game_option_state[icountry][0]
+	# 		# orders_list += country_orders_list
+	# 		icountry_list.append(icountry)
+	# 	# game_option_state[:] = [] # delete the contents t=not the ref
+	# 	game_option_state.clear_donated()
+	# 	# game_option_state.set_success_orders_data([])
+	# 	success_orders_data.reset_for_move()
+	# # else: # waiting for AI
 
 	orders_db = els.convert_list_to_phrases(orders_list)
 	success_list = [True for o in orders_list]
 	return orders_list, orders_db, success_list, icountry_list
 
+
+def support_AI(alliance_state, wd_game_state):
+	game_option_state = wd_game_state.get_game_option_state()
+
+	l_non_action_notice_option = alliance_state.select_option_type(['support_promised_notice'])
+	for non_action_notice_option in l_non_action_notice_option:
+		alliance_state.remove_option(non_action_notice_option[0], baccept=True)
+
+	l_rejected_support_option = alliance_state.select_option_type(['support_denied_notice'])
+	for rejected_support_option in l_rejected_support_option:
+		scountry = rejected_support_option[1].get_scountry()
+		icountry = wd_game_state.get_d_countries()[scountry]
+		game_option_state.free_held_registered_option(icountry)
+		alliance_state.remove_option(rejected_support_option[0], baccept=True)
+
+	l_support_app_option = alliance_state.select_option_type(['app_support'])
+	for support_app_option in l_support_app_option:
+		support_app_params = support_app_option[1].get_params()
+		scountry = support_app_option[1].get_scountry()
+		icountry = wd_game_state.get_d_countries()[scountry]
+		if alliance_state.has_been_asked_by_ally(icountry):
+			alliance_state.remove_option(support_app_option[0], baccept=False)
+			continue
+		icountry_asking, order = support_app_params[0], support_app_params[1:]
+		if alliance_state.has_asked_ally(icountry): # special rule for now. Cannot be asked if already asked. But can ask if been_asked
+			alliance_state.remove_option(support_app_option[0], baccept=False)
+			continue
+		donated = (order[0], order[2])
+		best_option = game_option_state.get_best_option(scountry, donated, b_no_ally=True)
+		if best_option == []:
+			alliance_state.remove_option(support_app_option[0], baccept=False)
+			continue
+		alliance_state.remove_option(support_app_option[0], baccept=True)
+
+	l_support_req_option = alliance_state.select_option_type(['support_req'])
+	for support_req_option in l_support_req_option:
+		support_req_params = support_req_option[1].get_params()
+		scountry = support_req_option[1].get_scountry()
+		icountry = wd_game_state.get_d_countries()[scountry]
+		if alliance_state.has_asked_ally(icountry):
+			alliance_state.remove_option(support_req_option[0], baccept=False)
+			continue
+		icountry2, support_order = support_req_params[0], support_req_params[1:]
+		scountry2 = wd_game_state.get_country_names_tbl()[icountry2]
+		if alliance_state.has_been_asked_by_ally(icountry2) or alliance_state.has_asked_ally(icountry2): # note if OTHEER guy has been asked. Don't care if I've been asked
+			alliance_state.remove_option(support_req_option[0], baccept=False)
+			continue
+		# support order is army in x support move from Y to Z
+		order_src, order_dest = support_order[6], support_order[8]
+		army_order = ['army', 'in', order_src, 'move', 'to', order_dest]
+		fleet_order = ['fleet', 'in', order_src, 'move', 'to', order_dest]
+		registered_game_option = game_option_state.get_registered_option(scountry)
+		l_orders = registered_game_option.get_orders()
+		if army_order not in l_orders and fleet_order not in l_orders:
+			alliance_state.remove_option(support_req_option[0], baccept=False)
+			continue
+		alliance_state.remove_option(support_req_option[0], baccept=True)
+		game_option_state.hold_registered_option(scountry)
+		break
+
+	return alliance_state.move_on_resp('done', b_support=True)
 
 def alliance_AI(alliance_state):
 	# What is a little confusing here is that the function is called where it is assumed that it is

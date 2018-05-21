@@ -704,3 +704,6 @@ def learn_orders_success(init_pl, status_pl, orders_pl, results_pl, all_the_dict
 	learn_vars[0] = event_step_id
 
 	return b_keep_working
+
+def register_country_moves(wd_game_state, scountry, l_country_orders):
+	wd_game_state.set_country_moves(wd_game_state.get_d_countries()[scountry], l_country_orders)
