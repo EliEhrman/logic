@@ -962,8 +962,8 @@ def classic_AI(wd_game_state, b_predict_success):
 			if donated == []:
 				donated = ('None', 'None')
 			else:
-				orders_list += alliance_state.get_support_order()
-				print('Ally order:', ' '.join(alliance_state.get_support_order()))
+				orders_list += [alliance_state.get_support_order(icountry)]
+				print('Ally order:', ' '.join(alliance_state.get_support_order(icountry)))
 
 			if game_option_state.is_registered_held(scountry):
 				best_option = game_option_state.get_registered_option(scountry)
@@ -1071,7 +1071,7 @@ def support_AI(alliance_state, wd_game_state):
 	for rejected_support_option in l_rejected_support_option:
 		scountry = rejected_support_option[1].get_scountry()
 		icountry = wd_game_state.get_d_countries()[scountry]
-		game_option_state.free_held_registered_option(icountry)
+		game_option_state.free_held_registered_option(scountry)
 		alliance_state.remove_option(rejected_support_option[0], baccept=True)
 
 	l_support_app_option = alliance_state.select_option_type(['app_support'])

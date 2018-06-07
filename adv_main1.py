@@ -24,6 +24,8 @@ import utils
 import rules
 from rules import conn_type
 import story
+import bitvec
+
 import adv_config
 import adv_learn
 import adv_rules
@@ -54,7 +56,7 @@ def init_sets(els_lists):
 
 
 def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
-			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, learn_vars, b_for_query):
+			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, learn_vars, bitvec_mgr, b_for_query):
 	start_rule_names = ['objects_start', 'people_start']
 	event_rule_names = ['pickup_rule', 'went_rule']
 	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went',
@@ -186,6 +188,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 						out_str += ' **** '
 						print(out_str)
 						l_player_events.append(els.convert_phrase_to_word_list([player_event[1:]])[0])
+						bitvec_mgr.add_phrase(l_player_events[-1], i_one_story, story_loop_stage, event_step_id[0])
 						story_loop_stage = e_story_loop_stage.state1
 					else:
 						event_as_decided = []
@@ -204,6 +207,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 														def_article_dict, db_len_grps, sess,
 														el_set_arr, glv_dict, els_sets, cascade_dict,
 														gg_cont, db_cont_mgr)
+					# bitvec_mgr.
 
 
 			elif story_loop_stage == e_story_loop_stage.state1:
@@ -273,14 +277,14 @@ def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists, learn_vars):
 		db_cont_mgr.load_W_dict(adv_config.W_fnt)
 		db_cont_mgr.apply_W_dict_data(db_len_grps, i_active_cont)
 		learn_vars[0] = max_eid
-
+		bitvec_mgr = bitvec.cl_bitvec_mgr()
 		# if gg_cont_list != []:
 		# 	dmlearn.learn_reset()
 		# 	db_len_grps = []
 
 		play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				adv_config.c_num_stories, adv_config.c_story_len, db_len_grps,
-				 db_cont_mgr, i_active_cont, learn_vars, b_for_query=False)
+				 db_cont_mgr, i_active_cont, learn_vars, bitvec_mgr, b_for_query=False)
 	print('Done!')
 	exit(1)
 

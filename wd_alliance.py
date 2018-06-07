@@ -6,13 +6,14 @@ import time
 
 import wdconfig
 import wd_classicAI
+import wdlearn
 
 class cl_alliance_state(object):
 	alliance_stypes = ['join_req', 'ally_req', 'leave_alliance', 'leave alliance notice', 'now allied notice',
 							'no alliance notice', 'alliance accepted', 'alliance rejected', 'app_ally', 'app_join',
 							'pass_alli_phase']
 	support_stypes = ['support_req', 'app_support', 'support_denied_notice', 'support_promised_notice',
-					  'pass_support_phase']
+					  'pass_support_phase', 'pass_support_temp']
 	class __cl_user_option(object):
 		def __init__(self, id=-1, turn_id=-1, stype='', scountry='', l_params=[], text=''):
 			self.__id = id
@@ -83,6 +84,7 @@ class cl_alliance_state(object):
 		# self.__l_b_support_processing_complete = [] # for each country
 		self.__l_donated = []
 		self.__l_support_order = []
+		self.__l_b_paused = []
 
 
 	def get_human_by_icountry(self):
@@ -216,6 +218,9 @@ class cl_alliance_state(object):
 		return option
 
 	def create_support_options(self, scountry, l_country_orders):
+		success_orders_data = self.__wd_game_state.get_success_orders_data()
+		if success_orders_data == None:
+			return
 		icountry = self.__d_countries[scountry]
 		if self.has_asked_ally(icountry):
 			return
@@ -225,7 +230,6 @@ class cl_alliance_state(object):
 			return
 
 		unit_owns_tbl= self.__wd_game_state.get_unit_owns_tbl()
-		success_orders_data = self.__wd_game_state.get_success_orders_data()
 		for order in l_country_orders:
 			l_templates = []
 			# l_support_orders = []
@@ -235,7 +239,7 @@ class cl_alliance_state(object):
 					l_templates.append(['?', 'in', '?', 'support', 'move', 'from', order_src, 'to', order_dest])
 			elif len(order) == 4:
 				order_sutype, w_in, order_src, w_hold = order
-				if w_in == 'in' and w_move == 'hold':
+				if w_in == 'in' and w_hold == 'hold':
 					l_templates.append(['?', 'in', '?', 'support', 'hold', 'in', order_src])
 			for icountry2 in mgrp:
 				if icountry2 == icountry or self.has_asked_ally(icountry2) or self.has_been_asked_by_ally((icountry2)):
@@ -254,6 +258,7 @@ class cl_alliance_state(object):
 											'Ask ' + scountry2 + ' for ' + ' '.join(l_support_orders[0][:3]) + ' to ' + ' '.join(l_support_orders[0][3:]))
 		if self.__human_by_icountry[icountry]:
 			self.add_option('pass_support_phase', scountry, [], 'End turn. Process the moves now please.')
+			self.add_option('pass_support_temp', scountry, [], 'Pass. Wait for further developments.')
 
 
 	def create_alliance_options(self, scountry):
@@ -293,6 +298,15 @@ class cl_alliance_state(object):
 	def destroy_option(self, option):
 		for icountry, l_options in enumerate(self.__l_user_l_options):
 			if self.find_option_by_id(l_options, option.get_id()) != None:
+				if self.__human_by_icountry[icountry]:
+					self.__wd_game_state.get_humaan_option_mgr().destroy_option(option)
+				l_options.remove(option)
+				break
+
+	def destroy_option_by_id(self, ioption):
+		for icountry, l_options in enumerate(self.__l_user_l_options):
+			option = self.find_option_by_id(l_options, ioption)
+			if option != None:
 				if self.__human_by_icountry[icountry]:
 					self.__wd_game_state.get_humaan_option_mgr().destroy_option(option)
 				l_options.remove(option)
@@ -413,6 +427,12 @@ class cl_alliance_state(object):
 		elif stype == 'support_denied_notice':
 			pass
 		elif stype == 'pass_support_phase':
+			if baccept:
+				self.__l_still_option_active[icountry] = False
+			else:
+				self.add_option('pass_support_phase', scountry, [], 'End turn. Process the moves now please. (2)')
+		elif stype == 'pass_support_temp':
+			code this
 			if baccept:
 				self.__l_still_option_active[icountry] = False
 			else:
@@ -612,13 +632,15 @@ class cl_alliance_state(object):
 			self.__l_b_asked_by_ally = [False for _ in self.__country_names_tbl]
 			self.__l_donated = [[] for _ in self.__country_names_tbl]
 			self.__l_support_order = [[] for _ in self.__country_names_tbl]
+			self.__l_b_paused = [False for _ in self.__country_names_tbl]
 			random.shuffle(self.__shuffled_country_ids)
 
+		terr_id_tbl = wd_game_state.get_terr_id_tbl()
 		humaan_option_mgr = wd_game_state.get_humaan_option_mgr()
 		l_humaans = wd_game_state.get_l_humaans()
 		if not humaan_option_mgr.is_game_initialized():
 			d_country_to_user_ids, d_user_to_country_ids = wd_game_state.get_user_country_id_conversions()
-			humaan_option_mgr.game_init(l_humaans, d_user_to_country_ids, country_names_tbl)
+			humaan_option_mgr.game_init(l_humaans, d_user_to_country_ids, wd_game_state)
 			self.__human_by_icountry = [False] + [d_country_to_user_ids[icountry] in l_humaans for icountry, _ in enumerate(country_names_tbl) if icountry != 0]
 		# alliance_data[:] = [game_turn-1, alliance_rel, alliance_matrix, propose_times, terminate_times]
 
@@ -754,15 +776,18 @@ class cl_alliance_state(object):
 		while num_quiet <= len(self.__country_names_tbl):
 			next_up_country_id = self.__shuffled_country_ids[self.__shuffled_curr_idx]
 			if self.__human_by_icountry[next_up_country_id]:
-				if self.__wd_game_state.get_humaan_option_mgr().remove_processed_options(self) != 'good':
+				self.__l_b_paused[next_up_country_id] = False
+				move_on_state = self.__wd_game_state.get_humaan_option_mgr().remove_processed_options(self)
+				if move_on_state != 'good':
+					self.__l_b_paused[next_up_country_id] = (move_on_state == 'paused')
 					break
 			else:
 				if b_support_options:
-					AI_ret = wd_classicAI.support_AI(self, self.__wd_game_state)
+					move_on_state = wd_classicAI.support_AI(self, self.__wd_game_state)
 				else:
-					AI_ret = wd_classicAI.alliance_AI(self)
+					move_on_state = wd_classicAI.alliance_AI(self)
 
-				if AI_ret != 'good':
+				if move_on_state != 'good':
 					break
 			if self.__b_option_created:
 				num_quiet = -1
@@ -797,17 +822,23 @@ class cl_alliance_state(object):
 			return True # means we are now ready for AI to completre
 
 		for icountry, l_options in enumerate(self.__l_user_l_options):
-			if icountry == 0:
+			if icountry == 0 or self.__l_b_paused[icountry]:
 				continue
 
 			b_no_new = False
+			l_destroy_option_ids = []
 			for option in l_options:
 				stype = option.get_stype()
-				if stype == 'support_req':
+				stypes_for_delete = ['support_req', 'pass_support_phase', 'join_req', 'ally_req', 'leave_alliance', 'pass_alli_phase', 'pass_support_temp']
+				code here
+				if stype in stypes_for_delete:
 					if option.is_processed():
 						b_no_new = True
 					else:
-						self.destroy_option(option)
+						l_destroy_option_ids.append(option.get_id())
+
+			for destroy_ioption in l_destroy_option_ids:
+				self.destroy_option_by_id(destroy_ioption)
 
 			if not b_no_new:
 				self.create_support_options(self.__country_names_tbl[icountry], wd_game_state.get_country_moves(icountry))

@@ -50,7 +50,7 @@ c_target_gens = ['l:army:0.2,l:in:1.0,l:munich:-0.5,l:move:1.0,l:to:1.0,l:piedmo
 				 'l:army:1.0,l:in:1.0,l:munich:-0.5,l:convoy:1.0,l:move:1.0,l:to:1.0,l:piedmont:-0.5']
 
 c_admin_action = None # 'DeleteGames'
-c_b_play_human = False
+c_b_play_human = True
 c_starting_user_id = 6
 c_human_uids = [7]
 c_gname_human_prefix = 'tplay'
@@ -214,6 +214,9 @@ class cl_wd_state(object):
 	def set_country_moves(self, icountry, l_country_moves):
 		self.__l_l_country_moves[icountry] = l_country_moves
 
+	def clear_one_country_moves(self, icountry):
+		self.__l_l_country_moves[icountry] = []
+
 	def get_country_moves(self, icountry): # registrered by icountry instead of scountry because there is not supposed to be game logic here. Just storing vars
 		return self.__l_l_country_moves[icountry]
 
@@ -293,6 +296,9 @@ class cl_wd_state(object):
 		return 	self.__init_db, self.__status_db, self.__db_cont_mgr, self.__country_names_tbl, self.__l_humaans, \
 				self.__unit_owns_tbl, self.__all_dicts, self.__terr_owns_tbl, self.__supply_tbl, \
 				self.__b_waiting_for_AI, self.__game_store
+
+	def get_terr_id_tbl(self):
+		return self.__terr_id_tbl
 
 	def get_unit_owns_tbl(self):
 		return self.__unit_owns_tbl

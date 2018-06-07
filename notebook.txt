@@ -1878,6 +1878,16 @@ Monday 21st May
 
 Pausing in mid-work because I want wd wok to happen only on Thursday & Friday
 
-Chaecking in with:
+Checking in with:
 
 Trying to get AI only games to support only with user options. Not working yet.
+
+Thursday 7th July
+
+Been working on bits. Now the goal is to integrate bits into this project. The planned change is
+very disruptive. Rules will be implemented differently and the goal is that inference/running/playing
+will be much faster - particularly when there is real hardware support.
+
+Checking in:
+
+Bitvector integrated minimally. The event phrase is stored.
