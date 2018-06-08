@@ -188,7 +188,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 						out_str += ' **** '
 						print(out_str)
 						l_player_events.append(els.convert_phrase_to_word_list([player_event[1:]])[0])
-						bitvec_mgr.add_phrase(l_player_events[-1], i_one_story, story_loop_stage, event_step_id[0])
+						bitvec_mgr.add_phrase(l_player_events[-1], (i_one_story, story_loop_stage, event_step_id[0]))
 						story_loop_stage = e_story_loop_stage.state1
 					else:
 						event_as_decided = []
@@ -203,11 +203,12 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 					rule_stats[ruleid][1] += 1.0
 				print('rule stats:',  rule_stats, 'ruleid:', ruleid, 'rand thresh:', (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1])))
 				if event_as_decided != [] or (random.random() > (0.99 * rule_stats[ruleid][0] / (rule_stats[ruleid][0] + rule_stats[ruleid][1]))):
-					adv_learn.do_learn_rule_from_step(	event_as_decided, event_step_id[0], story_db, one_decide, '',
-														def_article_dict, db_len_grps, sess,
-														el_set_arr, glv_dict, els_sets, cascade_dict,
-														gg_cont, db_cont_mgr)
-					# bitvec_mgr.
+					if adv_config.c_b_learn_full_rules:
+						adv_learn.do_learn_rule_from_step(	event_as_decided, event_step_id[0], story_db, one_decide, '',
+															def_article_dict, db_len_grps, sess,
+															el_set_arr, glv_dict, els_sets, cascade_dict,
+															gg_cont, db_cont_mgr)
+					bitvec_mgr.learn_rule(one_decide, event_as_decided, (i_one_story, story_loop_stage, event_step_id[0]))
 
 
 			elif story_loop_stage == e_story_loop_stage.state1:

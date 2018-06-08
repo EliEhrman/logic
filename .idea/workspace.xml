@@ -2,21 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c6b771a1-a10b-4216-9350-efe4ef2bc292" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/bitvec.py" afterDir="false" />
       <change beforePath="/devlink2/dev/faiss/glove.py" beforeDir="false" afterPath="/devlink2/dev/faiss/glove.py" afterDir="false" />
       <change beforePath="/devlink2/dev/faiss/glove_kmeans.py" beforeDir="false" afterPath="/devlink2/dev/faiss/glove_kmeans.py" afterDir="false" />
       <change beforePath="/devlink2/dev/phrases/on_the_fly.py" beforeDir="false" afterPath="/devlink2/dev/phrases/on_the_fly.py" afterDir="false" />
       <change beforePath="/devlink2/dev/stt/sttwordcomp.py" beforeDir="false" afterPath="/devlink2/dev/stt/sttwordcomp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/logic.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/logic.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adv_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/adv_config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/adv_main1.py" beforeDir="false" afterPath="$PROJECT_DIR$/adv_main1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bitvec.py" beforeDir="false" afterPath="$PROJECT_DIR$/bitvec.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebook.txt" beforeDir="false" afterPath="$PROJECT_DIR$/notebook.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wd2.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wd_alliance.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_alliance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wd_classicAI.py" beforeDir="false" afterPath="$PROJECT_DIR$/wd_classicAI.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wdconfig.py" beforeDir="false" afterPath="$PROJECT_DIR$/wdconfig.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -37,7 +31,7 @@
         <entry file="file://$PROJECT_DIR$/adv_main1.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="161">
-              <caret line="265" selection-start-line="265" selection-end-line="265" />
+              <caret line="266" selection-start-line="266" selection-end-line="266" />
               <folding>
                 <element signature="e#321#358#0" expanded="true" />
               </folding>
@@ -48,8 +42,62 @@
       <file leaf-file-name="adv_config.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/adv_config.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="431">
-              <caret line="33" column="5" lean-forward="true" selection-start-line="33" selection-start-column="5" selection-end-line="33" selection-end-column="5" />
+            <state relative-caret-position="340">
+              <caret line="20" column="20" selection-start-line="20" selection-end-line="20" selection-end-column="20" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="wdconfig.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wdconfig.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="221">
+              <caret line="28" column="8" lean-forward="true" selection-start-line="28" selection-start-column="8" selection-end-line="28" selection-end-column="8" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="wd2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wd2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="229">
+              <caret line="1164" column="47" selection-start-line="1164" selection-start-column="47" selection-end-line="1164" selection-end-column="47" />
+              <folding>
+                <element signature="e#0#37#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="wdlearn.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/wdlearn.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="342">
+              <caret line="649" column="26" selection-start-line="649" selection-start-column="26" selection-end-line="649" selection-end-column="26" />
+              <folding>
+                <element signature="e#0#37#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="learn.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/learn.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="189">
+              <caret line="272" column="19" selection-start-line="272" selection-start-column="19" selection-end-line="272" selection-end-column="19" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="on_the_fly.py" pinned="false" current-in-tab="false">
+        <entry file="file:///devlink2/dev/phrases/on_the_fly.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="294">
+              <caret line="550" lean-forward="true" selection-start-line="542" selection-end-line="550" />
+              <folding>
+                <element signature="e#193#230#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -57,8 +105,8 @@
       <file leaf-file-name="bitvec.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bitvec.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="212">
-              <caret line="73" column="27" lean-forward="true" selection-start-line="73" selection-start-column="27" selection-end-line="73" selection-end-column="27" />
+            <state relative-caret-position="151">
+              <caret line="100" column="8" selection-start-line="100" selection-start-column="8" selection-end-line="100" selection-end-column="8" />
               <folding>
                 <element signature="e#193#230#0" expanded="true" />
               </folding>
@@ -69,50 +117,8 @@
       <file leaf-file-name="notebook.txt" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/notebook.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="424">
-              <caret line="1892" column="46" selection-start-line="1892" selection-end-line="1892" selection-end-column="59" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="pydev_monkey_qt.py" pinned="false" current-in-tab="false">
-        <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="101" selection-start-line="101" selection-end-line="101" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="clrecgrp.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/clrecgrp.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="648" selection-start-line="648" selection-end-line="648" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="on_the_fly.py" pinned="false" current-in-tab="false">
-        <entry file="file:///devlink2/dev/phrases/on_the_fly.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="447">
-              <caret line="43" column="15" selection-start-line="43" selection-start-column="15" selection-end-line="43" selection-end-column="15" />
-              <folding>
-                <element signature="e#193#230#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="addlearn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/addlearn.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="546" selection-start-line="546" selection-end-line="546" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="472">
+              <caret line="1896" column="4" lean-forward="true" selection-start-line="1896" selection-start-column="4" selection-end-line="1896" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -120,8 +126,8 @@
       <file leaf-file-name="adv_learn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/adv_learn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="161">
-              <caret line="225" column="26" selection-start-line="225" selection-start-column="4" selection-end-line="225" selection-end-column="26" />
+            <state relative-caret-position="-145">
+              <caret line="135" column="4" selection-start-line="135" selection-start-column="4" selection-end-line="135" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -137,12 +143,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>change_db</find>
-      <find>divider =</find>
-      <find>divider_sum</find>
-      <find>5</find>
-      <find>c_kmeans_divider_offset</find>
-      <find>l_change_db</find>
       <find>l_word_phrase_ids</find>
       <find>l_word_counts</find>
       <find>c_init_len</find>
@@ -155,18 +155,24 @@
       <find>bitvec</find>
       <find>phrase_freq_fnt</find>
       <find>create_phrase_freq_tbl</find>
-      <find>phrase_freq</find>
       <find>story_phrases</find>
       <find>build_bit_masks</find>
       <find>score_hd_output_bits</find>
       <find>qbits</find>
       <find>c_</find>
       <find>num_ham_winners</find>
-      <find>add_new_words</find>
       <find>id</find>
-      <find>keep_going</find>
+      <find>infer_from_story</find>
       <find>l_player_events</find>
+      <find>event_as_decided</find>
       <find>add_phrase</find>
+      <find>keep_going</find>
+      <find>l_b_knownphrase</find>
+      <find>add_new_words</find>
+      <find>phrase_freq</find>
+      <find>learn</find>
+      <find>bitvec_mgr</find>
+      <find>nd_el_bin_db</find>
     </findStrings>
     <replaceStrings>
       <replace>curr_cont</replace>
@@ -175,6 +181,7 @@
       <replace>success_orders_data</replace>
       <replace>other</replace>
       <replace>phrase</replace>
+      <replace>self.__nd_el_bin_db</replace>
     </replaceStrings>
     <dirStrings>
       <dir>$PROJECT_DIR$</dir>
@@ -215,9 +222,7 @@
         <option value="$PROJECT_DIR$/config.py" />
         <option value="$PROJECT_DIR$/clrecgrp.py" />
         <option value="$PROJECT_DIR$/els.py" />
-        <option value="$PROJECT_DIR$/adv_config.py" />
         <option value="$PROJECT_DIR$/adv_learn.py" />
-        <option value="$PROJECT_DIR$/wdlearn.py" />
         <option value="/devlink2/dev/phrases/word_level.py" />
         <option value="/devlink2/dev/hamcifar/hc.py" />
         <option value="/devlink2/dev/hamcifar/hces.py" />
@@ -234,6 +239,8 @@
         <option value="/devlink2/dev/faiss/glove_kmeans.py" />
         <option value="/devlink2/dev/phrases/notebook.txt" />
         <option value="/devlink2/dev/phrases/on_the_fly.py" />
+        <option value="$PROJECT_DIR$/wdlearn.py" />
+        <option value="$PROJECT_DIR$/adv_config.py" />
         <option value="$PROJECT_DIR$/adv_main1.py" />
         <option value="$PROJECT_DIR$/bitvec.py" />
         <option value="$PROJECT_DIR$/notebook.txt" />
@@ -241,10 +248,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="69" />
-    <option name="y" value="-4" />
-    <option name="width" value="1847" />
-    <option name="height" value="1052" />
+    <option name="x" value="-84" />
+    <option name="y" value="455" />
+    <option name="width" value="1845" />
+    <option name="height" value="1044" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -452,13 +459,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1503060144014</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Blocking code running but no sig results.">
-      <created>1518185346324</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1518185346324</updated>
     </task>
     <task id="LOCAL-00003" summary="First version of step by step working.">
       <created>1519020732610</created>
@@ -796,7 +796,14 @@
       <option name="project" value="LOCAL" />
       <updated>1528292090561</updated>
     </task>
-    <option name="localTasksCounter" value="51" />
+    <task id="LOCAL-00051" summary="Bitvector integrated minimally. The event phrase is stored.">
+      <created>1528377814349</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1528377814349</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="TodoView">
@@ -809,8 +816,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="64" y="-11" width="1857" height="1092" extended-state="6" />
-    <editor active="true" />
+    <frame x="65" y="-4" width="1855" height="1084" extended-state="6" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4160839" visible="true" weight="0.16975982" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -871,7 +877,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="test of new locations" />
     <MESSAGE value="Added a layer above classic AI to protect wd sql from supports without moves. Classic AI technically working." />
     <MESSAGE value="Support and convoy orders now fail if their target does" />
     <MESSAGE value="Order frequency stats working with colist stats." />
@@ -896,7 +901,8 @@
     <MESSAGE value="Differential k for clustering works." />
     <MESSAGE value="Adding words works but no continuous updates." />
     <MESSAGE value="on_the_fly works." />
-    <option name="LAST_COMMIT_MESSAGE" value="on_the_fly works." />
+    <MESSAGE value="Bitvector integrated minimally. The event phrase is stored." />
+    <option name="LAST_COMMIT_MESSAGE" value="Bitvector integrated minimally. The event phrase is stored." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1222,11 +1228,6 @@
           <option name="timeStamp" value="3054" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/adv_main1.py</url>
-          <line>306</line>
-          <option name="timeStamp" value="3067" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/clrecgrp.py</url>
           <line>648</line>
           <option name="timeStamp" value="3079" />
@@ -1243,7 +1244,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/adv_main1.py</url>
-          <line>265</line>
+          <line>266</line>
           <option name="timeStamp" value="3118" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1565,51 +1566,20 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>546</line>
-          <option name="timeStamp" value="3610" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>247</line>
+          <line>328</line>
           <option name="timeStamp" value="3622" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>541</line>
-          <option name="timeStamp" value="3627" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>225</line>
-          <option name="timeStamp" value="3633" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>562</line>
-          <option name="timeStamp" value="3637" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>451</line>
-          <option name="timeStamp" value="3638" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>75</line>
-          <option name="timeStamp" value="3639" />
+          <line>118</line>
+          <option name="timeStamp" value="3657" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="3640" />
+      <option name="time" value="3664" />
     </breakpoint-manager>
-    <watches-manager>
-      <configuration name="PythonConfigurationType">
-        <watch expression="nd_bit_db[iunique]" />
-        <watch expression="l_change_db" />
-      </configuration>
-    </watches-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
@@ -1730,6 +1700,26 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
+        <expression-string>nd_bit_db[word_id]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>tuple(nd_bit_db[word_id])</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self.__l_word_fix_num</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self.__l_word_fix_num[554]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
         <expression-string>bitvec_mgr</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
@@ -1754,53 +1744,9 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
-      <expression>
-        <expression-string>np.concatenate(phrase_bin_db[ilen], np.expand_dims(input_bits, axis=0))</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>1 if itf in p else 0</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>nd_bit_db[d_words[word]]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>map(int, bits)</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/makerecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="563" selection-start-line="563" selection-end-line="563" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/learn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="405" selection-start-line="405" selection-end-line="405" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/els.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3162">
-          <caret line="197" selection-start-line="197" selection-end-line="197" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/wd_allies_lrn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="51">
@@ -1880,30 +1826,10 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wdlearn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3842">
-          <caret line="244" column="18" selection-start-line="244" selection-start-column="18" selection-end-line="244" selection-end-column="18" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/wd_classicAI.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="17748">
           <caret line="1057" selection-start-line="1057" selection-end-line="1057" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/wd2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="20179">
-          <caret line="1216" selection-start-line="1216" selection-end-line="1216" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
@@ -2013,9 +1939,6 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/wdconfig.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file:///devlink2/dev/faiss/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="506">
@@ -2102,16 +2025,6 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file:///devlink2/dev/phrases/on_the_fly.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="447">
-          <caret line="43" column="15" selection-start-line="43" selection-start-column="15" selection-end-line="43" selection-end-column="15" />
-          <folding>
-            <element signature="e#193#230#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
@@ -2119,17 +2032,17 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/adv_config.py">
+    <entry file="file://$PROJECT_DIR$/story.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="431">
-          <caret line="33" column="5" lean-forward="true" selection-start-line="33" selection-start-column="5" selection-end-line="33" selection-end-column="5" />
+        <state relative-caret-position="51">
+          <caret line="9" column="14" lean-forward="true" selection-start-line="9" selection-start-column="14" selection-end-line="9" selection-end-column="14" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/adv_learn.py">
+    <entry file="file://$PROJECT_DIR$/els.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="161">
-          <caret line="225" column="26" selection-start-line="225" selection-start-column="4" selection-end-line="225" selection-end-column="26" />
+        <state relative-caret-position="421">
+          <caret line="197" selection-start-line="197" selection-end-line="197" />
         </state>
       </provider>
     </entry>
@@ -2140,10 +2053,68 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
+    <entry file="file:///devlink2/dev/phrases/on_the_fly.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="294">
+          <caret line="550" lean-forward="true" selection-start-line="542" selection-end-line="550" />
+          <folding>
+            <element signature="e#193#230#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/adv_learn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-145">
+          <caret line="135" column="4" selection-start-line="135" selection-start-column="4" selection-end-line="135" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wd2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="229">
+          <caret line="1164" column="47" selection-start-line="1164" selection-start-column="47" selection-end-line="1164" selection-end-column="47" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/learn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="272" column="19" selection-start-line="272" selection-start-column="19" selection-end-line="272" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdlearn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="342">
+          <caret line="649" column="26" selection-start-line="649" selection-start-column="26" selection-end-line="649" selection-end-column="26" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/wdconfig.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="28" column="8" lean-forward="true" selection-start-line="28" selection-start-column="8" selection-end-line="28" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/adv_config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="20" column="20" selection-start-line="20" selection-end-line="20" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/adv_main1.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="161">
-          <caret line="265" selection-start-line="265" selection-end-line="265" />
+          <caret line="266" selection-start-line="266" selection-end-line="266" />
           <folding>
             <element signature="e#321#358#0" expanded="true" />
           </folding>
@@ -2152,8 +2123,8 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
     </entry>
     <entry file="file://$PROJECT_DIR$/bitvec.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="212">
-          <caret line="73" column="27" lean-forward="true" selection-start-line="73" selection-start-column="27" selection-end-line="73" selection-end-column="27" />
+        <state relative-caret-position="151">
+          <caret line="100" column="8" selection-start-line="100" selection-start-column="8" selection-end-line="100" selection-end-column="8" />
           <folding>
             <element signature="e#193#230#0" expanded="true" />
           </folding>
@@ -2162,8 +2133,8 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
     </entry>
     <entry file="file://$PROJECT_DIR$/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="424">
-          <caret line="1892" column="46" selection-start-line="1892" selection-end-line="1892" selection-end-column="59" />
+        <state relative-caret-position="472">
+          <caret line="1896" column="4" lean-forward="true" selection-start-line="1896" selection-start-column="4" selection-end-line="1896" selection-end-column="4" />
         </state>
       </provider>
     </entry>

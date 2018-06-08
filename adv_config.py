@@ -18,6 +18,7 @@ c_freq_stats_mature_thresh = 10
 c_freq_stats_drop_thresh = 0.1
 c_freq_stats_version = 1
 c_b_save_freq_stats = True
+c_b_learn_full_rules = False
 
 
 

@@ -1891,3 +1891,9 @@ will be much faster - particularly when there is real hardware support.
 Checking in:
 
 Bitvector integrated minimally. The event phrase is stored.
+
+Friday 8th July
+
+CIW:
+
+Bitvector integration includes new but frequent words.
