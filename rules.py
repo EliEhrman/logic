@@ -371,6 +371,7 @@ def apply_rules(els_dict, rules, phrase):
 	return mod_phrases, search_markers
 
 def apply_mods(story_db, mod_phrases, time_id):
+	iremoved, iadded, added_phrase = -1, -1, []
 	for imod, mod_phrase_rec in enumerate(mod_phrases):
 		mod_phrase = mod_phrase_rec.phrase()
 		mod_type = mod_phrase[0][1]
@@ -392,15 +393,21 @@ def apply_mods(story_db, mod_phrases, time_id):
 				b_phrase_found = True
 				if mod_type == conn_type.Remove or mod_type == conn_type.Insert:
 					story_db.pop(iphrase)
+					iremoved = iphrase
 				elif mod_type == conn_type.Modify:
 					story_db.pop(iphrase)
+					iremoved = iphrase
 					story_db += [C_phrase_rec(new_phrase, time_id)]
+					iadded = len(story_db) - 1
+					added_phrase = new_phrase
 		# Only insert if the phrase does not exist identically in DB already
 		# implemented by removing the previous iteration and re-inserting but with a new time stamp
 		if mod_type == conn_type.Insert:
 			story_db += [C_phrase_rec(mod_phrase[1:], time_id)]
+			iadded = len(story_db) - 1
+			added_phrase = mod_phrase[1:]
 
-	return story_db
+	return story_db, iremoved, iadded, added_phrase
 
 def gen_from_story(els_dict, els_arr, rule, story, gen_by_last=False, multi_ans=False):
 	conds = rule.preconds

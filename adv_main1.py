@@ -80,6 +80,9 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 	el_set_arr = []
 
 	for i_one_story in range(num_stories):
+		if i_one_story == 6:
+			bitvec_mgr.increase_rule_stages()
+
 		l_player_events = []
 		els_sets, num_els, els_arr, els_dict = init_sets(els_lists)
 		# els.quality_of_els_sets(glv_dict, els_sets)
@@ -95,6 +98,9 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 		decide_rules = [rule_dict[rule_name] for rule_name in decide_rule_names]
 		event_from_decide_rules = [rule_dict[rule_name] for rule_name in event_from_decide_names]
 
+		e_story_loop_stage = Enum('e_story_loop_stage', 'story_init decision_init decision event state1 complete_state1 state2')
+
+		l_story_db_event_refs = []
 		story_db = []
 		for rule in start_story_rules:
 			src_recs, recs = rules.gen_for_rule(b_gen_for_learn=True, rule=rule)
@@ -103,7 +109,13 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				phrase = rec.phrase()
 				if phrase[0][1] == conn_type.start:
 					if phrase[1][1] == conn_type.Insert:
-						story_db.append(rules.C_phrase_rec(phrase[2:-1]))
+						init_phrase = phrase[2:-1]
+						story_db.append(rules.C_phrase_rec(init_phrase))
+						init_wlist = els.convert_phrase_to_word_list([init_phrase])[0]
+						ilen, iphrase = bitvec_mgr.add_phrase(	init_wlist,
+																(	i_one_story, e_story_loop_stage.story_init,
+																	event_step_id[0]))
+						l_story_db_event_refs.append((ilen, iphrase))
 
 		print('Current state of story DB')
 		for phrase_rec in story_db:
@@ -188,7 +200,9 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 						out_str += ' **** '
 						print(out_str)
 						l_player_events.append(els.convert_phrase_to_word_list([player_event[1:]])[0])
-						bitvec_mgr.add_phrase(l_player_events[-1], (i_one_story, story_loop_stage, event_step_id[0]))
+						ilen, iphrase = bitvec_mgr.add_phrase(l_player_events[-1], (i_one_story, story_loop_stage, event_step_id[0]))
+						# l_story_db_event_refs.append((ilen, iphrase))
+						#handle deletes and modifies
 						story_loop_stage = e_story_loop_stage.state1
 					else:
 						event_as_decided = []
@@ -208,7 +222,9 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 															def_article_dict, db_len_grps, sess,
 															el_set_arr, glv_dict, els_sets, cascade_dict,
 															gg_cont, db_cont_mgr)
-					bitvec_mgr.learn_rule(one_decide, event_as_decided, (i_one_story, story_loop_stage, event_step_id[0]))
+					bitvec_mgr.learn_rule(one_decide, event_as_decided,
+										  (i_one_story, story_loop_stage, event_step_id[0]),
+										  l_story_db_event_refs)
 
 
 			elif story_loop_stage == e_story_loop_stage.state1:
@@ -227,7 +243,15 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 
 			if story_loop_stage == e_story_loop_stage.complete_state1:
 				for event_result in events_to_queue:
-					story_db = rules.apply_mods(story_db, [rules.C_phrase_rec(event_result)], i_story_step)
+					story_db, iremoved, iadded, added_phrase = \
+						rules.apply_mods(story_db, [rules.C_phrase_rec(event_result)], i_story_step)
+					if iremoved != -1:
+						l_story_db_event_refs.pop(iremoved)
+					if iadded != -1:
+						added_wlist = els.convert_phrase_to_word_list([added_phrase])[0]
+						ilen, iphrase = bitvec_mgr.add_phrase(added_wlist,
+															  (i_one_story, story_loop_stage, event_step_id[0]))
+						l_story_db_event_refs.append((ilen, iphrase))
 				story_loop_stage = e_story_loop_stage.decision_init
 				i_story_step += 1
 				if i_story_step >= num_story_steps:

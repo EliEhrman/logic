@@ -300,6 +300,41 @@ def build_vars_dict(phrase_list):
 
 	return new_phrase_list, vars_dict
 
+def replace_with_vars_in_wlist(l_wlist_src, phrase_result):
+	vars_dict, l_wlist_vars, l_wlist_lens = dict(), [], []
+	for iwlist, wlist in enumerate(l_wlist_src):
+		for iel, el in enumerate(wlist):
+			iwlist_src, pos_src = vars_dict.get(el, (-1, -1))
+			if iwlist_src == -1:
+				vars_dict[el] = (iwlist, iel)
+			else:
+				l_wlist_vars.append((iwlist_src, pos_src, iwlist, iel))
+		if iwlist == 0:
+			l_wlist_lens.append(len(wlist))
+		else:
+			l_wlist_lens.append(l_wlist_lens[-1] + len(wlist))
+
+
+	new_result = []
+	for ielr, elr in enumerate(phrase_result):
+		if elr[0] != rec_def_type.obj:
+			new_result.append(elr)
+			continue
+		word = elr[1]
+		iwlist_src, pos_src = vars_dict.get(word, (-1, -1))
+		if iwlist_src == -1:
+			# new_phrase_list.append([rec_def_type.var, len(vars_dict)])
+			new_result.append(elr)
+			vars_dict[word] = (len(l_wlist_src), ielr)
+		else:
+			if iwlist_src == 0:
+				dest_pos = pos_src
+			else:
+				dest_pos = l_wlist_lens[iwlist_src] + pos_src
+			new_result.append([rec_def_type.var, dest_pos])
+
+	return l_wlist_vars, new_result
+
 def make_vec(recs, glv_dict):
 	# numrecs = len(recs)
 	# num_els = len(els_dict)

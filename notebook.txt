@@ -1897,3 +1897,14 @@ Friday 8th July
 CIW:
 
 Bitvector integration includes new but frequent words.
+
+Wednesday 20th June 2018
+
+Bitvec learning of up to two stages of ruls works technically. However, we are distinguishing poorey between the
+success and failure cases.
+
+Next I will try decision trees
+
+CIW:
+
+Bitvecs learns two stage rules but distinguishes poorely.

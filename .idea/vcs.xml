@@ -5,9 +5,11 @@
     <mapping directory="/devlink2/dev/faiss" vcs="Git" />
     <mapping directory="/devlink2/dev/ham3" vcs="Git" />
     <mapping directory="/devlink2/dev/hamcifar" vcs="Git" />
+    <mapping directory="/devlink2/dev/myfaiss" vcs="Git" />
     <mapping directory="/devlink2/dev/phrases" vcs="Git" />
     <mapping directory="/devlink2/dev/stt" vcs="Git" />
     <mapping directory="/devlink2/dev/test8" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../faiss" vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
   </component>
 </project>

@@ -2,10 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file:///devlink2/dev/faiss/.idea/faiss.iml" filepath="/devlink2/dev/faiss/.idea/faiss.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../faiss/.idea/faiss.iml" filepath="$PROJECT_DIR$/../faiss/.idea/faiss.iml" />
       <module fileurl="file:///devlink2/dev/ham3/.idea/ham3.iml" filepath="/devlink2/dev/ham3/.idea/ham3.iml" />
       <module fileurl="file:///devlink2/dev/hamcifar/.idea/hamcifar.iml" filepath="/devlink2/dev/hamcifar/.idea/hamcifar.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/logic.iml" filepath="$PROJECT_DIR$/.idea/logic.iml" />
+      <module fileurl="file:///devlink2/dev/myfaiss/.idea/myfaiss.iml" filepath="/devlink2/dev/myfaiss/.idea/myfaiss.iml" />
       <module fileurl="file:///devlink2/dev/phrases/.idea/phrases.iml" filepath="/devlink2/dev/phrases/.idea/phrases.iml" />
       <module fileurl="file:///devlink2/dev/stt/.idea/stt.iml" filepath="/devlink2/dev/stt/.idea/stt.iml" />
     </modules>
