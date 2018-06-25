@@ -1908,3 +1908,9 @@ Next I will try decision trees
 CIW:
 
 Bitvecs learns two stage rules but distinguishes poorely.
+
+Monday 25th June
+
+CIW:
+
+Bitvecs rules work with reverse and rnd improvements but not applied.

@@ -23,6 +23,7 @@ from rules import conn_type
 from rules import rec_def_type
 import els
 import makerecs as mr
+import bitvec_rf
 
 
 # fnt = 'orders_success.txt'
@@ -59,10 +60,14 @@ c_bitvec_neibr_divider_offset = 5 # Closeness of neighbours factor
 # c_add_fix_iter = 20
 c_bitvec_min_len_before_learn = 100
 
-c_bitvec_gg_learn_min = 10 # must be even
-c_bitvec_gg_stats_min = 10
+c_bitvec_gg_learn_min = 100 # must be even
+c_bitvec_gg_stats_min = 100
 c_bitvec_gg_initial_valid = 0.3
-c_bitvec_gg_delta_on_parent = .1
+c_bitvec_gg_delta_on_parent = .2
+c_bitvec_learn_min_unusual = 23
+c_bitvec_finetune_num_rnds = 10  # type: int
+c_bitvec_rnd_hd_max = 3
+
 
 assert c_bitvec_gg_learn_min % 2 == 0, 'c_bitvec_gg_learn_min must be even'
 
@@ -93,9 +98,26 @@ class cl_bitvec_gg(object):
 		self.__num_stats = 0
 		self.__num_hits = 0
 		self.__score = -1.0
+		self.__match_bins = []
+		self.__match_hits = []
+		self.__gg_rev_impr = [] # a descendent gg (not child) improvement based on characterizing the misses
+		self.__l_gg_rnd_impr = [] # random improvements based on tightening characterization of individuals els
+		self.__b_rev_impr = False # I/this/self is a rev improv
+		self.__b_rnd_impr = True
+		self.__gg_src = [] # The src gg is not a parent but a less improved version of the rule that caused this one to be created
+		self.__impr_score = -1.
 		if num_stages == 2:
 			self.__l_els_rep += [[] for _ in range(phrase2_len)]
 			self.__l_hd_max += [c_bitvec_size for _ in range(phrase2_len)]
+
+	def set_imprv(self, gg_src, b_rev_imprv, b_rnd_imprv):
+		self.__b_rev_impr = b_rev_imprv
+		self.__b_rnd_impr = b_rnd_imprv
+		self.__gg_src = gg_src
+
+	def set_els_rep(self, l_els_rep, l_hd_max):
+		self.__l_els_rep = l_els_rep
+		self.__l_hd_max = l_hd_max
 
 	def get_phrase2_ilen(self):
 		return self.__phrase2_ilen
@@ -114,6 +136,9 @@ class cl_bitvec_gg(object):
 
 	def get_score(self):
 		return self.__score
+
+	def set_score(self, score):
+		self.__score = score
 
 	def get_status(self):
 		return self.__status
@@ -174,17 +199,150 @@ class cl_bitvec_gg(object):
 			self.__score = self.__num_hits / float(self.__num_stats)
 			if self.__score > c_bitvec_gg_initial_valid:
 				parent_score = self.get_parent().get_score()
-				if parent_score > self.__score:
-					if (self.__score - parent_score) / parent_score > c_bitvec_gg_delta_on_parent:
-						self.__status = rule_status.blocking
-					else:
-						self.__status = rule_status.irrelevant
-				else:
-					if (self.__score - parent_score) / parent_score  > c_bitvec_gg_delta_on_parent:
+				if parent_score < self.__score:
+					if (self.__score - parent_score) / (1. - parent_score) > c_bitvec_gg_delta_on_parent:
 						self.__status = rule_status.expands
 					else:
 						self.__status = rule_status.irrelevant
-			print('status', self.__status, 'score', self.__score, 'for rule:', mr.gen_rec_str(self.__rule_rec) )
+				else:
+					if (parent_score - self.__score) / parent_score  > c_bitvec_gg_delta_on_parent:
+						self.__status = rule_status.blocking
+					else:
+						self.__status = rule_status.irrelevant
+			self.fine_tune(self.__match_bins, self.__match_hits)
+			print('parent score:', self.__mgr.get_rule(self.__parent_irule).get_score(),
+				  'status', self.__status, 'score', self.__score, 'for rule:', mr.gen_rec_str(self.__rule_rec) )
+			pass
+
+		pass
+
+	def find_rnd_tuning(self, l_els_rep_src, l_hd_max_src, phrase_bins, hits, phrase_len):
+		num_hits = np.sum(hits)
+		old_true_positive =  num_hits / float(phrase_bins.shape[0])
+		b_one_found, best_true_positive, num_hits_best = False, -1.0, -1
+		l_els_rep_best, l_hd_max_best = [], []
+
+		for irnd in xrange(c_bitvec_finetune_num_rnds):
+			m_matches = np.ones(phrase_bins.shape[0], dtype=np.bool)
+			riphrase = random.randint(0, phrase_bins.shape[0]-1)
+			l_els_rep, l_hd_max = list(l_els_rep_src), list(l_hd_max_src)
+			riel = random.randint(0, phrase_len-1)
+			if l_els_rep[riel] == []:
+				continue
+			l_els_rep[riel] = phrase_bins[riphrase, riel * c_bitvec_size:(riel + 1) * c_bitvec_size].astype(np.float)
+			l_hd_max[riel] = random.randint(0, c_bitvec_rnd_hd_max)
+
+			for iel in range(phrase_len):
+				if l_els_rep[iel] == []:
+					continue
+				el_bins = phrase_bins[:, iel * c_bitvec_size:(iel + 1) * c_bitvec_size]
+				nd_diffs_hits = np.sum(np.not_equal(l_els_rep[iel], el_bins), axis=1)
+				m_matches = np.logical_and(m_matches, (nd_diffs_hits <= l_hd_max[iel]))
+
+			num_matches = np.sum(m_matches)
+			if num_matches < c_bitvec_learn_min_unusual:
+				continue
+			num_match_hits = np.sum(np.logical_and(m_matches, np.array(hits)))
+			true_positive = num_match_hits / float(num_matches)
+			if true_positive > old_true_positive and \
+					(true_positive - old_true_positive) / (1. - old_true_positive) > c_bitvec_gg_delta_on_parent:
+				if not b_one_found or true_positive > best_true_positive \
+						or (true_positive == best_true_positive and num_match_hits > num_hits_best):
+					b_one_found, num_hits_best = True, num_match_hits
+					l_els_rep_best, l_hd_max_best, best_true_positive = list(l_els_rep), list(l_hd_max), true_positive
+
+		return b_one_found, l_els_rep_best, l_hd_max_best
+
+
+	def fine_tune(self, match_bins, match_hits):
+		num_matches, num_hits = match_bins.shape[0], np.sum(match_hits)
+		if num_hits < c_bitvec_learn_min_unusual or num_matches - num_hits < c_bitvec_learn_min_unusual:
+			return
+		match_bin_hits = match_bins[match_hits]
+		match_bin_miss = match_bins[np.logical_not(match_hits)]
+		# if match_bin_hits.shape[0] % 2 == 0:
+		# 	match_bin_hits = match_bin_hits[:-1, :]
+		if match_bin_miss.shape[0] % 2 == 0:
+			match_bin_miss = match_bin_miss[:-1, :]
+		# for match_bins, match_bins_other in [(match_bin_hits, match_bin_miss), (match_bin_miss, match_bin_hits)]:
+		# 	for iel in range(self.__phrase2_len):
+		# 		el_bins = match_bins[:, iel * c_bitvec_size:(iel + 1) * c_bitvec_size]
+		# 		el_bins_other = match_bins_other[:, iel * c_bitvec_size:(iel + 1) * c_bitvec_size]
+		# 		# figure out if odd, figure out if 1
+		# 		els_rep = np.median(el_bins, axis=0)
+		# 		nd_diffs = np.sum(np.not_equal(els_rep, el_bins), axis=1)
+		# 		hd_max = np.max(nd_diffs)
+		# 		nd_diffs_other = np.sum(np.not_equal(els_rep, el_bins_other), axis=1)
+		# 		m_other = nd_diffs_other <= hd_max
+		# 		del el_bins, el_bins_other, els_rep,
+
+		# m_outside_miss = np.zeros(match_bin_hits.shape[0], dtype=np.bool)
+		# for iel in range(self.__phrase2_len):
+		# 	el_bins_hits = match_bin_hits[:, iel * c_bitvec_size:(iel + 1) * c_bitvec_size]
+		# 	nd_diffs_hits = np.sum(np.not_equal(l_els_rep_miss[iel], el_bins_hits), axis=1)
+		# 	m_outside_miss = np.logical_or(m_outside_miss, (nd_diffs_hits > l_hd_max_miss[iel]))
+
+		def create_reps(phrase_bins, phrase_len):
+			if phrase_bins.shape[0] % 2 == 0:
+				phrase_bins = phrase_bins[:-1, :]
+			l_els_rep, l_hd_max = [], []
+			for iel in range(phrase_len):
+				el_bins = phrase_bins[:, iel * c_bitvec_size:(iel + 1) * c_bitvec_size]
+				l_els_rep.append(np.median(el_bins, axis=0))
+				nd_diffs = np.sum(np.not_equal(l_els_rep[-1], el_bins), axis=1)
+				l_hd_max.append(np.max(nd_diffs))
+			return l_els_rep, l_hd_max
+
+		def create_match_arr(l_els_rep, l_hd_max, phrase_bins, phrase_len):
+			m_matches = np.ones(phrase_bins.shape[0], dtype=np.bool)
+			for iel in range(phrase_len):
+				el_bins = phrase_bins[:, iel * c_bitvec_size:(iel + 1) * c_bitvec_size]
+				nd_diffs_hits = np.sum(np.not_equal(l_els_rep[iel], el_bins), axis=1)
+				m_matches = np.logical_and(m_matches, (nd_diffs_hits <= l_hd_max[iel]))
+			return m_matches
+
+		l_els_rep_miss, l_hd_max_miss = create_reps(match_bin_miss, self.__phrase2_len)
+		m_outside_miss = np.logical_not(create_match_arr(	l_els_rep_miss, l_hd_max_miss,
+															match_bin_hits, self.__phrase2_len))
+
+		if np.sum(m_outside_miss) < c_bitvec_learn_min_unusual:
+			return
+		m_outside_matches = np.logical_not(create_match_arr(l_els_rep_miss, l_hd_max_miss, match_bins, self.__phrase2_len))
+		num_outside_match_hits = np.sum(np.logical_and(m_outside_matches, np.array(match_hits)))
+		new_score, old_score = num_outside_match_hits / np.sum(m_outside_matches).astype(np.float), num_hits / float(num_matches)
+		b_add_rev_gg = False
+		if new_score > old_score and (new_score - old_score) / (1. - old_score) > c_bitvec_gg_delta_on_parent:
+			if self.__gg_rev_impr == [] or self.__gg_rev_impr == None:
+				imprv_gg = self.__mgr.add_new_rule(self.__ilen, self.__phrase_len, self.__result, self.__num_stages,
+													self.__l_wlist_vars, self.__phrase2_ilen, self.__phrase2_len,
+													self.__parent_irule)
+				imprv_gg.set_imprv(self, b_rev_imprv=True, b_rnd_imprv=False)
+				b_add_rev_gg = True
+				self.__gg_rev_impr = imprv_gg
+			elif  self.__gg_rev_impr.get_score() < new_score:
+				b_add_rev_gg = True
+
+			if b_add_rev_gg:
+				self.__gg_rev_impr.set_score(new_score), self.__gg_rev_impr.set_els_rep(self, l_els_rep_miss, l_hd_max_miss)
+				if new_score > self.__impr_score:
+					self.__impr_score = new_score
+
+		b_rnd_impr_found, l_els_rep_rnd, l_hd_max_rnd = \
+			self.find_rnd_tuning(	self.__l_els_rep[self.__phrase_len:], self.__l_hd_max[self.__phrase_len:],
+									match_bins, match_hits,  self.__phrase2_len)
+		if b_rnd_impr_found:
+			print('add an improvement child')
+
+		# bins_outside = match_bin_hits[m_outside_miss]
+		# l_els_rep_outside, l_hd_max_outside = create_reps(bins_outside, self.__phrase2_len)
+		# m_outside_matches = create_match_arr(l_els_rep_outside, l_hd_max_outside, match_bins, self.__phrase2_len)
+		# num_outside_matches = np.sum(np.logical_and(m_outside_matches, np.array(match_hits)))
+		# if np.sum(num_outside_matches) < c_bitvec_learn_min_unusual:
+		# 	return
+		# new_score, old_score = num_outside_matches / np.sum(m_outside_matches).astype(np.float), num_hits / float(num_matches)
+		# if new_score > old_score and (new_score - old_score) / (1. - old_score) > c_bitvec_gg_delta_on_parent:
+		# 	print('add an improvement child')
+
 
 		pass
 
@@ -238,12 +396,20 @@ class cl_bitvec_gg(object):
 			return self.is_a_match_one_stage(iphrase)
 		return False
 
+	def set_match_hits(self, match_bins, match_hits):
+		if self.__match_bins == []:
+			self.__match_bins = match_bins
+		else:
+			self.__match_bins = np.concatenate((self.__match_bins, match_bins), axis=0)
+		self.__match_hits += match_hits.tolist()
+		pass
+
 	# assumes match has aaybeen confirmed. Justcheck the result
 	def update_stats(self, phrase, l_results):
 		self.__num_stats += 1
 		if l_results == [] or l_results[0] == []:
 			return
-		_, new_result = els.replace_with_vars_in_wlist([phrase], l_results[0])
+		_, new_result = els.replace_with_vars_in_wlist([phrase], l_results)
 		if self.__result == new_result:
 			self.__num_hits += 1
 		if not self.__b_tested:
@@ -277,21 +443,30 @@ class cl_bitvec_gg(object):
 		return m_match
 
 	def update_stats_stage_2(self, phrase, story_refs, m_matches, l_results):
+		m_hits = np.zeros(m_matches.shape[0], dtype=bool)
 		for imatch, bmatch in enumerate(m_matches.tolist()):
 			if not bmatch:
 				continue
-			self.__num_stats += 1
 			match_phrase = self.__mgr.get_phrase(self.__phrase2_ilen, story_refs[imatch])
+			l_wlist_vars, new_result = els.replace_with_vars_in_wlist([phrase, match_phrase], l_results)
+			if l_wlist_vars != self.__l_wlist_vars:
+				m_matches[imatch] = False
+				continue
+			self.__num_stats += 1
 			if l_results == [] or l_results[0] == []:
-				return
-			_, new_result = els.replace_with_vars_in_wlist([phrase, match_phrase], l_results[0])
+				x = 2
+				continue
 			if self.__result == new_result:
 				self.__num_hits += 1
+				m_hits[imatch] = True
+			else:
+				x = 1
+				pass
 
 		if not self.__b_tested:
 			if self.__num_stats > c_bitvec_gg_stats_min:
 				self.__b_tested = True
-		pass
+		return m_hits
 
 
 class cl_bitvec_mgr(object):
@@ -355,6 +530,16 @@ class cl_bitvec_mgr(object):
 	def get_rule(self, irule):
 		return self.__l_ggs[irule]
 
+	def add_new_rule(self, phrase_ilen, phrase_len, result, num_stages, l_wlist_vars, phrase2_ilen,
+					 phrase2_len, parent_irule):
+		gg_child = cl_bitvec_gg(self, phrase_ilen, phrase_len, result, num_stages=num_stages,
+						   l_wlist_vars=l_wlist_vars, phrase2_ilen=phrase2_ilen,
+						   phrase2_len=phrase2_len, parent_irule=parent_irule)
+		# gg1.add_child_rule_id(len(self.__l_ggs))
+		igg_child = len(self.__l_ggs)
+		self.__l_ggs.append((gg_child))
+		return igg_child, gg_child
+
 	def learn_rule_one_stage(self, stmt, l_results, phase_data, l_story_db_event_refs):
 		phrase = els.convert_phrase_to_word_list([stmt])[0]
 		ilen, iphrase =  self.__add_phrase(phrase, phase_data)
@@ -405,7 +590,7 @@ class cl_bitvec_mgr(object):
 							continue
 						phrase2_ilen, iphrase2 = l_story_refs[i_story_len][0], l_story_refs[i_story_len][1][iref]
 						match_phrase = self.__l_phrases[phrase2_ilen][iphrase2]
-						l_wlist_vars, new_result = els.replace_with_vars_in_wlist([phrase, match_phrase], l_results[0])
+						l_wlist_vars, new_result = els.replace_with_vars_in_wlist([phrase, match_phrase], l_results)
 						# now create a rule with this information
 						b_gg2_found = False
 						for irule in l_child_rule_ids:
@@ -476,7 +661,11 @@ class cl_bitvec_mgr(object):
 				m_matches = gg2.find_matches(phrase_bin, story_bin)
 				if not np.any(m_matches):
 					continue
-				gg2.update_stats_stage_2(phrase, story_refs, m_matches, l_results)
+				m_hits = gg2.update_stats_stage_2(phrase, story_refs, m_matches, l_results)
+				if np.sum(m_hits) < np.sum(m_matches) and gg2._cl_bitvec_gg__rule_rec[8][0] == rec_def_type.var:
+					pass
+				gg2.set_match_hits(story_bin[m_matches], match_hits = m_hits[m_matches])
+			pass
 
 
 

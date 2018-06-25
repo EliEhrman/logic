@@ -80,8 +80,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 	el_set_arr = []
 
 	for i_one_story in range(num_stories):
-		if i_one_story == 6:
-			bitvec_mgr.increase_rule_stages()
+		# if i_one_story == 6:
+		# 	bitvec_mgr.increase_rule_stages()
 
 		l_player_events = []
 		els_sets, num_els, els_arr, els_dict = init_sets(els_lists)

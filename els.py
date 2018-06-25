@@ -300,7 +300,7 @@ def build_vars_dict(phrase_list):
 
 	return new_phrase_list, vars_dict
 
-def replace_with_vars_in_wlist(l_wlist_src, phrase_result):
+def replace_with_vars_in_wlist(l_wlist_src, l_phrase_result):
 	vars_dict, l_wlist_vars, l_wlist_lens = dict(), [], []
 	for iwlist, wlist in enumerate(l_wlist_src):
 		for iel, el in enumerate(wlist):
@@ -314,7 +314,10 @@ def replace_with_vars_in_wlist(l_wlist_src, phrase_result):
 		else:
 			l_wlist_lens.append(l_wlist_lens[-1] + len(wlist))
 
+	if l_phrase_result == []:
+		return l_wlist_vars, []
 
+	phrase_result = l_phrase_result[0]
 	new_result = []
 	for ielr, elr in enumerate(phrase_result):
 		if elr[0] != rec_def_type.obj:
@@ -330,7 +333,7 @@ def replace_with_vars_in_wlist(l_wlist_src, phrase_result):
 			if iwlist_src == 0:
 				dest_pos = pos_src
 			else:
-				dest_pos = l_wlist_lens[iwlist_src] + pos_src
+				dest_pos = l_wlist_lens[iwlist_src-1] + pos_src
 			new_result.append([rec_def_type.var, dest_pos])
 
 	return l_wlist_vars, new_result
