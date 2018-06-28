@@ -28,6 +28,7 @@ def_article_arr = [False, True, False, False]
 cascade_els_arr = [True, True, True, False]
 set_sel_arr = [c_max_people, c_max_objects, c_max_countries, -1]
 sample_el = 'has' # used as an example that must be in el db or glv dict
+rules2_fn = 'adv/rules.txt'
 
 db_fnt = '~/tmp/advlengrps.txt'
 perm_fnt = '~/tmp/advperms.txt'

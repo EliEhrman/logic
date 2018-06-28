@@ -1914,3 +1914,9 @@ Monday 25th June
 CIW:
 
 Bitvecs rules work with reverse and rnd improvements but not applied.
+
+Thursday 28th June
+
+CIW:
+
+Text-specified rules that are implemented with vectors.

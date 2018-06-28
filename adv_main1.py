@@ -25,6 +25,7 @@ import rules
 from rules import conn_type
 import story
 import bitvec
+import rules2
 
 import adv_config
 import adv_learn
@@ -186,6 +187,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 															 story_step=one_decide,
 															 step_effect_rules=event_from_decide_rules,
 															 b_remove_mod_hdr=False)
+				event_as_decided =  bitvec_mgr.run_rule(one_decide, (i_one_story, story_loop_stage, event_step_id[0]),
+														l_story_db_event_refs)
 				if event_as_decided != []:
 					print(event_as_decided)
 					_, event_blocked = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
@@ -286,9 +289,12 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 
 
 def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists, learn_vars):
+	fixed_rule_mgr = rules2.cl_fixed_rules(adv_config.rules2_fn)
 	cl_templ_grp.glv_dict = glv_dict
 	cl_gens_grp.glv_len = cl_templ_grp.glv_len = len(glv_dict[adv_config.sample_el])
 	adv_learn.init_learn()
+	bitvec_mgr = bitvec.cl_bitvec_mgr()
+	fixed_rule_mgr.add_to_bitvec_mgr(bitvec_mgr)
 
 	for iplay in range(adv_config.c_num_plays):
 		dmlearn.learn_reset()
@@ -302,7 +308,6 @@ def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists, learn_vars):
 		db_cont_mgr.load_W_dict(adv_config.W_fnt)
 		db_cont_mgr.apply_W_dict_data(db_len_grps, i_active_cont)
 		learn_vars[0] = max_eid
-		bitvec_mgr = bitvec.cl_bitvec_mgr()
 		# if gg_cont_list != []:
 		# 	dmlearn.learn_reset()
 		# 	db_len_grps = []

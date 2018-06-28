@@ -109,6 +109,10 @@ def gen_rec_str(rec):
 				lcvo += ['d']
 			elif el[1] == rules.conn_type.Modify:
 				lcvo += ['m']
+			elif el[1] == rules.conn_type.IF:
+				lcvo += ['f']
+			elif el[1] == rules.conn_type.THEN:
+				lcvo += ['t']
 			else:
 				print('Coding error in gen_rec_str. Unknown rec_def_type. Exiting!')
 				exit()
@@ -157,6 +161,10 @@ def extract_rec_from_str(srec):
 				el += [rules.conn_type.Modify]
 			elif lelf[1] == 'd':
 				el += [rules.conn_type.Remove]
+			elif lelf[1] == 'f':
+				el += [rules.conn_type.IF]
+			elif lelf[1] == 't':
+				el += [rules.conn_type.THEN]
 			else:
 				print('Unknown rec def. Exiting.')
 				exit()
@@ -169,6 +177,9 @@ def extract_rec_from_str(srec):
 		elif lelf[0] == 'l':
 			el = [rules.rec_def_type.like]
 			el += [lelf[1], float(lelf[2])]
+			if len(lelf) > 3:
+				el += [int(lelf[3])]
+
 		else:
 			el = [rules.rec_def_type.error]
 			el += [lelf[1]]

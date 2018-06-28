@@ -1,0 +1,3 @@
+adv rules	version	1
+num rules	1
+c:f,c:a,c:s,l:Edgar:0.:1,l:decided to:1.:2,l:go to:1.:3,l:Finland:0.:4,c:e,c:s,v:1,l:is located in:1.:5,l:Belgium:0.:6,c:e,c:e,c:t,c:i,v:1,o:went to,v:4

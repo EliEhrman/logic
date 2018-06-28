@@ -128,6 +128,9 @@ class cl_bitvec_gg(object):
 	def is_formed(self):
 		return self.__b_formed
 
+	def set_formed_and_tested(self, bformed, btested):
+		self.__b_formed, self.__b_tested = bformed, btested
+
 	def get_num_stages(self):
 		return self.__num_stages
 
@@ -142,6 +145,9 @@ class cl_bitvec_gg(object):
 
 	def get_status(self):
 		return self.__status
+
+	def get_phrase2_len(self):
+		return self.__phrase2_ilen, self.__phrase2_len
 
 	def test_rule_match(self, l_wlist_vars, result, phrase2_ilen):
 		if l_wlist_vars == self.__l_wlist_vars and result == self.__result and phrase2_ilen == self.__phrase2_ilen:
@@ -442,6 +448,35 @@ class cl_bitvec_gg(object):
 
 		return m_match
 
+	def make_result(self, phrase_arr):
+		result = []
+		for irel, rel in enumerate(self.__result):
+			if rel[0] == rec_def_type.var:
+				var_src = rel[1]
+				len_so_far = 0
+				for irphrase, rphrase in enumerate(phrase_arr):
+					if var_src < len_so_far + len(rphrase):
+						ipos = var_src - len_so_far
+						src_word = rphrase[ipos]
+						break
+					len_so_far += len(rphrase)
+				# iphrase = var_src
+				result += [[rec_def_type.obj, src_word]]
+			else:
+				result.append(rel)
+		return result
+
+	def filter_overmatch(self, phrase, story_refs, m_matches):
+		for imatch, bmatch in enumerate(m_matches.tolist()):
+			if not bmatch:
+				continue
+			match_phrase = self.__mgr.get_phrase(self.__phrase2_ilen, story_refs[imatch])
+			l_wlist_vars, new_result = els.replace_with_vars_in_wlist([phrase, match_phrase], [])
+			if l_wlist_vars != self.__l_wlist_vars:
+				m_matches[imatch] = False
+				continue
+		# return m_matches
+
 	def update_stats_stage_2(self, phrase, story_refs, m_matches, l_results):
 		m_hits = np.zeros(m_matches.shape[0], dtype=bool)
 		for imatch, bmatch in enumerate(m_matches.tolist()):
@@ -467,6 +502,9 @@ class cl_bitvec_gg(object):
 			if self.__num_stats > c_bitvec_gg_stats_min:
 				self.__b_tested = True
 		return m_hits
+
+	def update_bin_for_word(self, iword, el_bin):
+		self.__l_els_rep[iword] = el_bin
 
 
 class cl_bitvec_mgr(object):
@@ -499,7 +537,78 @@ class cl_bitvec_mgr(object):
 		self.__rule_stages = 1
 		self.__d_gg2 = dict() # for two stage rules
 		self.__l_els = l_els
+
+		self.__l_fixed_rules = []
+		self.__d_word_in_fixed_rule = dict()
 		pass
+
+	def add_fixed_rule(self, rule_rec):
+		if rule_rec == [] or rule_rec[0] == [] or rule_rec[0][1] != conn_type.IF:
+			raise ValueError('Error. Trying to add ill-formed rule to bitvec mgr')
+		then_el = [rec_def_type.conn, conn_type.THEN]
+		if then_el not in rule_rec:
+			raise ValueError('Error. Trying to add ill-formed rule to bitvec mgr')
+		then_idx = rule_rec.index(then_el)
+		rule_arr = mr.make_rule_arr(rule_rec[1:then_idx])
+		if len(rule_arr) != 2:
+			raise ValueError('Error. For now only 2-stage rules may be added to bitvec mgr')
+		phrase_len, phrase2_len = len(rule_arr[0]) - 1, len(rule_arr[1])-1
+		def get_ilen(phrase_len):
+			ilen = self.__d_lens.get(phrase_len, -1)
+			if ilen == -1:
+				ilen = len(self.__l_phrases)
+				self.__d_lens[phrase_len] = ilen
+				self.__l_phrases.append([])
+				self.__phrase_bin_db.append([])
+			return ilen
+
+		phrase_ilen, phrase2_ilen = get_ilen(phrase_len), get_ilen(phrase2_len)
+		rule_arr_pos, counter = [], 1
+		map_rec_to_list_pos = dict()
+		for irrec, rrec in enumerate(rule_arr):
+			rule_arr_pos.append(2 if irrec == 0 else rule_arr_pos[-1] + len(rule_arr[irrec])+1)
+			for iel, el in enumerate(rrec):
+				counter += 1
+				map_rec_to_list_pos[counter] = (irrec, iel-1)
+			counter += 1
+		l_rrec_len = [0, phrase_len, phrase_len+phrase2_len]
+
+		l_wlist_vars, l_els_rep,  = [], [[] for _ in xrange(phrase_len+phrase2_len)]
+		l_hd_max = [c_bitvec_size for _ in l_els_rep]
+		result = []
+		for iel, el in enumerate(rule_rec):
+			if iel >= then_idx:
+				if el[0] == rec_def_type.var:
+					istage, ipos = map_rec_to_list_pos[el[1]]
+					result.append([el[0], l_rrec_len[istage] + ipos])
+				elif el[1] != conn_type.THEN:
+					result.append(el)
+			elif el[0] == rec_def_type.var:
+				istage, ipos = map_rec_to_list_pos[iel]
+				l_wlist_vars.append(map_rec_to_list_pos[el[1]] + (istage, ipos))
+				l_els_rep[l_rrec_len[istage] + ipos] = [0 for _ in xrange(c_bitvec_size)]
+			elif el[0] == rec_def_type.like:
+				istage, ipos = map_rec_to_list_pos[iel]
+				word = el[1]
+				word_idx = self.check_or_add_word(word)
+				el_pos = l_rrec_len[istage] + ipos
+				word_idx_data = (len(self.__l_fixed_rules), el_pos)
+				l_pos_data = self.__d_word_in_fixed_rule.get(word, [])
+				l_pos_data.append(word_idx_data)
+				self.__d_word_in_fixed_rule[word] = l_pos_data
+				l_els_rep[el_pos] = self.__nd_el_bin_db[self.__d_words[word]]
+				l_hd_max[el_pos] = int(c_bitvec_size * (1. - el[2]))
+				# pass
+
+		# pass
+		fixed_rule = cl_bitvec_gg(	self, phrase_ilen, phrase_len, result, num_stages=len(rule_arr),
+									l_wlist_vars=l_wlist_vars, phrase2_ilen=phrase2_ilen, phrase2_len=phrase2_len,
+									parent_irule=-1)
+		fixed_rule.set_els_rep(l_els_rep, l_hd_max)
+		fixed_rule.set_formed_and_tested(bformed=True, btested=True)
+		self.__l_fixed_rules.append(fixed_rule)
+
+
 
 	def increase_rule_stages(self):
 		self.__rule_stages += 1
@@ -618,6 +727,43 @@ class cl_bitvec_mgr(object):
 		_, _, ilen, iphrase = self.learn_rule_two_stages(stmt, l_results, phase_data, l_story_db_event_refs)
 		self.update_rule_stats(stmt, ilen, iphrase, l_results, l_story_db_event_refs)
 
+	def run_rule(self, stmt, phase_data, l_story_db_event_refs):
+		phrase = els.convert_phrase_to_word_list([stmt])[0]
+		ilen, iphrase =  self.__add_phrase(phrase, phase_data)
+		len_phrase_bin_db = self.get_phrase_bin_db(ilen)
+		phrase_bin = len_phrase_bin_db[iphrase]
+
+		# l_story_bins, l_story_refs = [], []
+		d_story_bins = dict()
+		for klen, vilen in self.__d_lens.iteritems():
+			bin_dn = self.get_phrase_bin_db(vilen)
+			story_refs = [tref[1] for tref in l_story_db_event_refs if tref[0] == vilen]
+			if story_refs != []:
+				d_story_bins[vilen] = (bin_dn[story_refs], story_refs)
+
+		results = []
+		for igg, gg in enumerate(self.__l_fixed_rules):
+			if not gg.is_formed() or not gg.is_tested():
+				continue
+			if not gg.is_a_match_one_stage(iphrase):
+				continue
+			# gg.update_stats(phrase, l_results)
+			story_bin, story_refs = d_story_bins.get(gg.get_phrase2_ilen(), ([], []))
+			if story_bin == []:
+				continue
+			m_matches = gg.find_matches(phrase_bin, story_bin)
+			if not np.any(m_matches):
+				continue
+			gg.filter_overmatch(phrase, story_refs, m_matches)
+			for imatch, bmatch in enumerate(m_matches.tolist()):
+				if not bmatch:
+					continue
+				p2_ilen, _ = gg.get_phrase2_len()
+				match_phrase = self.get_phrase(p2_ilen, story_refs[imatch])
+				results.append(gg.make_result([phrase, match_phrase]))
+
+		return results
+
 	def update_rule_stats(self, stmt, ilen, iphrase, l_results, l_story_db_event_refs):
 		phrase = els.convert_phrase_to_word_list([stmt])[0]
 		# ilen, iphrase =  self.__add_phrase(phrase, phase_data)
@@ -680,6 +826,21 @@ class cl_bitvec_mgr(object):
 		# self.__nd_el_bin_db[word_id, :] = word_binvec
 		self.__s_word_bit_db.add(tuple(word_binvec))
 		self.__l_word_fix_num.append(0)
+		return word_id
+
+	def check_or_add_word(self, word):
+		word_id = self.__d_words.get(word, -1)
+		if word_id == -1:
+			# l_b_known[iword] = False
+			while True:
+				proposal = np.random.choice(a=[0, 1], size=(c_bitvec_size))
+				tproposal = tuple(proposal.tolist())
+				if tproposal in self.__s_word_bit_db:
+					continue
+				break
+
+			word_id = self.add_new_word(word, proposal)
+		return word_id
 
 	def keep_going(self, phrase):
 		phrase_bin_db, d_words, s_word_bit_db, d_lens, l_phrases, l_word_counts, l_word_phrase_ids =\
@@ -698,30 +859,21 @@ class cl_bitvec_mgr(object):
 		iphrase = len(l_phrases[ilen])
 		l_b_known = [True for _ in phrase]
 		for iword, word in enumerate(phrase):
-			word_id = d_words.get(word, -1)
-			if word_id == -1:
-				l_b_known[iword] = False
-				while True:
-					proposal = np.random.choice(a=[0, 1], size=(c_bitvec_size))
-					tproposal = tuple(proposal.tolist())
-					if tproposal in s_word_bit_db:
-						continue
-					break
-				self.add_new_word(word, proposal)
-				# self.__l_word_phrase_ids.append([(ilen, iphrase)])
-			del word_id
+			word_id = self.check_or_add_word(word)
 
 		l_mbits = build_a_bit_mask(phrase_len)  # mask bits
 		input_bits = create_input_bits(self.__nd_el_bin_db, d_words, phrase)
+		changed_words = []
 		for iskip in range(phrase_len):
 			iword = d_words[phrase[iskip]]
 			if iphrase > c_bitvec_min_len_before_learn:
 				if self.__l_word_fix_num[iword] == 0:
 					self.__nd_el_bin_db = add_new_words(self.__nd_el_bin_db, d_words, phrase_bin_db[ilen], phrase, input_bits,
 												 s_word_bit_db, iskip)
-					change_phrase_bin_db(phrase_bin_db, l_phrases, self.__nd_el_bin_db, d_words, iword, l_word_phrase_ids)
 					self.__l_word_fix_num[iword] = 1
+					changed_words.append(phrase[iskip])
 				else:
+					# Following adds change pressure to self.__l_word_change_db[iword]
 					score_hd_output_bits(	phrase_bin_db[ilen], input_bits,
 										l_mbits[iskip], iskip, iword,
 										self.__l_word_change_db, bscore=False)
@@ -731,7 +883,7 @@ class cl_bitvec_mgr(object):
 						bchanged = change_bit(self.__nd_el_bin_db, s_word_bit_db, self.__nd_el_bin_db[iword], l_bits_avg, iword)
 						if bchanged == 1:
 							num_changed += 1
-							change_phrase_bin_db(phrase_bin_db, l_phrases, self.__nd_el_bin_db, d_words, iword, l_word_phrase_ids)
+							changed_words.append(phrase[iskip])
 						self.__l_word_change_db[iword] = [[0.0 for ibit in xrange(c_bitvec_size)], 0.0]
 						if self.__l_word_fix_num[iword] != -1:
 							self.__l_word_fix_num[iword] += 1
@@ -743,6 +895,13 @@ class cl_bitvec_mgr(object):
 			phrase_bin_db[ilen] = np.expand_dims(input_bits, axis=0)
 		else:
 			phrase_bin_db[ilen] = np.concatenate((phrase_bin_db[ilen], np.expand_dims(input_bits, axis=0)), axis=0)
+
+		for word_changed in changed_words:
+			iword = d_words[word_changed]
+			change_phrase_bin_db(phrase_bin_db, l_phrases, self.__nd_el_bin_db, d_words, iword, l_word_phrase_ids)
+			l_fixed_rule_pos_data = self.__d_word_in_fixed_rule.get(word_changed, [])
+			for i_fixed_rule, word_pos in l_fixed_rule_pos_data:
+				self.__l_fixed_rules[i_fixed_rule].update_bin_for_word(word_pos, self.__nd_el_bin_db[iword])
 
 		return self.__nd_el_bin_db, ilen, iphrase
 
@@ -1124,6 +1283,8 @@ def change_phrase_bin_db(phrase_bits_db, l_phrases, nd_el_bin_db, d_words, iword
 		phrase = l_phrases[ilen][iphrase]
 		input_bits = create_input_bits(nd_el_bin_db, d_words, phrase)
 		phrase_bits_db[ilen][iphrase, :] = input_bits
+
+
 
 
 # ilen is the index number of the list of phrase grouped by phrase len (not the length of the phrase)
