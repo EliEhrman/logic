@@ -26,6 +26,7 @@ from rules import conn_type
 import story
 import bitvec
 import rules2
+import mpdb
 
 import adv_config
 import adv_learn
@@ -57,7 +58,8 @@ def init_sets(els_lists):
 
 
 def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
-			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, learn_vars, bitvec_mgr, b_for_query):
+			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, learn_vars, mpdb_mgr, b_for_query):
+	bitvec_mgr = mpdb_mgr.get_bitvec_mgr()
 	start_rule_names = ['objects_start', 'people_start']
 	event_rule_names = ['pickup_rule', 'went_rule']
 	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went',
@@ -100,6 +102,11 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 		event_from_decide_rules = [rule_dict[rule_name] for rule_name in event_from_decide_names]
 
 		e_story_loop_stage = Enum('e_story_loop_stage', 'story_init decision_init decision event state1 complete_state1 state2')
+		# e_story_loop_stage = Enum('e_story_loop_stage', 'decision_init decision event state1 complete_state1 state2')
+
+		story_loop_stage = e_story_loop_stage.story_init
+
+		mpdb_mgr.clear_dbs()
 
 		l_story_db_event_refs = []
 		story_db = []
@@ -116,7 +123,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 						ilen, iphrase = bitvec_mgr.add_phrase(	init_wlist,
 																(	i_one_story, e_story_loop_stage.story_init,
 																	event_step_id[0]))
-						l_story_db_event_refs.append((ilen, iphrase))
+						# l_story_db_event_refs.append((ilen, iphrase))
+						mpdb_mgr.insert(['main'], (ilen, iphrase))
 
 		print('Current state of story DB')
 		for phrase_rec in story_db:
@@ -124,14 +132,22 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 			out_str = els.output_phrase(def_article_dict, out_str, phrase_rec.phrase())
 			print(out_str)
 
+		db_transfrs =  mpdb_mgr.infer(['main'], (i_one_story, story_loop_stage, event_step_id[0]),
+												['state_from_state'])
+		for one_transfer in db_transfrs:
+			if one_transfer[0][1] == conn_type.Insert:
+				db_name = one_transfer[0][2]
+				added_wlist = els.convert_phrase_to_word_list([one_transfer[1:]])[0]
+				ilen, iphrase = bitvec_mgr.add_phrase(added_wlist,
+													  (i_one_story, story_loop_stage, event_step_id[0]))
+				mpdb_mgr.insert([db_name], (ilen, iphrase))
+
 		total_event_rule_prob = sum(one_rule.prob for one_rule in event_rules)
 
 		localtime = time.asctime(time.localtime(time.time()))
 		print("Local current time :", localtime)
 
 		story_names = els_sets[0][2]
-
-		e_story_loop_stage = Enum('e_story_loop_stage', 'decision_init decision event state1 complete_state1 state2')
 
 		story_loop_stage = e_story_loop_stage.decision_init
 		decide_options = []
@@ -163,7 +179,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				story_player_name = story_names[i_story_player]
 				player_decide_rules = adv_rules.init_decide_rules(els_sets, els_dict, story_player_name)
 				ruleid = random.randint(0, len(player_decide_rules)-1)
-				# rule = random.choice(player_decide_rules)
+				ruleid = 1
+				print('Change this to return to picking up events')
 				rule = player_decide_rules[ruleid]
 				_, gens_recs = rules.gen_for_rule(b_gen_for_learn=False, rule=rule)
 				decide_options += gens_recs
@@ -182,35 +199,35 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				out_str = ''
 				out_str = els.output_phrase(def_article_dict, out_str, one_decide)
 				print(out_str)
-				_, event_as_decided = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
-															 b_apply_results=False,
-															 story_step=one_decide,
-															 step_effect_rules=event_from_decide_rules,
-															 b_remove_mod_hdr=False)
-				event_as_decided =  bitvec_mgr.run_rule(one_decide, (i_one_story, story_loop_stage, event_step_id[0]),
-														l_story_db_event_refs)
+				# _, event_as_decided = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
+				# 											 b_apply_results=False,
+				# 											 story_step=one_decide,
+				# 											 step_effect_rules=event_from_decide_rules,
+				# 											 b_remove_mod_hdr=False)
+				_, event_as_decided =  mpdb_mgr.run_rule(one_decide, (i_one_story, story_loop_stage, event_step_id[0]),
+														'main', ['event_from_decide'])
 				if event_as_decided != []:
 					print(event_as_decided)
-					_, event_blocked = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
-															  b_apply_results=False,
-															  story_step=event_as_decided[0][1:],
-															  step_effect_rules=block_event_rules,
-															  b_remove_mod_hdr=False)
-					if event_blocked == []:
-						player_event = event_as_decided[0]
-						out_str = 'time:' + str(i_story_step) + '. Next story step: *** '
-						out_str = els.output_phrase(def_article_dict, out_str, player_event[1:])
-						out_str += ' **** '
-						print(out_str)
-						l_player_events.append(els.convert_phrase_to_word_list([player_event[1:]])[0])
-						ilen, iphrase = bitvec_mgr.add_phrase(l_player_events[-1], (i_one_story, story_loop_stage, event_step_id[0]))
-						# l_story_db_event_refs.append((ilen, iphrase))
-						#handle deletes and modifies
-						story_loop_stage = e_story_loop_stage.state1
-					else:
-						event_as_decided = []
-						print('Event blocked!')
-						story_loop_stage = e_story_loop_stage.decision
+					# _, event_blocked = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
+					# 										  b_apply_results=False,
+					# 										  story_step=event_as_decided[0][1:],
+					# 										  step_effect_rules=block_event_rules,
+					# 										  b_remove_mod_hdr=False)
+					# if event_blocked == []:
+					player_event = event_as_decided[0]
+					out_str = 'time:' + str(i_story_step) + '. Next story step: *** '
+					out_str = els.output_phrase(def_article_dict, out_str, player_event[1:])
+					out_str += ' **** '
+					print(out_str)
+					l_player_events.append(els.convert_phrase_to_word_list([player_event[1:]])[0])
+					ilen, iphrase = bitvec_mgr.add_phrase(l_player_events[-1], (i_one_story, story_loop_stage, event_step_id[0]))
+					# l_story_db_event_refs.append((ilen, iphrase))
+					#handle deletes and modifies
+					story_loop_stage = e_story_loop_stage.state1
+					# else:
+					# 	event_as_decided = []
+					# 	print('Event blocked!')
+					# 	story_loop_stage = e_story_loop_stage.decision
 				else:
 					story_loop_stage = e_story_loop_stage.decision
 
@@ -225,17 +242,32 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 															def_article_dict, db_len_grps, sess,
 															el_set_arr, glv_dict, els_sets, cascade_dict,
 															gg_cont, db_cont_mgr)
-					bitvec_mgr.learn_rule(one_decide, event_as_decided,
+					mpdb_mgr.learn_rule(one_decide, event_as_decided,
 										  (i_one_story, story_loop_stage, event_step_id[0]),
-										  l_story_db_event_refs)
+										  'main')
 
 
 			elif story_loop_stage == e_story_loop_stage.state1:
-				_, events_to_queue = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
-															b_apply_results=False,
-															story_step=player_event[1:],
-															step_effect_rules=state_from_event_rules,
-															b_remove_mod_hdr=False)
+				# events_to_queue, l_dbs_to_mod = [], []
+				# _, events_to_queue = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
+				# 											b_apply_results=False,
+				# 											story_step=player_event[1:],
+				# 											step_effect_rules=state_from_event_rules,
+				# 											b_remove_mod_hdr=False)
+				the_main_event = player_event[1:]
+				_, events_transfrs =  mpdb_mgr.run_rule(the_main_event, (i_one_story, story_loop_stage, event_step_id[0]),
+														'main', ['distibute_from_event'])
+				l_dbs_to_mod, events_to_queue =  mpdb_mgr.run_rule(	the_main_event,
+																	(i_one_story, story_loop_stage, event_step_id[0]),
+																	'main', ['state_from_event'])
+				for trnsfr in events_transfrs:
+					if trnsfr[0][1] != conn_type.Broadcast or len(trnsfr[0]) <= 2:
+						continue
+					db_name = trnsfr[0][2]
+					l_new_dbs, new_mods = mpdb_mgr.run_rule(trnsfr[1:], (i_one_story, story_loop_stage, event_step_id[0]),
+															db_name, ['state_from_event'])
+					events_to_queue += new_mods
+					l_dbs_to_mod += l_new_dbs
 				# do_learn_rule_from_step(events_to_queue, event_step_id, story_db, player_event[1:], '',
 				# 						def_article_dict, db_len_grps, sess, el_set_arr, glv_dict, els_sets)
 				story_loop_stage = e_story_loop_stage.complete_state1
@@ -245,16 +277,17 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				exit(1)
 
 			if story_loop_stage == e_story_loop_stage.complete_state1:
-				for event_result in events_to_queue:
-					story_db, iremoved, iadded, added_phrase = \
-						rules.apply_mods(story_db, [rules.C_phrase_rec(event_result)], i_story_step)
-					if iremoved != -1:
-						l_story_db_event_refs.pop(iremoved)
-					if iadded != -1:
-						added_wlist = els.convert_phrase_to_word_list([added_phrase])[0]
-						ilen, iphrase = bitvec_mgr.add_phrase(added_wlist,
-															  (i_one_story, story_loop_stage, event_step_id[0]))
-						l_story_db_event_refs.append((ilen, iphrase))
+				for db_name, event_result in zip(l_dbs_to_mod, events_to_queue):
+					mpdb_mgr.apply_mods(db_name, event_result, (i_one_story, story_loop_stage, event_step_id[0]))
+					# story_db, iremoved, iadded, added_phrase = \
+					# 	rules.apply_mods(story_db, [rules.C_phrase_rec(event_result)], i_story_step)
+					# if iremoved != -1:
+					# 	l_story_db_event_refs.pop(iremoved)
+					# if iadded != -1:
+					# 	added_wlist = els.convert_phrase_to_word_list([added_phrase])[0]
+					# 	ilen, iphrase = bitvec_mgr.add_phrase(added_wlist,
+					# 										  (i_one_story, story_loop_stage, event_step_id[0]))
+					# 	l_story_db_event_refs.append((ilen, iphrase))
 				story_loop_stage = e_story_loop_stage.decision_init
 				i_story_step += 1
 				if i_story_step >= num_story_steps:
@@ -294,7 +327,7 @@ def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists, learn_vars):
 	cl_gens_grp.glv_len = cl_templ_grp.glv_len = len(glv_dict[adv_config.sample_el])
 	adv_learn.init_learn()
 	bitvec_mgr = bitvec.cl_bitvec_mgr()
-	fixed_rule_mgr.add_to_bitvec_mgr(bitvec_mgr)
+	mpdb_mgr = mpdb.cl_mpdb_mgr(bitvec_mgr, fixed_rule_mgr)
 
 	for iplay in range(adv_config.c_num_plays):
 		dmlearn.learn_reset()
@@ -314,7 +347,7 @@ def do_adv(glv_dict, def_article_dict, cascade_dict, els_lists, learn_vars):
 
 		play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				adv_config.c_num_stories, adv_config.c_story_len, db_len_grps,
-				 db_cont_mgr, i_active_cont, learn_vars, bitvec_mgr, b_for_query=False)
+				 db_cont_mgr, i_active_cont, learn_vars, mpdb_mgr, b_for_query=False)
 	print('Done!')
 	exit(1)
 

@@ -1920,3 +1920,13 @@ Thursday 28th June
 CIW:
 
 Text-specified rules that are implemented with vectors.
+
+Not all rules work like this. I didn't want to mess with the initialization of the story rules that work through all combos.
+
+For now, I just want a way to process efficiently the decisions and events as they come in.
+
+Thursday 5th July
+
+CIW
+
+Three stage rules seem to work for run but learning is broken.

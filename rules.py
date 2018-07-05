@@ -18,7 +18,7 @@ from utils import ulogger as logger
 # mod is one of dm_type and says how to change the database
 df_type = Enum('df_type', 'bool var obj varobj varmod mod conn')
 dm_type = Enum('dm_type', 'Insert Remove Modify')
-conn_type = Enum('conn_type', 'single AND OR start end Insert Remove Modify IF THEN')
+conn_type = Enum('conn_type', 'single AND OR start end Insert Remove Modify IF THEN Broadcast replace_with_next')
 rec_def_type = Enum('rec_def_type', 'obj conn var error set like')
 # see notebook on 2nd Nov
 rule_type = Enum('rule_type', 'story_start event_from_decide state_from_state state_from_event '
