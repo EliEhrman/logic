@@ -119,8 +119,8 @@ class cl_bitvec_gg(object):
 
 
 		for stg in range(1, num_stages):
-			self.__l_els_rep += [[] for _ in range(l_phrases_len[stg])]
-			self.__l_hd_max += [c_bitvec_size for _ in range(l_phrases_len[stg])]
+			self.__l_els_rep += [[] for _ in range(self.__l_phrases_len[stg])]
+			self.__l_hd_max += [c_bitvec_size for _ in range(self.__l_phrases_len[stg])]
 
 	def set_imprv(self, gg_src, b_rev_imprv, b_rnd_imprv):
 		self.__b_rev_impr = b_rev_imprv
@@ -133,6 +133,9 @@ class cl_bitvec_gg(object):
 
 	def get_phrase2_ilen(self):
 		return self.__phrase2_ilen
+
+	def get_last_phrase_ilen(self):
+		return self.__l_phrases_ilen[-1]
 
 	def is_tested(self):
 		return self.__b_tested
@@ -169,6 +172,9 @@ class cl_bitvec_gg(object):
 
 	def get_gg_rev_impr(self):
 		return self.__gg_rev_impr
+
+	def get_gg_rnd_impr(self):
+		return self.__l_gg_rnd_impr
 
 	def test_rule_match(self, l_wlist_vars, result, phrase2_ilen):
 		if l_wlist_vars == self.__l_wlist_vars and result == self.__result and phrase2_ilen == self.__phrase2_ilen:
@@ -493,6 +499,7 @@ class cl_bitvec_gg(object):
 		l_l_story_refs = [[] for _ in r_num_stages]
 		l_l_phrases_stgs = [[] for _ in r_num_stages]
 		l_l_obj_unused_stgs = [[] for _ in r_num_stages]
+		l_l_obj_imatch_stgs = [[] for _ in r_num_stages]
 		d_len_to_idx, l_story_lens = dict(), []
 		for stg in r_num_stages[1:]:
 			stg_ilen, stg_len = self.__l_phrases_ilen[stg], self.__l_phrases_len[stg]
@@ -568,8 +575,10 @@ class cl_bitvec_gg(object):
 					l_l_story_refs[stg+1].append(story_refs[imatch])
 					l_l_phrases_stgs[stg+1].append(l_back_match[0])
 					l_l_obj_unused_stgs[stg + 1].append(self.cl_unused_mrk(obj_unused, self.__l_phrases_len[stg+1], imatch))
+					l_l_obj_imatch_stgs[stg+1].append(imatch)
 
-		stg = r_num_stages[-1]
+		stg, l_imatches = r_num_stages[-1], []
+		# m_match_last_stage = np.zeros(story_bin.shape[0], dtype=bool)
 		for isrc, src_stg in  enumerate(l_l_src_stg[stg]):
 			b_some_found = True
 			match_path = [l_l_phrases_stgs[stg][isrc]]
@@ -577,8 +586,10 @@ class cl_bitvec_gg(object):
 				match_path += [l_l_phrases_stgs[stg2][src_stg]]
 				if stg2 > 0: src_stg = l_l_src_stg[stg2][src_stg]
 			l_match_paths.append(match_path[::-1]) # reverses the list and returns it in the same step
+			# m_match_last_stage[l_l_obj_imatch_stgs[stg]] = True
+			l_imatches.append(l_l_obj_imatch_stgs[stg][isrc])
 
-		return l_match_paths
+		return l_match_paths, l_imatches
 
 	def make_result(self, phrase_arr):
 		def get_var_src(var_src):
@@ -617,7 +628,22 @@ class cl_bitvec_gg(object):
 				continue
 		# return m_matches
 
-	def update_stats_stage_2(self, phrase, story_refs, m_matches, l_results):
+	def update_stats_stage_2(self, l_match_paths, l_imatches, num_story_refs, l_results):
+		m_matches, m_hits = np.zeros(num_story_refs, dtype=bool), np.zeros(num_story_refs, dtype=bool)
+		for imatch, match_path in zip(l_imatches, l_match_paths):
+			self.__num_stats += 1
+			m_matches[imatch] = True
+			_, new_result = els.replace_with_vars_in_wlist(match_path, l_results)
+			if self.__result == new_result:
+				self.__num_hits += 1
+				m_hits[imatch] = True
+		if not self.__b_tested:
+			if self.__num_stats > c_bitvec_gg_stats_min:
+				self.__b_tested = True
+		return m_matches, m_hits
+
+
+	def update_stats_stage_2_old(self, phrase, story_refs, m_matches, l_results):
 		m_hits = np.zeros(m_matches.shape[0], dtype=bool)
 		for imatch, bmatch in enumerate(m_matches.tolist()):
 			if not bmatch:
@@ -955,34 +981,61 @@ class cl_bitvec_mgr(object):
 				story_bin, story_refs = d_story_bins.get(gg2.get_phrase2_ilen(), ([], []))
 				if story_bin == []:
 					continue
-				m_matches = gg2.find_matches(phrase_bin, d_story_bins)
-				assert False
-				if not np.any(m_matches):
-					continue
-				gg2.filter_overmatch(phrase, story_refs, m_matches)
-				if not np.any(m_matches):
+				l_match_paths, l_imatches = gg2.find_matches(phrase, phrase_bin, d_story_bins)
+				if l_match_paths == []:
 					continue
 				gg_results, gg_indxs, gg_scores = [], [], []
 				main_gg_score = gg2.get_score()
-				for imatch, bmatch in enumerate(m_matches.tolist()):
-					if bmatch:
-						p2_ilen, _ = gg2.get_phrase2_len()
-						match_phrase = self.get_phrase(p2_ilen, story_refs[imatch])
-						gg_results.append(gg2.make_result([phrase, match_phrase]))
-						gg_indxs.append(imatch)
-						gg_scores.append(main_gg_score)
+				for imatch, match_path in zip(l_imatches, l_match_paths):
+					one_result = gg2.make_result(match_path)
+					# if one_result != []:
+					gg_results.append(one_result)
+					gg_scores.append(main_gg_score)
+					gg_indxs.append(imatch)
+
+				# m_matches = gg2.find_matches(phrase_bin, d_story_bins)
+				# assert False
+				# if not np.any(m_matches):
+				# 	continue
+				# gg2.filter_overmatch(phrase, story_refs, m_matches)
+				# if not np.any(m_matches):
+				# 	continue
+				# gg_results, gg_indxs, gg_scores = [], [], []
+				# main_gg_score = gg2.get_score()
+				# for imatch, bmatch in enumerate(m_matches.tolist()):
+				# 	if bmatch:
+				# 		p2_ilen, _ = gg2.get_phrase2_len()
+				# 		match_phrase = self.get_phrase(p2_ilen, story_refs[imatch])
+				# 		gg_results.append(gg2.make_result([phrase, match_phrase]))
+				# 		gg_indxs.append(imatch)
+				# 		gg_scores.append(main_gg_score)
 				gg_rev = gg2.get_gg_rev_impr()
 				if gg_rev != []:
+					rev_gg_score = gg_rev.get_score()
 					if gg2._cl_bitvec_gg__rule_rec[8][0] == rec_def_type.var: # debug
 						pass
-					m_matches_rev = gg_rev.find_matches(phrase_bin, story_bin)
-					m_matches_outside = np.logical_and(np.logical_not(m_matches_rev), m_matches)
-					if np.any(m_matches_outside) and gg_rev.get_score() > main_gg_score:
-						rev_gg_score = gg_rev.get_score()
-						for imatch, bmatch in enumerate(m_matches_outside.tolist()):
-							if bmatch:
-								ii = gg_indxs.index(imatch)
-								gg_scores[ii] = rev_gg_score
+					_, l_rev_imatches = gg_rev.find_matches(phrase, phrase_bin, d_story_bins)
+					for imatch in l_imatches:
+						if imatch not in l_rev_imatches:
+							gg_scores[imatch] = rev_gg_score
+					# m_matches_rev = gg_rev.find_matches(phrase_bin, story_bin)
+					# m_matches_outside = np.logical_and(np.logical_not(m_matches_rev), m_matches)
+					# if np.any(m_matches_outside) and gg_rev.get_score() > main_gg_score:
+					# 	rev_gg_score = gg_rev.get_score()
+					# 	for imatch, bmatch in enumerate(m_matches_outside.tolist()):
+					# 		if bmatch:
+					# 			ii = gg_indxs.index(imatch)
+					# 			gg_scores[ii] = rev_gg_score
+				l_gg_rnd_impr = gg2.get_gg_rnd_impr()
+				if l_gg_rnd_impr != []:
+					for gg_impr in l_gg_rnd_impr:
+						impr_gg_score = gg_impr.get_score()
+						_, l_impr_imatches = gg_impr.find_matches(phrase, phrase_bin, d_story_bins)
+						for impr_imatch in l_rev_imatches:
+							if impr_imatch in l_imatches:
+								impr_indx = gg_indxs.index(impr_imatch)
+								gg_scores[impr_indx] = impr_gg_score
+
 				results += gg_results
 				scores += gg_scores
 
@@ -1028,7 +1081,7 @@ class cl_bitvec_mgr(object):
 			# story_bin, story_refs = d_story_bins.get(gg.get_phrase2_ilen(), ([], []))
 			# if story_bin == []:
 			# 	continue
-			l_match_paths = gg.find_matches(phrase, phrase_bin, d_story_bins)
+			l_match_paths, _ = gg.find_matches(phrase, phrase_bin, d_story_bins)
 			if l_match_paths == []:
 				continue
 			for match_path in l_match_paths:
@@ -1084,14 +1137,13 @@ class cl_bitvec_mgr(object):
 				gg2 = self.__l_ggs[irule]
 				if not gg2.is_formed():
 					continue
-				story_bin, story_refs = d_story_bins.get(gg2.get_phrase2_ilen(), ([], []))
+				story_bin, story_refs = d_story_bins.get(gg2.get_last_phrase_ilen(), ([], []))
 				if story_bin == []:
 					continue
-				m_matches = gg2.find_matches(phrase_bin, d_story_bins)
-				assert False
-				if not np.any(m_matches):
+				l_match_paths, l_imatches = gg2.find_matches(phrase, phrase_bin, d_story_bins)
+				if l_match_paths == []:
 					continue
-				m_hits = gg2.update_stats_stage_2(phrase, story_refs, m_matches, l_results)
+				m_matches, m_hits = gg2.update_stats_stage_2(l_match_paths, l_imatches, story_bin.shape[0], l_results)
 				if np.sum(m_hits) < np.sum(m_matches) and gg2._cl_bitvec_gg__rule_rec[8][0] == rec_def_type.var:
 					pass
 				gg2.set_match_hits(story_bin[m_matches], match_hits = m_hits[m_matches])

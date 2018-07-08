@@ -1930,3 +1930,9 @@ Thursday 5th July
 CIW
 
 Three stage rules seem to work for run but learning is broken.
+
+Sunday 7th July
+
+CIW
+
+Learning not broken but still learning two-phased rules only
