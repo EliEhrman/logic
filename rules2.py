@@ -42,7 +42,8 @@ class cl_fixed_rules(object):
 							if len(el) > 2:
 								rule[-1] += [el[2]]
 						elif el[0] == rec_def_type.conn \
-								and el[1] in [conn_type.Insert, conn_type.Modify, conn_type.Broadcast] \
+								and el[1] in [	conn_type.Insert, conn_type.Modify, conn_type.Broadcast,
+												conn_type.Remove, conn_type.Unique] \
 								and len(el) > 2:
 							rule += [el[:2] + [var_dict[e] for e in el[2:]]]
 						else:
@@ -77,7 +78,7 @@ class cl_fixed_rules(object):
 		# else:
 		# 	l_db_names = ['main']
 
-		remove_phrase, insert_phrase, b_insert_next = [], [], False
+		remove_phrase, insert_phrase, m_unique_bels, b_insert_next = [], [], [], False
 		if mod_type  == conn_type.Modify:
 			for el in phrase[1:]:
 				if el[0] != rec_def_type.obj:
@@ -86,15 +87,40 @@ class cl_fixed_rules(object):
 					b_insert_next = False
 				else:
 					remove_phrase += [el[1]]
+					m_unique_bels.append(True)
 				insert_phrase += [el[1]]
 				if len(el) > 2 and el[2] == True:
 					b_insert_next = True
 					insert_phrase.pop()
+		if mod_type == conn_type.Unique:
+			for el in phrase[1:]:
+				if el[0] != rec_def_type.obj:
+					raise ValueError('Error. Badly formed phrase for mod', phrase)
+				insert_phrase += [el[1]]
+				remove_phrase += [el[1]]
+				# if len(el) > 2 and el[2] == True:
+				m_unique_bels.append(len(el) > 2 and el[2] == True)
 		elif mod_type == conn_type.Insert:
 			insert_phrase = [el[1] for el in phrase[1:]]
 		elif mod_type == conn_type.Remove:
-			remove_phrase = [el[1] for el in phrase[1:]]
+			# remove_phrase = [el[1] for el in phrase[1:]]
+			# m_unique_bels= [True for _ in phrase[1:]]
+			for el in phrase[1:]:
+				if el[0] != rec_def_type.obj:
+					raise ValueError('Error. Badly formed phrase for mod', phrase)
+				remove_phrase += [el[1]]
+				# if len(el) > 2 and el[2] == True:
+				m_unique_bels.append(len(el) > 2 and el[2] == True)
 
-		return insert_phrase, remove_phrase #, l_db_names
+		return insert_phrase, remove_phrase , m_unique_bels
+
+	def parse_phrase_for_mod_db(self, phrase):
+		if phrase[0][1] not in [conn_type.Broadcast, conn_type.Insert,
+										conn_type.Remove, conn_type.Modify, conn_type.Unique]:
+			return None
+		if len(phrase[0]) <= 2:
+			return None
+		db_name = phrase[0].pop()
+		return db_name
 
 

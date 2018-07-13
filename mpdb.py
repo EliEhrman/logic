@@ -6,6 +6,7 @@ Also, monte-carlo or tree-based search might use the db
 
 """
 
+from __future__ import print_function
 import numpy as np
 
 
@@ -74,7 +75,7 @@ class cl_mpdb_mgr(object):
 	def run_rule(self, stmt, phase_data, db_name, l_rule_cats):
 		idb = self.__d_dn_names.get(db_name, -1)
 		if idb == -1:
-			print('Warning. mpdb requested to run rule on db', db_name, 'which doesnt exist.')
+			print('Error. mpdb requested to run rule on db', db_name, 'which doesnt exist.')
 			return None
 		results = self.__bitvec_mgr.run_rule(stmt, phase_data, self.__l_dbs[idb], l_rule_cats)
 		return [db_name for _ in results], results
@@ -87,7 +88,7 @@ class cl_mpdb_mgr(object):
 		return self.__bitvec_mgr.learn_rule(stmt, l_results, phase_data, self.__l_dbs[idb])
 
 	def apply_mods(self, db_name, phrase, phase_data):
-		insert_phrase, remove_phrase = self.__rules_mgr.parse_phrase_for_mod(phrase)
+		insert_phrase, remove_phrase, m_unique_bels = self.__rules_mgr.parse_phrase_for_mod(phrase)
 		# for db_name in l_db_names:
 		idb = self.__d_dn_names.get(db_name, -1)
 		if idb == -1:
@@ -95,13 +96,31 @@ class cl_mpdb_mgr(object):
 		if remove_phrase != []:
 			for iphrase2, phrase2_ref in enumerate( self.__l_dbs[idb]):
 				phrase2 = self.__bitvec_mgr.get_phrase(*phrase2_ref)
-				if phrase2 == remove_phrase:
+				if len(phrase2) != len(remove_phrase):
+					continue
+				bfound = True
+				for breq, word, rword in zip(m_unique_bels, phrase2, remove_phrase):
+					if breq and word != rword:
+						bfound = False
+						break
+				if bfound:
 					del self.__l_dbs[idb][iphrase2]
 					break
 		if insert_phrase != []:
 			ilen, iphrase = self.__bitvec_mgr.add_phrase(insert_phrase, phase_data)
 			self.__l_dbs[idb].append((ilen, iphrase))
 
+	def show_dbs(self):
+		for kdb_name, vidb in self.__d_dn_names.iteritems():
+			print('db for', kdb_name)
+			for iphrase, phrase_ref in enumerate( self.__l_dbs[vidb]):
+				phrase = self.__bitvec_mgr.get_phrase(*phrase_ref)
+				print(phrase)
+
+	def extract_mod_db(self, l_dbs_to_mod, events_to_queue):
+		for ievq, one_event_to_q in enumerate(events_to_queue):
+			db_name = self.__rules_mgr.parse_phrase_for_mod_db(one_event_to_q)
+			if db_name != None: l_dbs_to_mod[ievq] = db_name
 
 
 

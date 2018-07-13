@@ -60,7 +60,7 @@ def init_sets(els_lists):
 def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 			num_stories, num_story_steps, db_len_grps, db_cont_mgr, i_gg_cont, learn_vars, mpdb_mgr, b_for_query):
 	bitvec_mgr = mpdb_mgr.get_bitvec_mgr()
-	start_rule_names = ['objects_start', 'people_start']
+	start_rule_names = ['objects_start', 'people_start']  # ['people_start'] #
 	event_rule_names = ['pickup_rule', 'went_rule']
 	state_from_event_names = ['gen_rule_picked_up', 'gen_rule_picked_up_free', 'gen_rule_went', 'gen_rule_has_and_went',
 							  'gen_rule_knows_dynamic_action']
@@ -133,7 +133,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 			print(out_str)
 
 		db_transfrs =  mpdb_mgr.infer(['main'], (i_one_story, story_loop_stage, event_step_id[0]),
-												['state_from_state'])
+												['state_from_start'])
 		for one_transfer in db_transfrs:
 			if one_transfer[0][1] == conn_type.Insert:
 				db_name = one_transfer[0][2]
@@ -145,6 +145,9 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 		total_event_rule_prob = sum(one_rule.prob for one_rule in event_rules)
 
 		localtime = time.asctime(time.localtime(time.time()))
+
+		mpdb_mgr.show_dbs()
+
 		print("Local current time :", localtime)
 
 		story_names = els_sets[0][2]
@@ -179,8 +182,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				story_player_name = story_names[i_story_player]
 				player_decide_rules = adv_rules.init_decide_rules(els_sets, els_dict, story_player_name)
 				ruleid = random.randint(0, len(player_decide_rules)-1)
-				ruleid = 1
-				print('Change this to return to picking up events')
+				# ruleid = 1
+				# print('Change this to return to going to events')
 				rule = player_decide_rules[ruleid]
 				_, gens_recs = rules.gen_for_rule(b_gen_for_learn=False, rule=rule)
 				decide_options += gens_recs
@@ -207,7 +210,7 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				_, event_as_decided =  mpdb_mgr.run_rule(one_decide, (i_one_story, story_loop_stage, event_step_id[0]),
 														'main', ['event_from_decide'])
 				if event_as_decided != []:
-					print(event_as_decided)
+					# print(event_as_decided)
 					# _, event_blocked = story.infer_from_story(els_dict, els_arr, def_article_dict, story_db,
 					# 										  b_apply_results=False,
 					# 										  story_step=event_as_decided[0][1:],
@@ -242,9 +245,9 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 															def_article_dict, db_len_grps, sess,
 															el_set_arr, glv_dict, els_sets, cascade_dict,
 															gg_cont, db_cont_mgr)
-					mpdb_mgr.learn_rule(one_decide, event_as_decided,
-										  (i_one_story, story_loop_stage, event_step_id[0]),
-										  'main')
+						mpdb_mgr.learn_rule(one_decide, event_as_decided,
+											  (i_one_story, story_loop_stage, event_step_id[0]),
+											  'main')
 
 
 			elif story_loop_stage == e_story_loop_stage.state1:
@@ -256,10 +259,11 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 				# 											b_remove_mod_hdr=False)
 				the_main_event = player_event[1:]
 				_, events_transfrs =  mpdb_mgr.run_rule(the_main_event, (i_one_story, story_loop_stage, event_step_id[0]),
-														'main', ['distibute_from_event'])
+														'main', ['distr_from_event'])
 				l_dbs_to_mod, events_to_queue =  mpdb_mgr.run_rule(	the_main_event,
 																	(i_one_story, story_loop_stage, event_step_id[0]),
-																	'main', ['state_from_event'])
+																	'main', ['state_from_event', 'br_state_from_event'])
+				mpdb_mgr.extract_mod_db(l_dbs_to_mod, events_to_queue)
 				for trnsfr in events_transfrs:
 					if trnsfr[0][1] != conn_type.Broadcast or len(trnsfr[0]) <= 2:
 						continue
@@ -288,6 +292,8 @@ def play(	glv_dict, def_article_dict, cascade_dict, els_lists,
 					# 	ilen, iphrase = bitvec_mgr.add_phrase(added_wlist,
 					# 										  (i_one_story, story_loop_stage, event_step_id[0]))
 					# 	l_story_db_event_refs.append((ilen, iphrase))
+				print('All dbs for step', event_step_id[0], 'in story num', i_one_story, ':')
+				mpdb_mgr.show_dbs()
 				story_loop_stage = e_story_loop_stage.decision_init
 				i_story_step += 1
 				if i_story_step >= num_story_steps:

@@ -2,18 +2,25 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c6b771a1-a10b-4216-9350-efe4ef2bc292" name="Default" comment="">
+      <change afterPath="/devlink2/dev/phrases/word_gather.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../faiss/python/faiss/test.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../faiss/python/test1.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../faiss/python/test2.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../faiss/test1.py" afterDir="false" />
       <change beforePath="/devlink2/dev/myfaiss/glove_kmeans.py" beforeDir="false" afterPath="/devlink2/dev/myfaiss/glove_kmeans.py" afterDir="false" />
-      <change beforePath="/devlink2/dev/phrases/on_the_fly.py" beforeDir="false" afterPath="/devlink2/dev/phrases/on_the_fly.py" afterDir="false" />
       <change beforePath="/devlink2/dev/stt/sttwordcomp.py" beforeDir="false" afterPath="/devlink2/dev/stt/sttwordcomp.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../faiss/python/swigfaiss.py" beforeDir="false" afterPath="$PROJECT_DIR$/../faiss/python/swigfaiss.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../faiss/python/swigfaiss_wrap.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../faiss/python/swigfaiss_wrap.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adv/rules.txt" beforeDir="false" afterPath="$PROJECT_DIR$/adv/rules.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adv_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/adv_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adv_main1.py" beforeDir="false" afterPath="$PROJECT_DIR$/adv_main1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bitvec.py" beforeDir="false" afterPath="$PROJECT_DIR$/bitvec.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/makerecs.py" beforeDir="false" afterPath="$PROJECT_DIR$/makerecs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mpdb.py" beforeDir="false" afterPath="$PROJECT_DIR$/mpdb.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/notebook.txt" beforeDir="false" afterPath="$PROJECT_DIR$/notebook.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rules.py" beforeDir="false" afterPath="$PROJECT_DIR$/rules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rules2.py" beforeDir="false" afterPath="$PROJECT_DIR$/rules2.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -33,10 +40,31 @@
       <file leaf-file-name="adv_main1.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/adv_main1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="327" selection-start-line="327" selection-end-line="327" />
+            <state relative-caret-position="191">
+              <caret line="225" selection-start-line="225" selection-end-line="225" />
               <folding>
                 <element signature="e#321#358#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="adv_config.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/adv_config.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="323">
+              <caret line="19" column="27" selection-start-line="19" selection-start-column="27" selection-end-line="19" selection-end-column="27" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="rules.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/rules.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="204">
+              <caret line="20" column="145" selection-start-line="20" selection-start-column="145" selection-end-line="20" selection-end-column="145" />
+              <folding>
+                <element signature="e#0#37#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -45,8 +73,8 @@
       <file leaf-file-name="notebook.txt" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/notebook.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="506">
-              <caret line="1937" selection-start-line="1937" selection-end-line="1937" selection-end-column="60" />
+            <state relative-caret-position="565">
+              <caret line="1957" selection-start-line="1957" selection-end-line="1957" selection-end-column="55" />
             </state>
           </provider>
         </entry>
@@ -54,8 +82,11 @@
       <file leaf-file-name="mpdb.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mpdb.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="86" selection-start-line="86" selection-end-line="86" />
+            <state relative-caret-position="251">
+              <caret line="115" selection-start-line="115" selection-end-line="115" />
+              <folding>
+                <element signature="e#261#298#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -63,40 +94,10 @@
       <file leaf-file-name="bitvec.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bitvec.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="365">
-              <caret line="1028" selection-start-line="1028" selection-end-line="1028" />
+            <state relative-caret-position="231">
+              <caret line="846" selection-start-line="846" selection-end-line="846" />
               <folding>
                 <element signature="e#193#230#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="adv_learn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/adv_learn.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="230" selection-start-line="230" selection-end-line="230" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="rules.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/adv/rules.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="51">
-              <caret line="3" selection-start-line="3" selection-end-line="3" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="els.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/els.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5185">
-              <caret line="316" selection-start-line="316" selection-end-line="316" />
-              <folding>
-                <element signature="e#0#10#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -105,20 +106,8 @@
       <file leaf-file-name="rules2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/rules2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="323">
-              <caret line="25" selection-start-line="25" selection-end-line="25" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="rules.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/rules.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6256">
-              <caret line="376" selection-start-line="376" selection-end-line="376" />
+            <state relative-caret-position="191">
+              <caret line="64" selection-start-line="64" selection-end-line="64" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -129,11 +118,20 @@
       <file leaf-file-name="makerecs.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/makerecs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2635">
-              <caret line="174" column="28" selection-start-line="174" selection-start-column="28" selection-end-line="174" selection-end-column="28" />
+            <state relative-caret-position="2992">
+              <caret line="195" selection-start-line="195" selection-end-line="195" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="rules.txt" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/adv/rules.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="425">
+              <caret line="25" selection-start-line="25" selection-end-line="25" />
             </state>
           </provider>
         </entry>
@@ -149,23 +147,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>rule stats</find>
-      <find>stmt</find>
-      <find>in [conn_type.Insert</find>
-      <find>conn_type.Insert</find>
-      <find>rec_def_type.conn and</find>
-      <find>result</find>
-      <find>e_story_loop_stage.story_init</find>
-      <find>conn_type</find>
-      <find>self.__l_phrases</find>
-      <find>__l_phrases</find>
-      <find>add_phrase</find>
-      <find>bitvec_mgr</find>
-      <find>__l_all_phrases</find>
-      <find>'b'</find>
-      <find>`</find>
-      <find>infer</find>
-      <find>mod_type</find>
       <find>phrase2_len</find>
       <find>map_rec_to_list_pos</find>
       <find>run_rule</find>
@@ -179,6 +160,23 @@
       <find>find_matches</find>
       <find>zip(l_imatches, l_match_paths)</find>
       <find>fine_</find>
+      <find>l_curr_stage_ggs</find>
+      <find>fnt_dict</find>
+      <find>return to</find>
+      <find>from_init</find>
+      <find>iteritems</find>
+      <find>conn_type.Insert</find>
+      <find>results</find>
+      <find>conn_type.Broadcast</find>
+      <find>dis</find>
+      <find>:r</find>
+      <find>state_from_event</find>
+      <find>c:d</find>
+      <find>conn_type.Unique</find>
+      <find>Insert</find>
+      <find>phrase</find>
+      <find>phrase_len</find>
+      <find>change_db</find>
     </findStrings>
     <replaceStrings>
       <replace>curr_cont</replace>
@@ -188,6 +186,9 @@
       <replace>other</replace>
       <replace>phrase</replace>
       <replace>self.__nd_el_bin_db</replace>
+      <replace>num_stages</replace>
+      <replace>r_num_stages</replace>
+      <replace>l_blanks</replace>
     </replaceStrings>
     <dirStrings>
       <dir>$PROJECT_DIR$</dir>
@@ -226,7 +227,6 @@
         <option value="/devlink2/dev/faiss/glove_baseline.py" />
         <option value="/devlink2/dev/faiss/glove_all_to_all_abandon.py" />
         <option value="/devlink2/dev/faiss/glove.py" />
-        <option value="/devlink2/dev/phrases/notebook.txt" />
         <option value="/devlink2/dev/phrases/on_the_fly.py" />
         <option value="$PROJECT_DIR$/wdlearn.py" />
         <option value="/devlink2/dev/faiss/sift.py" />
@@ -242,14 +242,15 @@
         <option value="$PROJECT_DIR$/adv_learn.py" />
         <option value="$PROJECT_DIR$/bitvec_rf.py" />
         <option value="$PROJECT_DIR$/els.py" />
-        <option value="$PROJECT_DIR$/adv_config.py" />
+        <option value="/devlink2/dev/phrases/notebook.txt" />
         <option value="$PROJECT_DIR$/rules.py" />
         <option value="$PROJECT_DIR$/makerecs.py" />
-        <option value="$PROJECT_DIR$/adv_main1.py" />
         <option value="$PROJECT_DIR$/mpdb.py" />
+        <option value="$PROJECT_DIR$/bitvec.py" />
         <option value="$PROJECT_DIR$/rules2.py" />
         <option value="$PROJECT_DIR$/adv/rules.txt" />
-        <option value="$PROJECT_DIR$/bitvec.py" />
+        <option value="$PROJECT_DIR$/adv_config.py" />
+        <option value="$PROJECT_DIR$/adv_main1.py" />
         <option value="$PROJECT_DIR$/notebook.txt" />
       </list>
     </option>
@@ -471,20 +472,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1503060144014</updated>
-    </task>
-    <task id="LOCAL-00012" summary="Learning wd rules. No nonblock after block. New untried maturation.">
-      <created>1520833631148</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
-      <option name="project" value="LOCAL" />
-      <updated>1520833631148</updated>
-    </task>
-    <task id="LOCAL-00013" summary="Add wd_admin. Deleting all finshed games.">
-      <created>1520862251323</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
-      <option name="project" value="LOCAL" />
-      <updated>1520862251323</updated>
     </task>
     <task id="LOCAL-00014" summary="Learning of prediction when multiple rules match working.">
       <created>1521125566186</created>
@@ -815,7 +802,21 @@
       <option name="project" value="LOCAL" />
       <updated>1530793584550</updated>
     </task>
-    <option name="localTasksCounter" value="61" />
+    <task id="LOCAL-00061" summary="Learning not broken but still learning two-phased rules only">
+      <created>1531065483170</created>
+      <option name="number" value="00061" />
+      <option name="presentableId" value="LOCAL-00061" />
+      <option name="project" value="LOCAL" />
+      <updated>1531065483173</updated>
+    </task>
+    <task id="LOCAL-00062" summary="hangover checkin">
+      <created>1531146893552</created>
+      <option name="number" value="00062" />
+      <option name="presentableId" value="LOCAL-00062" />
+      <option name="project" value="LOCAL" />
+      <updated>1531146893552</updated>
+    </task>
+    <option name="localTasksCounter" value="63" />
     <servers />
   </component>
   <component name="TodoView">
@@ -829,17 +830,17 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="64" y="-11" width="1857" height="1092" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.40034965" visible="true" weight="0.16648471" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.3961965" visible="true" weight="0.16648471" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.325054" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.3261339" />
       <window_info anchor="bottom" id="Version Control" order="10" weight="0.32721382" />
       <window_info anchor="bottom" id="Python Console" order="8" weight="0.32829374" />
-      <window_info id="Structure" order="1" sideWeight="0.5996503" weight="0.16648471" />
+      <window_info id="Structure" order="1" sideWeight="0.6038035" weight="0.16648471" />
       <window_info anchor="bottom" id="Terminal" order="9" weight="0.32937366" />
-      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.3822894" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.31857452" />
       <window_info id="Favorites" order="2" sideWeight="0.5032258" side_tool="true" weight="0.17139737" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -847,6 +848,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.325054" />
     </layout>
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -889,8 +891,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="New alliance-group system working." />
-    <MESSAGE value="Upgraded forbidden module to include blocking with subsidiary unless rules." />
     <MESSAGE value="Allies can support each other units. Some speedups implemented." />
     <MESSAGE value="Alliance and user option system working. No humans yet." />
     <MESSAGE value="Alliances including human seems to work." />
@@ -914,7 +914,9 @@
     <MESSAGE value="Bitvecs rules work with reverse and rnd improvements but not applied." />
     <MESSAGE value="Text-specified rules that are implemented with vectors." />
     <MESSAGE value="Three stage rules seem to work for run but learning is broken." />
-    <option name="LAST_COMMIT_MESSAGE" value="Three stage rules seem to work for run but learning is broken." />
+    <MESSAGE value="Learning not broken but still learning two-phased rules only" />
+    <MESSAGE value="hangover checkin" />
+    <option name="LAST_COMMIT_MESSAGE" value="hangover checkin" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1071,12 +1073,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/makerecs.py</url>
-          <line>116</line>
+          <line>118</line>
           <option name="timeStamp" value="2110" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/makerecs.py</url>
-          <line>176</line>
+          <line>184</line>
           <option name="timeStamp" value="2113" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1256,7 +1258,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/adv_main1.py</url>
-          <line>327</line>
+          <line>333</line>
           <option name="timeStamp" value="3118" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1578,7 +1580,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>1414</line>
+          <line>1384</line>
           <option name="timeStamp" value="3622" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1653,17 +1655,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>663</line>
+          <line>664</line>
           <option name="timeStamp" value="3813" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/makerecs.py</url>
-          <line>187</line>
-          <option name="timeStamp" value="3941" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>1147</line>
+          <line>1117</line>
           <option name="timeStamp" value="3967" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1673,22 +1670,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/mpdb.py</url>
-          <line>61</line>
+          <line>62</line>
           <option name="timeStamp" value="3990" />
         </line-breakpoint>
         <line-breakpoint suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/adv_main1.py</url>
-          <line>280</line>
-          <option name="timeStamp" value="4048" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/rules2.py</url>
-          <line>81</line>
-          <option name="timeStamp" value="4049" />
-        </line-breakpoint>
-        <line-breakpoint suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/adv_main1.py</url>
-          <line>290</line>
+          <line>296</line>
           <option name="timeStamp" value="4057" />
         </line-breakpoint>
         <line-breakpoint suspend="THREAD" type="python-line">
@@ -1710,38 +1697,49 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>1016</line>
+          <line>1006</line>
           <option name="timeStamp" value="4112" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>355</line>
-          <option name="timeStamp" value="4113" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>344</line>
-          <option name="timeStamp" value="4114" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>1013</line>
+          <line>1003</line>
           <option name="timeStamp" value="4115" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/bitvec.py</url>
-          <line>1031</line>
+          <line>1013</line>
           <option name="timeStamp" value="4117" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bitvec.py</url>
+          <line>1009</line>
+          <option name="timeStamp" value="4123" />
+        </line-breakpoint>
+        <line-breakpoint suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/adv_main1.py</url>
+          <line>284</line>
+          <option name="timeStamp" value="4157" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/adv_main1.py</url>
+          <line>315</line>
+          <option name="timeStamp" value="4165" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bitvec.py</url>
+          <line>1364</line>
+          <option name="timeStamp" value="4168" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="4120" />
+      <option name="time" value="4169" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="mpdb_mgr" />
+        <watch expression="phrase" />
       </configuration>
     </watches-manager>
   </component>
@@ -1778,6 +1776,26 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
     </expressions>
     <expressions id="breakpointCondition">
       <expression>
+        <expression-string>db_name != 'main' and not m_unique_bels[2]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>db_name != 'main'</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>rel[1] == conn_type.Unique</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>el[1] == conn_type.Unique</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
         <expression-string>np.all(match_hits) == False</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
@@ -1804,26 +1822,6 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
       </expression>
       <expression>
         <expression-string>results != []</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>event_as_decided == []</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>irule==1</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>num_flip&gt;5</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>num_flip&gt;4</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -1864,90 +1862,53 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>np.sum(m_outside_miss)</expression-string>
+        <expression-string>change_db[iword]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>l_phrases_len == []</expression-string>
+        <expression-string>change_db[iword][0]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>obj_unused.get_unused(self._cl_bitvec_gg__l_phrases_len[stg+1])</expression-string>
+        <expression-string>np.sum(nd_diffs, axis=1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>obj_unused.get_unused(self.__l_phrases_len[stg+1])</expression-string>
+        <expression-string>odiffs.astype(np.int)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.sum(nd_el_diffs, axis=1)</expression-string>
+        <expression-string>np.sum(obits.transpose() / hd_divider, axis=1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>r_num_stages[:-1]</expression-string>
+        <expression-string>obits.transpose() / hd_divider</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>l_l_mat_pat_stgs[stg][i_stg_phrase]</expression-string>
+        <expression-string>l_word_counts[400:]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>r_num_stages[1:-1]</expression-string>
+        <expression-string>l_word_counts</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>range(1, num_stages)</expression-string>
+        <expression-string>__py_debug_temp_var_803686978[400:]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/wdconfig.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="28" column="8" selection-start-line="28" selection-start-column="8" selection-end-line="28" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///devlink2/dev/faiss/glove.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5610">
-          <caret line="333" column="32" selection-start-line="333" selection-start-column="32" selection-end-line="333" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///devlink2/dev/faiss/sift.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6681">
-          <caret line="396" column="28" selection-start-line="396" selection-start-column="28" selection-end-line="396" selection-end-column="28" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../faiss/test1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="8" column="22" selection-end-line="9" selection-end-column="33" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///devlink2/dev/faiss/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1326">
@@ -2118,13 +2079,6 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/core/fromnumeric.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17119">
-          <caret line="1018" selection-start-line="1018" selection-end-line="1018" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/core/_methods.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="306">
@@ -2160,20 +2114,6 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/adv_config.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="510">
-          <caret line="30" column="9" selection-start-line="30" selection-end-line="30" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/adv_rules.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="16" column="4" selection-start-line="16" selection-start-column="4" selection-end-line="16" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/addlearn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="527">
@@ -2198,43 +2138,6 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/rules.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6256">
-          <caret line="376" selection-start-line="376" selection-end-line="376" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/rules2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="25" selection-start-line="25" selection-end-line="25" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/makerecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2635">
-          <caret line="174" column="28" selection-start-line="174" selection-start-column="28" selection-end-line="174" selection-end-column="28" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/adv/rules.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/els.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="5185">
@@ -2245,34 +2148,119 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/adv_learn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3672">
+          <caret line="230" selection-start-line="230" selection-end-line="230" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///devlink2/dev/phrases/word_level.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file:///devlink2/dev/phrases/notebook.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="493">
+          <caret line="29" selection-start-line="29" selection-end-line="29" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///devlink2/dev/phrases/on_the_fly.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="178">
+          <caret line="22" column="5" lean-forward="true" selection-start-line="22" selection-start-column="5" selection-end-line="22" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/adv_rules.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="16" column="4" selection-start-line="16" selection-start-column="4" selection-end-line="16" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharmCE2018.1/system/python_stubs/-1247972723/PyQt4/QtNetwork/QHostAddress.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="395">
+          <caret line="107" column="4" selection-start-line="107" selection-start-column="4" selection-end-line="107" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rules.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="20" column="145" selection-start-line="20" selection-start-column="145" selection-end-line="20" selection-end-column="145" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/makerecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2992">
+          <caret line="195" selection-start-line="195" selection-end-line="195" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/adv/rules.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="25" selection-start-line="25" selection-end-line="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/rules2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="64" selection-start-line="64" selection-end-line="64" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/adv_config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="19" column="27" selection-start-line="19" selection-start-column="27" selection-end-line="19" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/mpdb.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="171">
-          <caret line="86" selection-start-line="86" selection-end-line="86" />
+        <state relative-caret-position="251">
+          <caret line="115" selection-start-line="115" selection-end-line="115" />
+          <folding>
+            <element signature="e#261#298#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/adv_main1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="171">
-          <caret line="327" selection-start-line="327" selection-end-line="327" />
+        <state relative-caret-position="191">
+          <caret line="225" selection-start-line="225" selection-end-line="225" />
           <folding>
             <element signature="e#321#358#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/adv_learn.py">
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/numpy/core/fromnumeric.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="171">
-          <caret line="230" selection-start-line="230" selection-end-line="230" />
+        <state relative-caret-position="191">
+          <caret line="1796" selection-start-line="1796" selection-end-line="1796" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/bitvec.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="365">
-          <caret line="1028" selection-start-line="1028" selection-end-line="1028" />
+        <state relative-caret-position="231">
+          <caret line="846" selection-start-line="846" selection-end-line="846" />
           <folding>
             <element signature="e#193#230#0" expanded="true" />
           </folding>
@@ -2281,8 +2269,8 @@ array([ 0.28570275,  0.52517798,  0.42188402,  0.20788488,  0.30710266,
     </entry>
     <entry file="file://$PROJECT_DIR$/notebook.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="506">
-          <caret line="1937" selection-start-line="1937" selection-end-line="1937" selection-end-column="60" />
+        <state relative-caret-position="565">
+          <caret line="1957" selection-start-line="1957" selection-end-line="1957" selection-end-column="55" />
         </state>
       </provider>
     </entry>

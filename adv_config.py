@@ -1,9 +1,9 @@
 c_max_people = 5
 c_max_countries = 5
 c_max_objects = 5
-c_save_every = 2
+c_save_every = 50
 c_story_len = 25
-c_num_stories = 50
+c_num_stories = 500
 c_num_plays = 100
 c_cont_score_thresh = 0.95 # better than this, we don't bother trying to find more clauses
 c_cont_score_min = 0.1
@@ -17,7 +17,7 @@ c_freq_stats_newbie_thresh = 5
 c_freq_stats_mature_thresh = 10
 c_freq_stats_drop_thresh = 0.1
 c_freq_stats_version = 1
-c_b_save_freq_stats = True
+c_b_save_freq_stats = False
 c_b_learn_full_rules = False
 
 

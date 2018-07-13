@@ -105,6 +105,8 @@ def gen_rec_str(rec):
 				lcvo += ['e']
 			elif el[1] == rules.conn_type.Insert:
 				lcvo += ['i']
+			elif el[1] == rules.conn_type.Unique:
+				lcvo += ['u']
 			elif el[1] == rules.conn_type.Remove:
 				lcvo += ['d']
 			elif el[1] == rules.conn_type.Modify:
@@ -159,12 +161,18 @@ def extract_rec_from_str(srec):
 				el += [rules.conn_type.Insert]
 				if len(lelf) > 2:
 					el += [int(v) for v in lelf[2:]]
+			elif lelf[1] == 'u':
+				el += [rules.conn_type.Unique]
+				if len(lelf) > 2:
+					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'm':
 				el += [rules.conn_type.Modify]
 				if len(lelf) > 2:
 					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'd':
 				el += [rules.conn_type.Remove]
+				if len(lelf) > 2:
+					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'f':
 				el += [rules.conn_type.IF]
 			elif lelf[1] == 't':

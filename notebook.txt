@@ -1936,3 +1936,23 @@ Sunday 7th July
 CIW
 
 Learning not broken but still learning two-phased rules only
+
+Monday 8th June
+
+To do:
+
+Finish off knows picked up - A picked up, A in B C in B t C knows , A picked up t A knows
+Add wants
+Likes, Asks for, wants to give, gives
+Asks where A went, wants to tell
+Monte, lookahead, rules about
+
+After about 3000 added phrases the program starts slowing down. After 7000, the output is no longer flying. This is even
+without learning any rules. Turns out the problem is add_phrase. All words added are scored for closeness to neighbors.
+The knn db for this is growing becuase it's the phrases that are compared.
+1. There is little need to process every phrase
+2. Phrases should be thrown out after enough examples are collected for a rule
+
+CIW
+
+Rules working for pickup and went and all observer dbs.
