@@ -10,5 +10,7 @@
     <orderEntry type="module" module-name="stt" />
     <orderEntry type="module" module-name="myfaiss" />
     <orderEntry type="module" module-name="faiss" />
+    <orderEntry type="module" module-name="misc" />
+    <orderEntry type="module" module-name="agent" />
   </component>
 </module>

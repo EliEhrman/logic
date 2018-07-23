@@ -159,31 +159,24 @@ def extract_rec_from_str(srec):
 				el += [rules.conn_type.end]
 			elif lelf[1] == 'i':
 				el += [rules.conn_type.Insert]
-				if len(lelf) > 2:
-					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'u':
 				el += [rules.conn_type.Unique]
-				if len(lelf) > 2:
-					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'm':
 				el += [rules.conn_type.Modify]
-				if len(lelf) > 2:
-					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'd':
 				el += [rules.conn_type.Remove]
-				if len(lelf) > 2:
-					el += [int(v) for v in lelf[2:]]
 			elif lelf[1] == 'f':
 				el += [rules.conn_type.IF]
 			elif lelf[1] == 't':
 				el += [rules.conn_type.THEN]
 			elif lelf[1] == 'b':
 				el += [rules.conn_type.Broadcast]
-				if len(lelf) > 2:
-					el += [int(v) for v in lelf[2:]]
 			else:
 				print('Unknown rec def. Exiting.')
 				exit()
+			if lelf[1] in ['s', 'i', 'u', 'm', 'd', 'b']:
+				if len(lelf) > 2:
+					el += [int(v) for v in lelf[2:]]
 		elif lelf[0] == 'v':
 			el = [rules.rec_def_type.var]
 			el += [int(lelf[1])]

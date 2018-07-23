@@ -42,6 +42,61 @@ def init_decide_rules(els_sets, els_dict, name):
 	)
 	all_rules.append(goto_decide_rule)
 
+	ask_where_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='ask'),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj, rand_sel=False),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='where is'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='ask_where_decide_rule'
+	)
+	all_rules.append(ask_where_decide_rule)
+
+	tell_where_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='tell'),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj, rand_sel=False),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='where is'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='tell_where_decide_rule'
+	)
+	all_rules.append(tell_where_decide_rule)
+
+	ask_give_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='ask'),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj, rand_sel=False),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='for'),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='ask_give_decide_rule'
+	)
+	all_rules.append(ask_give_decide_rule)
+
+	give_decide_rule = nt_rule(
+		gens = nt_tree_junct(single = [
+			# nt_rule_fld(els_set=[], df_type=df_type.mod, sel_el=conn_type.Insert),
+			nt_rule_fld(els_set=[], df_type=df_type.obj, sel_el=name),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='decided to'),
+			nt_rule_fld(els_set=action_set, df_type=df_type.obj, sel_el='give'),
+			nt_rule_fld(els_set=name_set, df_type=df_type.obj, rand_sel=False),
+			nt_rule_fld(els_set=object_set, df_type=df_type.obj, rand_sel=False)
+		]),
+		story_based=False, type=rule_type.story_start, name='give_decide_rule'
+	)
+	all_rules.append(give_decide_rule)
+
 	return all_rules
 
 
